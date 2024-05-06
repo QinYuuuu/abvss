@@ -17,12 +17,9 @@ type ABVSS struct {
 	distributor bool
 	receiver    bool
 	verifier    bool
-	happy1      bool
-	happy2      bool
-	unhappy1    bool
-	unhappy2    bool
-	unsure      bool
 	ABVSSD
+	ABVSSR
+	ABVSSV
 }
 
 type ABVSSD struct {
@@ -31,11 +28,16 @@ type ABVSSD struct {
 	shares []*big.Int
 }
 
-type ABVSS struct {
+type ABVSSR struct {
 }
 
 type ABVSSV struct {
-	index []int
+	index    []int
+	happy1   bool
+	happy2   bool
+	unhappy1 bool
+	unhappy2 bool
+	unsure   bool
 }
 
 func (vss *ABVSS) Init() {
