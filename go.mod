@@ -1,9 +1,10 @@
 module github.com/QinYuuuu/abvss
 
-go 1.20
+go 1.21
+
+toolchain go1.21.0
 
 require (
-	github.com/QinYuuuu/avid-d v0.0.0-20240430134932-c1781d9c51b8
 	github.com/ethereum/go-ethereum v1.14.0
 	github.com/stretchr/testify v1.8.4
 	google.golang.org/protobuf v1.33.0
