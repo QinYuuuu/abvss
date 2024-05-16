@@ -14,12 +14,11 @@ type ABVSS struct {
 	p         *big.Int
 	randState *rand.Rand
 
-	distributor bool
-	receiver    bool
-	verifier    bool
-	ABVSSD
-	ABVSSR
-	ABVSSV
+	receiver bool
+	verifier bool
+	*ABVSSD
+	*ABVSSR
+	*ABVSSV
 }
 
 type ABVSSD struct {
@@ -45,7 +44,7 @@ func (vss *ABVSS) Init() {
 }
 
 func (vss *ABVSS) GenerateShares(s *big.Int) error {
-	if !vss.distributor {
+	if vss.ABVSSD == nil {
 		return errors.New("not a distributor")
 	}
 	vss.secret = s
