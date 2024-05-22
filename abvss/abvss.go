@@ -9,14 +9,15 @@ import (
 )
 
 type ABVSS struct {
-	degree    int
-	counter   int
-	p         *big.Int
-	randState *rand.Rand
-	batchsize int
-	vnum      int
-	receiver  bool
-	verifier  bool
+	degree      int
+	nodenum     int
+	p           *big.Int
+	randState   *rand.Rand
+	batchsize   int
+	vnum        int
+	distributor bool
+	receiver    bool
+	verifier    bool
 	*ABVSSD
 	*ABVSSR
 	*ABVSSV
@@ -41,8 +42,12 @@ type ABVSSV struct {
 	unsure   bool
 }
 
-func (vss *ABVSS) Init(s []*big.Int) {
+func (vss *ABVSS) Init(s []*big.Int, nodenum, degree, batchsize, vnum int) {
+	vss.nodenum = nodenum
+	vss.degree = degree
 	vss.secret = s
+	vss.batchsize = batchsize
+	vss.vnum = vnum
 }
 
 func (vss *ABVSS) GenerateShares() error {
@@ -70,6 +75,17 @@ func (vss *ABVSS) GenerateShares() error {
 	return nil
 }
 
-func (vss *ABVSS) ConstructLinearCombinations() {
+func (vss *ABVSS) ConstructLCM() {
 
+}
+
+func (vss *ABVSS) VeriftLCM() error {
+	if vss.ABVSSD == nil {
+		return errors.New("not a verifier")
+	}
+	return nil
+}
+
+func (vss *ABVSS) ShareRecovery() error {
+	return nil
 }
