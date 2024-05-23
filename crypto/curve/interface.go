@@ -1,30 +1,22 @@
 package curve
 
-import "math/big"
-
-// CurveParams contains the parameters of an elliptic curve and also provides
-// a generic, non-constant time implementation of Curve.
-type CurveParams struct {
-	P       *big.Int // the order of the underlying field
-	N       *big.Int // the order of the base point
-	B       *big.Int // the constant of the curve equation
-	Gx, Gy  *big.Int // (x,y) of the base point
-	BitSize int      // the size of the underlying field
-	Name    string   // the canonical name of the curve
-}
+import (
+	"crypto/elliptic"
+	"math/big"
+)
 
 type Curve interface {
-	// Params返回曲线的参数
-	Params() *CurveParams
+	// Params 返回曲线的参数
+	Params() *elliptic.CurveParams
 	// IsOnCurve verify if (x，y) on the curve
 	IsOnCurve(x, y *big.Int) bool
-	// Add返回(x1,y1)和(x2,y2)的和
+	// Add 返回(x1,y1)和(x2,y2)的和
 	Add(x1, y1, x2, y2 *big.Int) (x, y *big.Int)
-	// Double返回 2*(x,y)
+	// Double 返回 2*(x,y)
 	Double(x1, y1 *big.Int) (x, y *big.Int)
-	// ScalarMult返回k*(Bx,By) and k in big-endian
+	// ScalarMult 返回k*(Bx,By) and k in big-endian
 	ScalarMult(x1, y1 *big.Int, k []byte) (x, y *big.Int)
-	// ScalarBaseMult返回 k*G, G是组的基点。
+	// ScalarBaseMult 返回 k*G, G是组的基点。
 	// k是大端形式的整数。
 	ScalarBaseMult(k []byte) (x, y *big.Int)
 }
