@@ -1,4 +1,4 @@
-package crypto
+package utils
 
 import (
 	"crypto/hmac"
@@ -10,7 +10,8 @@ import (
 )
 
 var (
-	one = big.NewInt(1)
+	one  = big.NewInt(1)
+	zero = big.NewInt(0)
 )
 
 // SHA512Int hmac sha512 []*big.Int
@@ -98,4 +99,17 @@ func GenerateSafePrime(bits int, values chan *big.Int, quit chan int) (p *big.In
 			return
 		}
 	}
+}
+
+func AppendSlices[T any](slices ...[]T) []T {
+	var totalLen int
+	for _, s := range slices {
+		totalLen += len(s)
+	}
+	result := make([]T, totalLen)
+	begin := 0
+	for _, s := range slices {
+		begin += copy(result[begin:begin+len(s)], s)
+	}
+	return result
 }

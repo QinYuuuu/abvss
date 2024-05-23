@@ -2,7 +2,15 @@ package curve
 
 import "math/big"
 
-type CurveParams interface {
+// CurveParams contains the parameters of an elliptic curve and also provides
+// a generic, non-constant time implementation of Curve.
+type CurveParams struct {
+	P       *big.Int // the order of the underlying field
+	N       *big.Int // the order of the base point
+	B       *big.Int // the constant of the curve equation
+	Gx, Gy  *big.Int // (x,y) of the base point
+	BitSize int      // the size of the underlying field
+	Name    string   // the canonical name of the curve
 }
 
 type Curve interface {

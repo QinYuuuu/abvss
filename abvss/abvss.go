@@ -1,11 +1,11 @@
-package nodes
+package abvss
 
 import (
 	"errors"
 	"math/big"
 	"math/rand"
 
-	"github.com/QinYuuuu/abvss/utils/polynomial"
+	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
 )
 
 type ABVSS struct {

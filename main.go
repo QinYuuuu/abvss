@@ -6,5 +6,5 @@ import (
 
 func main() {
 	curve := secp256k1.S256()
-	curve.
+	curve.Params()
 }
