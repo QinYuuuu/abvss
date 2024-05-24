@@ -3,9 +3,15 @@ package utils
 import (
 	"errors"
 	"math/big"
-
-	"github.com/QinYuuuu/abvss/crypto/curve"
 )
+
+func arrayOfZeroes(n int) []*big.Int {
+	r := make([]*big.Int, n)
+	for i := 0; i < n; i++ {
+		r[i] = new(big.Int).SetInt64(0)
+	}
+	return r[:]
+}
 
 func DotProduct(v1, v2 []*big.Int) (*big.Int, error) {
 	if len(v1) != len(v2) {
@@ -18,19 +24,6 @@ func DotProduct(v1, v2 []*big.Int) (*big.Int, error) {
 	return dot, nil
 }
 
-func DotProductGroup(curve curve.Curve, v1 []*big.Int, v2x, v2y []*big.Int) (*big.Int, *big.Int, error) {
-	if len(v1) != len(v2x) || len(v1) != len(v2y) || len(v2x) != len(v2y) {
-		return nil, nil, errors.New("the input length is different")
-	}
-	dotx := zero
-	doty := zero
-	for i := 0; i < len(v1); i++ {
-		tmpx, tmpy := curve.ScalarMult(v2x[i], v2y[i], v1[i].Bytes())
-		curve.Add(dotx, doty, tmpx, tmpy)
-	}
-	return dotx, doty, nil
-}
-
 func VecPow(v1, v2 []*big.Int) (*big.Int, error) {
 	if len(v1) != len(v2) {
 		return nil, errors.New("the input length is different")
@@ -40,4 +33,16 @@ func VecPow(v1, v2 []*big.Int) (*big.Int, error) {
 		dot.Add(dot, new(big.Int).Mul(v1[i], v2[i]))
 	}
 	return dot, nil
+}
+
+// VecAdd returns v1 + v2
+func VecAdd(v1, v2 []*big.Int) ([]*big.Int, error) {
+	if len(v1) != len(v2) {
+		return nil, errors.New("the input length is different")
+	}
+	v := make([]*big.Int, len(v1))
+	for i := 0; i < len(v); i++ {
+		v[i] = new(big.Int).Add(v1[i], v2[i])
+	}
+	return v, nil
 }

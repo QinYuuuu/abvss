@@ -2,7 +2,13 @@ package curve
 
 import (
 	"crypto/elliptic"
+	"errors"
 	"math/big"
+)
+
+var (
+	one  = big.NewInt(1)
+	zero = big.NewInt(0)
 )
 
 type Curve interface {
@@ -19,4 +25,17 @@ type Curve interface {
 	// ScalarBaseMult 返回 k*G, G是组的基点。
 	// k是大端形式的整数。
 	ScalarBaseMult(k []byte) (x, y *big.Int)
+}
+
+func DotProductGroup(curve Curve, v1 []*big.Int, v2x, v2y []*big.Int) (*big.Int, *big.Int, error) {
+	if len(v1) != len(v2x) || len(v1) != len(v2y) || len(v2x) != len(v2y) {
+		return nil, nil, errors.New("the input length is different")
+	}
+	dotx := zero
+	doty := zero
+	for i := 0; i < len(v1); i++ {
+		tmpx, tmpy := curve.ScalarMult(v2x[i], v2y[i], v1[i].Bytes())
+		curve.Add(dotx, doty, tmpx, tmpy)
+	}
+	return dotx, doty, nil
 }

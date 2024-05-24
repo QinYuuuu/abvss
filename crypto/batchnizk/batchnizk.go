@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"github.com/QinYuuuu/abvss/crypto/utils"
 	"math/big"
 
 	"github.com/QinYuuuu/abvss/crypto/curve"
 	"github.com/QinYuuuu/abvss/crypto/hasher"
 	"github.com/QinYuuuu/abvss/crypto/paillier"
-	. "github.com/QinYuuuu/abvss/crypto/utils"
 )
 
 type NIZKProof struct {
@@ -38,15 +38,15 @@ func NewBatchNIZK(curve curve.Curve, g *curve.ECPoint, p *big.Int, num int, pk p
 	return zk
 }
 
-func (zk BatchNIZK) Prove(fij, zij, rij []*big.Int) (*NIZKProof, error) {
+func (zk BatchNIZK) Prove(fij, rij []*big.Int) (*NIZKProof, error) {
 	lenth := len(fij)
-	if lenth != len(zij) {
+	if lenth != len(rij) {
 		return nil, errors.New("the input length is different")
 	}
 	g := zk.generator
 	p2 := new(big.Int).Sqrt(zk.p)
-	u := RandomNum(zk.p)
-	s := RandomNum(zk.p)
+	u := utils.RandomNum(zk.p)
+	s := utils.RandomNum(zk.p)
 	tx, ty := zk.curve.ScalarMult(g.X(), g.Y(), u.Bytes())
 	pk := zk.pk
 
@@ -62,17 +62,17 @@ func (zk BatchNIZK) Prove(fij, zij, rij []*big.Int) (*NIZKProof, error) {
 		if err != nil {
 			return nil, err
 		}
-		m := AppendSlices(tx.Bytes(), ty.Bytes(), e.Bytes(), bytesBuffer.Bytes())
+		m := utils.AppendSlices(tx.Bytes(), ty.Bytes(), e.Bytes(), bytesBuffer.Bytes())
 		cij[i] = new(big.Int).SetBytes(hasher.SHA256Hasher(m))
 	}
 
-	dot, err := DotProduct(fij, cij)
+	dot, err := utils.DotProduct(fij, cij)
 	if err != nil {
 		return nil, err
 	}
 	Rij := new(big.Int).Add(u, dot)
 
-	pow, err := VecPow(rij, cij)
+	pow, err := utils.VecPow(rij, cij)
 	if err != nil {
 		return nil, err
 	}
@@ -94,12 +94,12 @@ func (zk BatchNIZK) Verify(Aijx, Aijy, zij []*big.Int, pi NIZKProof) (bool, erro
 		if err != nil {
 			return false, err
 		}
-		m := AppendSlices(pi.tx.Bytes(), pi.ty.Bytes(), pi.e.Bytes(), bytesBuffer.Bytes())
+		m := utils.AppendSlices(pi.tx.Bytes(), pi.ty.Bytes(), pi.e.Bytes(), bytesBuffer.Bytes())
 		cij[i] = new(big.Int).SetBytes(hasher.SHA256Hasher(m))
 	}
 
 	left1x, lef1y := zk.curve.ScalarMult(zk.generator.X(), zk.generator.Y(), pi.r.Bytes())
-	dotx, doty, err := DotProductGroup(zk.curve, cij, Aijx, Aijy)
+	dotx, doty, err := curve.DotProductGroup(zk.curve, cij, Aijx, Aijy)
 	if err != nil {
 		return false, err
 	}
@@ -110,7 +110,7 @@ func (zk BatchNIZK) Verify(Aijx, Aijy, zij []*big.Int, pi NIZKProof) (bool, erro
 		t1 = true
 	}
 
-	pow, err := VecPow(zij, cij)
+	pow, err := utils.VecPow(zij, cij)
 	if err != nil {
 		return false, err
 	}

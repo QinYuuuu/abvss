@@ -9,6 +9,6 @@ type SecretKey interface{}
 type Cipher interface{}
 
 type Sigma interface {
-	Encrypt(pk PublicKey, s []*big.Int) Cipher
-	Decrypt(sk []SecretKey, c Cipher) []*big.Int
+	Encrypt(pk PublicKey, s *big.Int) (Cipher, error)
+	Decrypt(sk SecretKey, c Cipher) (*big.Int, error)
 }

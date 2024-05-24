@@ -9,32 +9,45 @@ import (
 )
 
 type ABVSS struct {
-	degree      int
-	nodenum     int
-	p           *big.Int
-	randState   *rand.Rand
-	batchsize   int
-	vnum        int
-	distributor bool
-	receiver    bool
-	verifier    bool
+	index     int
+	degree    int
+	nodenum   int
+	p         *big.Int
+	randState *rand.Rand
+	batchsize int
+	vnum      int
+
+	sigma Sigma
 	*ABVSSD
 	*ABVSSR
 	*ABVSSV
 }
 
 type ABVSSD struct {
+	pk     []PublicKey
 	secret []*big.Int
 	polyf  []polynomial.Polynomial
 	polyg  []polynomial.Polynomial
-	shares [][]*big.Int
+	//shares [][]*big.Int
 }
 
 type ABVSSR struct {
+	sk       SecretKey
+	fshares  []*big.Int
+	gshares  []*big.Int
+	complain bool
+	qlist    []struct {
+		index int
+		fj    *big.Int
+	}
 }
 
 type ABVSSV struct {
-	index    []int
+	ilist []struct {
+		index int
+		lcm   *big.Int
+	}
+	jlist    []int
 	happy1   bool
 	happy2   bool
 	unhappy1 bool
@@ -42,50 +55,19 @@ type ABVSSV struct {
 	unsure   bool
 }
 
-func (vss *ABVSS) Init(s []*big.Int, nodenum, degree, batchsize, vnum int) {
-	vss.nodenum = nodenum
-	vss.degree = degree
-	vss.secret = s
-	vss.batchsize = batchsize
-	vss.vnum = vnum
-}
-
-func (vss *ABVSS) GenerateShares() error {
-	if vss.ABVSSD == nil {
-		return errors.New("not a distributor")
+func NewVSS(index, nodenum, degree, batchsize, vnum int, p *big.Int, sigma Sigma) (*ABVSS, error) {
+	if nodenum < 3*degree+1 {
+		return nil, errors.New("must satisfy n >= 3f+1")
 	}
-	for i := 0; i < vss.batchsize; i++ {
-		poly, err := polynomial.NewRand(vss.degree, vss.randState, vss.p)
-		if err != nil {
-			return err
-		}
-		poly.SetCoefficientBig(0, vss.secret[i])
-		if err != nil {
-			return err
-		}
-		vss.polyf[i] = poly
+	if batchsize <= 0 || vnum <= 0 {
+		return nil, errors.New("batchsize/vnum must >= 1")
 	}
-	for i := 0; i < vss.vnum; i++ {
-		poly, err := polynomial.NewRand(vss.degree, vss.randState, vss.p)
-		if err != nil {
-			return err
-		}
-		vss.polyg[i] = poly
-	}
-	return nil
-}
-
-func (vss *ABVSS) ConstructLCM() {
-
-}
-
-func (vss *ABVSS) VeriftLCM() error {
-	if vss.ABVSSD == nil {
-		return errors.New("not a verifier")
-	}
-	return nil
-}
-
-func (vss *ABVSS) ShareRecovery() error {
-	return nil
+	return &ABVSS{
+		index:     index,
+		degree:    degree,
+		nodenum:   nodenum,
+		p:         p,
+		batchsize: batchsize,
+		sigma:     sigma,
+	}, nil
 }
