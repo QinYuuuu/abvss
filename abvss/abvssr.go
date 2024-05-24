@@ -7,6 +7,12 @@ import (
 	"math/big"
 )
 
+func (vss *ABVSS) ReceiverInit(sk SecretKey) {
+	vss.sk = sk
+	vss.fshares = make([]*big.Int, vss.batchsize)
+	vss.gshares = make([]*big.Int, vss.vnum)
+}
+
 func (vss *ABVSS) ObtainShares(zi, xi []Cipher) error {
 	if vss.ABVSSR == nil {
 		return errors.New("not a receiver")
@@ -19,7 +25,7 @@ func (vss *ABVSS) ObtainShares(zi, xi []Cipher) error {
 		}
 		vss.fshares[i] = tmp
 	}
-	for i := 0; i < vss.batchsize; i++ {
+	for i := 0; i < vss.vnum; i++ {
 		tmp, err := vss.sigma.Decrypt(vss.sk, xi)
 		if err != nil {
 			return err
@@ -44,6 +50,37 @@ func (vss *ABVSS) ConstructLCM(r [][]*big.Int) ([]*big.Int, error) {
 	return lcm, nil
 }
 
+func (vss *ABVSS) GetRecoverShares(sk SecretKey, index int, r [][]*big.Int) error {
+	fj := make([]*big.Int, vss.batchsize)
+	for i := 0; i < vss.batchsize; i++ {
+		tmp, err := vss.sigma.Decrypt(sk, vss.zi[index])
+		if err != nil {
+			return err
+		}
+		fj[i] = tmp
+	}
+	gj := make([]*big.Int, vss.vnum)
+	for i := 0; i < vss.vnum; i++ {
+		tmp, err := vss.sigma.Decrypt(sk, vss.xi[index])
+		if err != nil {
+			return err
+		}
+		fj[i] = tmp
+	}
+	lcm := make([]*big.Int, vss.vnum)
+	for i := 0; i < vss.vnum; i++ {
+		tmp, err := utils.DotProduct(fj, r[i])
+		if err != nil {
+			return err
+		}
+		lcm[i] = new(big.Int).Add(tmp, gj[i])
+	}
+	if true {
+		vss.qlist[index] = fj
+	}
+	return nil
+}
+
 func (vss *ABVSS) ShareRecovery() error {
 	if vss.ABVSSR == nil {
 		return errors.New("not a receiver")
@@ -55,15 +92,18 @@ func (vss *ABVSS) ShareRecovery() error {
 		return errors.New("invalid Q list")
 	}
 	xlist := make([]*big.Int, len(vss.qlist))
-	ylist := make([]*big.Int, len(vss.qlist))
-	for i := 0; i < len(vss.qlist); i++ {
-		xlist[i] = new(big.Int).SetInt64(int64(vss.qlist[i].index)
-		ylist[i] = vss.qlist[i].fj
+	ylist := make([][]*big.Int, vss.batchsize)
+	for i, index := range vss.jlist {
+		xlist[i] = new(big.Int).SetInt64(int64(index))
+		ylist[i] = vss.qlist[index]
 	}
-	f ,err := polynomial.LagrangeInterpolation(xlist,ylist,vss.p)
-	if err != nil {
-		return err
+
+	for i := 0; i < vss.batchsize; i++ {
+		f, err := polynomial.LagrangeInterpolation(xlist, ylist[i], vss.p)
+		if err != nil {
+			return err
+		}
+		vss.fshares[i] = f.EvalMod(new(big.Int).SetInt64(int64(vss.index)), vss.p)
 	}
-	f.EvalMod(vss.index, vss.)
 	return nil
 }

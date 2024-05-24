@@ -6,6 +6,7 @@ import (
 	"github.com/QinYuuuu/abvss/crypto/curve"
 	"github.com/QinYuuuu/abvss/crypto/paillier"
 	"github.com/QinYuuuu/abvss/crypto/utils"
+	"github.com/stretchr/testify/assert"
 	"math/big"
 	"testing"
 )
@@ -25,15 +26,37 @@ func TestBatchNIZK(t *testing.T) {
 	c = elliptic.P256()
 	param := c.Params()
 	generator := curve.NewECPoint(param.Gx, param.Gy)
-	num := 2
+	batchsize := 2
+	//degree := 1
+	//randstate := rand.New(rand.NewSource(1))
 	pk := paillier.PublicKey{N: param.P}
-	zk := NewBatchNIZK(c, generator, param.P, num, pk)
-	fij := make([]*big.Int, num)
-	zij := make([]*big.Int, num)
-	Aijx := make([]*big.Int, num)
-	Aijy := make([]*big.Int, num)
-	for i := 0; i < num; i++ {
-		fij := utils.RandomNum(param.P)
+	zk := NewBatchNIZK(c, generator, param.P, batchsize, pk)
+	/*
+		secret := make([]*big.Int, batchsize)
+		polyf := make([]polynomial.Polynomial, batchsize)
+		for i := 0; i < batchsize; i++ {
+			secret[i] = new(big.Int).SetInt64(rand.Int63())
+			poly, err := polynomial.NewRand(degree, randstate, param.P)
+			assert.Nil(t, err, "err in NewRand")
+			err = poly.SetCoefficientBig(0, secret[i])
+			assert.Nil(t, err, "err in SetCoefficientBig")
+			polyf[i] = poly
+		}
+	*/
+	var err error
+	fij := make([]*big.Int, batchsize)
+	zij := make([]*big.Int, batchsize)
+	rij := make([]*big.Int, batchsize)
+	Aijx := make([]*big.Int, batchsize)
+	Aijy := make([]*big.Int, batchsize)
+	for i := 0; i < batchsize; i++ {
+		fij[i] = utils.RandomNum(param.P)
+		zij[i], rij[i], err = pk.Encrypt(fij[i])
+		assert.Nil(t, err, "err in Paillier Encrypt")
+		Aijx[i], Aijy[i] = c.ScalarMult(generator.X(), generator.Y(), fij[i].Bytes())
 	}
-	zk.Prove()
+	pi, err := zk.Prove(fij, rij)
+	assert.Nil(t, err, "err in nizk proof")
+	result, err := zk.Verify(Aijx, Aijy, zij, pi)
+	assert.Equal(t, true, result, "zk verify")
 }

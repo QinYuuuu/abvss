@@ -81,7 +81,7 @@ func (zk BatchNIZK) Prove(fij, rij []*big.Int) (*NIZKProof, error) {
 	return proof, nil
 }
 
-func (zk BatchNIZK) Verify(Aijx, Aijy, zij []*big.Int, pi NIZKProof) (bool, error) {
+func (zk BatchNIZK) Verify(Aijx, Aijy, zij []*big.Int, pi *NIZKProof) (bool, error) {
 	lenth := len(Aijx)
 	if lenth != len(zij) || lenth != len(Aijy) || len(zij) != len(Aijy) {
 		return false, errors.New("the input length is different")

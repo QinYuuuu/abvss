@@ -33,13 +33,12 @@ type ABVSSD struct {
 
 type ABVSSR struct {
 	sk       SecretKey
+	zi       map[int][]Cipher
+	xi       map[int][]Cipher
 	fshares  []*big.Int
 	gshares  []*big.Int
 	complain bool
-	qlist    []struct {
-		index int
-		fj    *big.Int
-	}
+	qlist    map[int][]*big.Int
 }
 
 type ABVSSV struct {

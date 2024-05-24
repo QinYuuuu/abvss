@@ -192,7 +192,7 @@ func NewRand(degree int, rand *rand.Rand, n *big.Int) (Polynomial, error) {
 	return p, nil
 }
 
-// NewOne returns create a constant polynomial P(x) = c
+// NewConstant returns create a constant polynomial P(x) = c
 func NewConstant(c int64) Polynomial {
 	zero, err := New(0)
 	if err != nil {
@@ -304,7 +304,7 @@ func (poly *Polynomial) AddMul(poly2 Polynomial, k *big.Int) {
 	}
 }
 
-// MulSelf set poly to op1 * op2
+// Mul set poly to op1 * op2
 func (poly *Polynomial) Mul(op1 Polynomial, op2 Polynomial) error {
 	deg1 := op1.GetDegree()
 	deg2 := op2.GetDegree()
@@ -364,8 +364,10 @@ func DivMod(a Polynomial, b Polynomial, p *big.Int) (Polynomial, Polynomial, err
 			return Polynomial{}, Polynomial{}, err
 		}
 
-		s.SetCoefficientBig(r.GetDegree()-d, lc.Mul(lc, cInv))
-
+		err = s.SetCoefficientBig(r.GetDegree()-d, lc.Mul(lc, cInv))
+		if err != nil {
+			return Polynomial{}, Polynomial{}, err
+		}
 		q.AddSelf(s)
 
 		sb := NewEmpty()
