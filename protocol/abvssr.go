@@ -1,10 +1,11 @@
-package abvss
+package protocol
 
 import (
 	"errors"
+	"math/big"
+
 	"github.com/QinYuuuu/abvss/crypto/utils"
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
-	"math/big"
 )
 
 func (vss *ABVSS) ReceiverInit(sk SecretKey) {
