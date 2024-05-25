@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"github.com/QinYuuuu/abvss/crypto/utils"
+	"fmt"
 	"math/big"
+
+	"github.com/QinYuuuu/abvss/crypto/utils"
 
 	"github.com/QinYuuuu/abvss/crypto/curve"
 	"github.com/QinYuuuu/abvss/crypto/hasher"
@@ -47,6 +49,8 @@ func (zk BatchNIZK) Prove(fij, rij []*big.Int) (*NIZKProof, error) {
 	p2 := new(big.Int).Sqrt(zk.p)
 	u := utils.RandomNum(zk.p)
 	s := utils.RandomNum(zk.p)
+	fmt.Printf("u:\t%v\n", u)
+	fmt.Printf("s:\t%v\n", s)
 	tx, ty := zk.curve.ScalarMult(g.X(), g.Y(), u.Bytes())
 	pk := zk.pk
 
@@ -64,19 +68,25 @@ func (zk BatchNIZK) Prove(fij, rij []*big.Int) (*NIZKProof, error) {
 		}
 		m := utils.AppendSlices(tx.Bytes(), ty.Bytes(), e.Bytes(), bytesBuffer.Bytes())
 		cij[i] = new(big.Int).SetBytes(hasher.SHA256Hasher(m))
+		fmt.Printf("cij_%v:\t%v\n", i, cij[i])
 	}
 
 	dot, err := utils.DotProduct(fij, cij)
 	if err != nil {
 		return nil, err
 	}
-	Rij := new(big.Int).Add(u, dot)
+	Rij := new(big.Int).Mod(new(big.Int).Add(u, dot), zk.p)
 
-	pow, err := utils.VecPow(rij, cij)
+	pow, err := utils.VecPow(rij, cij, p2)
 	if err != nil {
 		return nil, err
 	}
 	Qij := new(big.Int).Mod(new(big.Int).Mul(s, pow), p2)
+
+	fmt.Printf("R:\t%v\n", Rij)
+	fmt.Printf("u+:\t%v\n", new(big.Int).Mod(new(big.Int).Add(u, cij[0]), zk.p))
+	fmt.Printf("Q:\t%v\n", Qij)
+	fmt.Printf("s mod p2:\t%v\n", new(big.Int).Mod(s, p2))
 	proof := &NIZKProof{tx: tx, ty: ty, e: e, r: Rij, q: Qij}
 	return proof, nil
 }
@@ -96,6 +106,7 @@ func (zk BatchNIZK) Verify(Aijx, Aijy, zij []*big.Int, pi *NIZKProof) (bool, err
 		}
 		m := utils.AppendSlices(pi.tx.Bytes(), pi.ty.Bytes(), pi.e.Bytes(), bytesBuffer.Bytes())
 		cij[i] = new(big.Int).SetBytes(hasher.SHA256Hasher(m))
+		fmt.Printf("cij_%v:\t%v\n", i, cij[i])
 	}
 
 	left1x, lef1y := zk.curve.ScalarMult(zk.generator.X(), zk.generator.Y(), pi.r.Bytes())
@@ -106,11 +117,13 @@ func (zk BatchNIZK) Verify(Aijx, Aijy, zij []*big.Int, pi *NIZKProof) (bool, err
 	right1x, right1y := zk.curve.Add(pi.tx, pi.ty, dotx, doty)
 
 	t1 := false
+	fmt.Println(left1x)
+	fmt.Println(right1x)
 	if left1x.Cmp(right1x) == 0 && lef1y.Cmp(right1y) == 0 {
 		t1 = true
 	}
-
-	pow, err := utils.VecPow(zij, cij)
+	fmt.Println(t1)
+	pow, err := utils.VecPow(zij, cij, p2)
 	if err != nil {
 		return false, err
 	}
@@ -123,5 +136,6 @@ func (zk BatchNIZK) Verify(Aijx, Aijy, zij []*big.Int, pi *NIZKProof) (bool, err
 	if left2.Cmp(right2) == 0 {
 		t2 = true
 	}
+	fmt.Println(t2)
 	return t1 && t2, nil
 }

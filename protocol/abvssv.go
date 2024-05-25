@@ -1,4 +1,4 @@
-package abvss
+package protocol
 
 import (
 	"errors"

@@ -1,9 +1,10 @@
-package abvss
+package protocol
 
 import (
 	"errors"
-	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
 	"math/big"
+
+	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
 )
 
 func (vss *ABVSS) DistributorInit(pk []PublicKey, s []*big.Int) error {

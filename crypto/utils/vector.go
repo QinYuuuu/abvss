@@ -24,13 +24,13 @@ func DotProduct(v1, v2 []*big.Int) (*big.Int, error) {
 	return dot, nil
 }
 
-func VecPow(v1, v2 []*big.Int) (*big.Int, error) {
+func VecPow(v1, v2 []*big.Int, m *big.Int) (*big.Int, error) {
 	if len(v1) != len(v2) {
 		return nil, errors.New("the input length is different")
 	}
 	dot := one
 	for i := 0; i < len(v1); i++ {
-		dot.Add(dot, new(big.Int).Mul(v1[i], v2[i]))
+		dot.Mul(dot, new(big.Int).Exp(v1[i], v2[i], m))
 	}
 	return dot, nil
 }

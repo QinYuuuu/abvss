@@ -31,11 +31,10 @@ func DotProductGroup(curve Curve, v1 []*big.Int, v2x, v2y []*big.Int) (*big.Int,
 	if len(v1) != len(v2x) || len(v1) != len(v2y) || len(v2x) != len(v2y) {
 		return nil, nil, errors.New("the input length is different")
 	}
-	dotx := zero
-	doty := zero
-	for i := 0; i < len(v1); i++ {
+	dotx, doty := curve.ScalarMult(v2x[0], v2y[0], v1[0].Bytes())
+	for i := 1; i < len(v1); i++ {
 		tmpx, tmpy := curve.ScalarMult(v2x[i], v2y[i], v1[i].Bytes())
-		curve.Add(dotx, doty, tmpx, tmpy)
+		dotx, doty = curve.Add(dotx, doty, tmpx, tmpy)
 	}
 	return dotx, doty, nil
 }
