@@ -24,7 +24,7 @@ type NIZKProof struct {
 type BatchNIZK struct {
 	curve     curve.Curve
 	generator *curve.ECPoint
-	p         *big.Int
+	n         *big.Int
 	num       int
 	pk        paillier.PublicKey
 }
@@ -48,7 +48,7 @@ func (zk BatchNIZK) Prove(fij, rij []*big.Int) (*NIZKProof, error) {
 	g := zk.generator
 	p2 := new(big.Int).Sqrt(zk.p)
 	u := utils.RandomNum(zk.p)
-	s := utils.RandomNum(zk.p)
+	s := utils.RandomNum(p2)
 	fmt.Printf("u:\t%v\n", u)
 	fmt.Printf("s:\t%v\n", s)
 	tx, ty := zk.curve.ScalarMult(g.X(), g.Y(), u.Bytes())

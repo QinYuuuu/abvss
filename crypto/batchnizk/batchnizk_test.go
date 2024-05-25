@@ -13,12 +13,13 @@ import (
 
 func TestNewBatchNIZK(t *testing.T) {
 	var c curve.Curve
-	c = elliptic.P256()
+	c = elliptic.P224()
 	param := c.Params()
 	generator := curve.NewECPoint(param.Gx, param.Gy)
 	pk := paillier.PublicKey{N: param.P}
 	zk := NewBatchNIZK(c, generator, param.P, 2, pk)
-	fmt.Println(zk)
+	fmt.Println(zk, param.P, param.Gx, param.Gy)
+	fmt.Print(c.ScalarBaseMult(param.N.Bytes()))
 }
 
 func TestBatchNIZK(t *testing.T) {
@@ -27,10 +28,11 @@ func TestBatchNIZK(t *testing.T) {
 	param := c.Params()
 	generator := curve.NewECPoint(param.Gx, param.Gy)
 	batchsize := 1
+	n := new(big.Int).Mul(param.P, big.NewInt(5))
 	//degree := 1
 	//randstate := rand.New(rand.NewSource(1))
-	pk := paillier.PublicKey{N: param.P}
-	zk := NewBatchNIZK(c, generator, param.P, batchsize, pk)
+	pk := paillier.PublicKey{N: n}
+	zk := NewBatchNIZK(c, generator, n, batchsize, pk)
 	/*
 		secret := make([]*big.Int, batchsize)
 		polyf := make([]polynomial.Polynomial, batchsize)

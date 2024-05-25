@@ -46,12 +46,7 @@ type ABVSSV struct {
 		index int
 		lcm   *big.Int
 	}
-	jlist    []int
-	happy1   bool
-	happy2   bool
-	unhappy1 bool
-	unhappy2 bool
-	unsure   bool
+	jlist []int
 }
 
 func NewVSS(index, nodenum, degree, batchsize, vnum int, p *big.Int, sigma Sigma) (*ABVSS, error) {
