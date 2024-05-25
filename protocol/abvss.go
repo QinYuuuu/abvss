@@ -62,6 +62,7 @@ func NewVSS(index, nodenum, degree, batchsize, vnum int, p *big.Int, sigma Sigma
 		nodenum:   nodenum,
 		p:         p,
 		batchsize: batchsize,
+		vnum:      vnum,
 		sigma:     sigma,
 	}, nil
 }

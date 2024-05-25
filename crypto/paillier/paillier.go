@@ -5,7 +5,7 @@ import (
 	"math/big"
 	"runtime"
 
-	crypto "github.com/QinYuuuu/abvss/crypto/utils"
+	"github.com/QinYuuuu/abvss/crypto/utils"
 )
 
 // clone from github.com/okx/threshold-lib/crypto
@@ -45,7 +45,7 @@ func NewKeyPair(concurrency ...int) (*PrivateKey, *PublicKey, error) {
 	for p == q {
 		var quit = make(chan int)
 		for i := 0; i < currency; i++ {
-			go crypto.GenerateSafePrime(PrimeBits/2, values, quit)
+			go utils.GenerateSafePrime(PrimeBits/2, values, quit)
 		}
 		p, q = <-values, <-values
 		close(quit)
@@ -70,7 +70,7 @@ func NewKeyPair(concurrency ...int) (*PrivateKey, *PublicKey, error) {
 
 // Encrypt E(m) =  (g^m) * (r^n) mod n^2
 func (pk *PublicKey) Encrypt(m *big.Int) (*big.Int, *big.Int, error) {
-	r, err := crypto.RandomPrimeNum(pk.N)
+	r, err := utils.RandomPrimeNum(pk.N)
 	if err != nil {
 		return nil, nil, fmt.Errorf("getRandom error")
 	}
@@ -82,7 +82,7 @@ func (pk *PublicKey) Encrypt(m *big.Int) (*big.Int, *big.Int, error) {
 }
 
 // EncryptWithR E(m) =  (g^m) * (r^n) mod n^2
-func (pk *PublicKey) EncryptWithR(m, r *big.Int) (c *big.Int, err error) {
+func (pk *PublicKey) EncryptWithR(m, r *big.Int) (*big.Int, error) {
 	if m.Cmp(zero) == -1 || m.Cmp(pk.N) != -1 { // 0 <=  m < N
 		return nil, fmt.Errorf("m range error")
 	}
@@ -92,8 +92,8 @@ func (pk *PublicKey) EncryptWithR(m, r *big.Int) (c *big.Int, err error) {
 	// r^n mod N2
 	xN := new(big.Int).Exp(r, pk.N, N2)
 	//  (g^m) * (r^n) mod N2
-	c = new(big.Int).Mod(new(big.Int).Mul(Gm, xN), N2)
-	return
+	c := new(big.Int).Mod(new(big.Int).Mul(Gm, xN), N2)
+	return c, nil
 }
 
 // HomoMulPlain  E(ab) = E(a) ^ b mod n^2
