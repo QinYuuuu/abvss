@@ -29,11 +29,11 @@ type BatchNIZK struct {
 	pk        paillier.PublicKey
 }
 
-func NewBatchNIZK(curve curve.Curve, g *curve.ECPoint, p *big.Int, num int, pk paillier.PublicKey) *BatchNIZK {
+func NewBatchNIZK(curve curve.Curve, g *curve.ECPoint, n *big.Int, num int, pk paillier.PublicKey) *BatchNIZK {
 	zk := &BatchNIZK{
 		curve:     curve,
 		generator: g,
-		p:         p,
+		n:         n,
 		num:       num,
 		pk:        pk,
 	}
@@ -46,7 +46,7 @@ func (zk BatchNIZK) Prove(fij, rij []*big.Int) (*NIZKProof, error) {
 		return nil, errors.New("the input length is different")
 	}
 	g := zk.generator
-	p2 := new(big.Int).Sqrt(zk.p)
+	n2 := new(big.Int).Sqrt(zk.n)
 	u := utils.RandomNum(zk.p)
 	s := utils.RandomNum(p2)
 	fmt.Printf("u:\t%v\n", u)
