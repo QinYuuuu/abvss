@@ -26,14 +26,16 @@ type BatchNIZK struct {
 	generator *curve.ECPoint
 	num       int
 	pk        *paillier.PublicKey
+	sk        *paillier.PrivateKey
 }
 
-func NewBatchNIZK(curve curve.Curve, g *curve.ECPoint, num int, pk *paillier.PublicKey) *BatchNIZK {
+func NewBatchNIZK(curve curve.Curve, g *curve.ECPoint, num int, pk *paillier.PublicKey, sk *paillier.PrivateKey) *BatchNIZK {
 	zk := &BatchNIZK{
 		curve:     curve,
 		generator: g,
 		num:       num,
 		pk:        pk,
+		sk:        sk,
 	}
 	return zk
 }
@@ -45,7 +47,7 @@ func (zk *BatchNIZK) Prove(fij, rij []*big.Int) (*NIZKProof, error) {
 	}
 	g := zk.generator
 	n := zk.pk.N
-	n2 := zk.pk.N2()
+	//n2 := zk.pk.N2()
 	u, err := utils.RandomPrimeNum(n)
 	if err != nil {
 		return nil, err
@@ -61,7 +63,6 @@ func (zk *BatchNIZK) Prove(fij, rij []*big.Int) (*NIZKProof, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	cij := make([]*big.Int, zk.num)
 	for i := 0; i < zk.num; i++ {
 		bytesBuffer := bytes.NewBuffer([]byte{})
@@ -81,12 +82,12 @@ func (zk *BatchNIZK) Prove(fij, rij []*big.Int) (*NIZKProof, error) {
 	Rij := new(big.Int).Mod(new(big.Int).Add(u, dot), n)
 	//Rij := new(big.Int).Add(u, dot)
 	fmt.Printf("eij:\t%v\n", e)
-	pow, err := utils.VecPow(rij, cij, n2)
+	pow, err := utils.VecPow(rij, cij, n)
 
 	if err != nil {
 		return nil, err
 	}
-	Qij := new(big.Int).Mod(new(big.Int).Mul(s, pow), n2)
+	Qij := new(big.Int).Mod(new(big.Int).Mul(s, pow), n)
 
 	proof := &NIZKProof{tx: tx, ty: ty, e: e, r: Rij, q: Qij}
 	return proof, nil
@@ -129,6 +130,13 @@ func (zk *BatchNIZK) Verify(Aijx, Aijy, zij []*big.Int, pi *NIZKProof) (bool, er
 	left2 := new(big.Int).Mod(new(big.Int).Mul(pi.e, pow), n2)
 	fmt.Printf("left2:\t%v\n", left2)
 	right2, err := zk.pk.EncryptWithR(pi.r, pi.q)
+	if err != nil {
+		return false, err
+	}
+	paillliertest, err := zk.sk.Decrypt(right2)
+
+	fmt.Printf("right encrypt %v\n", pi.r.Cmp(paillliertest) == 0)
+
 	//fmt.Printf("right2:\t %v\n", right2)
 	//right2 = new(big.Int).Mod(right2, n2)
 	fmt.Printf("right2:\t%v\n", right2)

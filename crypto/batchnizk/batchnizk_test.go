@@ -3,9 +3,10 @@ package batchnizk
 import (
 	"crypto/elliptic"
 	"fmt"
-	"github.com/QinYuuuu/abvss/crypto/utils"
 	"math/big"
 	"testing"
+
+	"github.com/QinYuuuu/abvss/crypto/utils"
 
 	"github.com/QinYuuuu/abvss/crypto/curve"
 	"github.com/QinYuuuu/abvss/crypto/paillier"
@@ -29,15 +30,15 @@ func TestBatchNIZK(t *testing.T) {
 	c = elliptic.P256()
 	param := c.Params()
 	generator := curve.NewECPoint(param.Gx, param.Gy)
-	batchsize := 1
+	batchsize := 3
 	//n := new(big.Int).Mul(param.P, big.NewInt(5))
 	//degree := 1
 	//randstate := rand.New(rand.NewSource(1))
-	_, pk, _ := paillier.NewKeyPair()
+	sk, pk, _ := paillier.NewKeyPair()
 	/*
 		n := new(big.Int).SetInt64(77)
 		pk := &paillier.PublicKey{N: n}*/
-	zk := NewBatchNIZK(c, generator, batchsize, pk)
+	zk := NewBatchNIZK(c, generator, batchsize, pk, sk)
 
 	var err error
 	fij := make([]*big.Int, batchsize)

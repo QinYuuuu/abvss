@@ -3,6 +3,9 @@ package protocol
 import (
 	"math/big"
 	"math/rand"
+
+	"github.com/QinYuuuu/abvss/crypto/batchnizk"
+	"github.com/QinYuuuu/abvss/crypto/curve"
 )
 
 type ABDKG struct {
@@ -10,10 +13,15 @@ type ABDKG struct {
 	index     int
 	degree    int
 	nodenum   int
+	curve     curve.Curve
 	p         *big.Int
 	randState *rand.Rand
 	batchsize int
 	vnum      int
+	fshares   [][]*big.Int
+	gshares   [][]*big.Int
+	Dlist     []int
+	zk        batchnizk.BatchNIZK
 }
 
 func NewDKG(index, nodenum, degree, batchsize, vnum int, p *big.Int) (*ABDKG, error) {
@@ -29,4 +37,22 @@ func NewDKG(index, nodenum, degree, batchsize, vnum int, p *big.Int) (*ABDKG, er
 
 func (dkg *ABDKG) SecretSharing() {
 	return
+}
+
+func (dkg *ABDKG) PKComponentsAndProofs() {
+	for _, i := range dkg.Dlist {
+		Aijx := make([]*big.Int, dkg.batchsize)
+		Aijy := make([]*big.Int, dkg.batchsize)
+		Bijx := make([]*big.Int, dkg.vnum)
+		Bijy := make([]*big.Int, dkg.vnum)
+		fij := dkg.fshares[i-1]
+		gij := dkg.gshares[i-1]
+		for i, fijl := range fij {
+			Aijx[i], Aijy[i] = dkg.curve.ScalarBaseMult(fijl.Bytes())
+		}
+		for i, gijl := range gij {
+			Bijx[i], Bijy[i] = dkg.curve.ScalarBaseMult(gijl.Bytes())
+		}
+		//pij := dkg.zk.Prove(fij, )
+	}
 }
