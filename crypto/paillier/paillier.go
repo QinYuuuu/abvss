@@ -1,6 +1,7 @@
 package paillier
 
 import (
+	"crypto/rand"
 	"fmt"
 	"math/big"
 	"runtime"
@@ -30,6 +31,36 @@ var (
 	zero = big.NewInt(0)
 	one  = big.NewInt(1)
 )
+
+// KeyGen generate paillier key pair faster than NewKeyPair
+func KeyGen() (*PrivateKey, *PublicKey, error) {
+	p, err := rand.Prime(rand.Reader, 1024)
+	if err != nil {
+		return nil, nil, fmt.Errorf("generate p error")
+	}
+	q, err := rand.Prime(rand.Reader, 1024)
+	for p.Cmp(q) == 0 {
+		q, err = rand.Prime(rand.Reader, 1024)
+	}
+	if err != nil {
+		return nil, nil, fmt.Errorf("generate q error")
+	}
+	// n = p*q
+	n := new(big.Int).Mul(p, q)
+
+	// phi = (p-1) * (q-1)
+	pMinus1 := new(big.Int).Sub(p, one)
+	qMinus1 := new(big.Int).Sub(q, one)
+	phi := new(big.Int).Mul(pMinus1, qMinus1)
+
+	// lambda = lcm(p−1, q−1)
+	gcd := new(big.Int).GCD(nil, nil, pMinus1, qMinus1)
+	lambda := new(big.Int).Div(phi, gcd)
+
+	publicKey := &PublicKey{N: n}
+	privateKey := &PrivateKey{PublicKey: *publicKey, Lambda: lambda, Phi: phi}
+	return privateKey, publicKey, nil
+}
 
 // NewKeyPair generate paillier key pair
 func NewKeyPair(concurrency ...int) (*PrivateKey, *PublicKey, error) {

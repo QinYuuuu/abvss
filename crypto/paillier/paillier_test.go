@@ -7,8 +7,7 @@ import (
 )
 
 func TestPaillier(t *testing.T) {
-	privateKey, publicKey, _ := NewKeyPair(8)
-
+	privateKey, publicKey, _ := KeyGen()
 	num1 := big.NewInt(10)
 	num2 := big.NewInt(32)
 	c1, _, _ := publicKey.Encrypt(num1)
@@ -20,7 +19,7 @@ func TestPaillier(t *testing.T) {
 }
 
 func TestPaillierEnc(t *testing.T) {
-	privateKey, publicKey, _ := NewKeyPair(8)
+	privateKey, publicKey, _ := KeyGen()
 	num1 := big.NewInt(10)
 	c1, _, _ := publicKey.Encrypt(num1)
 	plain, _ := privateKey.Decrypt(c1)

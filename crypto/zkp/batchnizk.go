@@ -1,10 +1,9 @@
-package batchnizk
+package zkp
 
 import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"math/big"
 
 	"github.com/QinYuuuu/abvss/crypto/utils"
@@ -26,16 +25,14 @@ type BatchNIZK struct {
 	generator *curve.ECPoint
 	num       int
 	pk        *paillier.PublicKey
-	sk        *paillier.PrivateKey
 }
 
-func NewBatchNIZK(curve curve.Curve, g *curve.ECPoint, num int, pk *paillier.PublicKey, sk *paillier.PrivateKey) *BatchNIZK {
+func NewBatchNIZK(curve curve.Curve, g *curve.ECPoint, num int, pk *paillier.PublicKey) *BatchNIZK {
 	zk := &BatchNIZK{
 		curve:     curve,
 		generator: g,
 		num:       num,
 		pk:        pk,
-		sk:        sk,
 	}
 	return zk
 }
@@ -47,7 +44,7 @@ func (zk *BatchNIZK) Prove(fij, rij []*big.Int) (*NIZKProof, error) {
 	}
 	g := zk.generator
 	n := zk.pk.N
-	//n2 := zk.pk.N2()
+	n2 := zk.pk.N2()
 	u, err := utils.RandomPrimeNum(n)
 	if err != nil {
 		return nil, err
@@ -72,7 +69,6 @@ func (zk *BatchNIZK) Prove(fij, rij []*big.Int) (*NIZKProof, error) {
 		}
 		m := utils.AppendSlices(tx.Bytes(), ty.Bytes(), e.Bytes(), bytesBuffer.Bytes())
 		cij[i] = new(big.Int).SetBytes(hasher.SHA256Hasher(m))
-		cij[i] = new(big.Int).SetInt64(1)
 	}
 
 	dot, err := utils.DotProduct(fij, cij)
@@ -81,14 +77,16 @@ func (zk *BatchNIZK) Prove(fij, rij []*big.Int) (*NIZKProof, error) {
 	}
 	Rij := new(big.Int).Mod(new(big.Int).Add(u, dot), n)
 	//Rij := new(big.Int).Add(u, dot)
-	fmt.Printf("eij:\t%v\n", e)
-	pow, err := utils.VecPow(rij, cij, n)
+	//fmt.Printf("Rij:\t%v\n", Rij)
+	//fmt.Printf("eij:\t%v\n", e)
+
+	pow, err := utils.VecPow(rij, cij, n2)
 
 	if err != nil {
 		return nil, err
 	}
-	Qij := new(big.Int).Mod(new(big.Int).Mul(s, pow), n)
-
+	Qij := new(big.Int).Mod(new(big.Int).Mul(s, pow), n2)
+	//fmt.Printf("Qij:\t%v\n", Qij)
 	proof := &NIZKProof{tx: tx, ty: ty, e: e, r: Rij, q: Qij}
 	return proof, nil
 }
@@ -109,7 +107,7 @@ func (zk *BatchNIZK) Verify(Aijx, Aijy, zij []*big.Int, pi *NIZKProof) (bool, er
 		}
 		m := utils.AppendSlices(pi.tx.Bytes(), pi.ty.Bytes(), pi.e.Bytes(), bytesBuffer.Bytes())
 		cij[i] = new(big.Int).SetBytes(hasher.SHA256Hasher(m))
-		cij[i] = new(big.Int).SetInt64(1)
+		//cij[i] = new(big.Int).SetInt64(2)
 	}
 
 	left1x, lef1y := zk.curve.ScalarMult(zk.generator.X(), zk.generator.Y(), pi.r.Bytes())
@@ -123,23 +121,17 @@ func (zk *BatchNIZK) Verify(Aijx, Aijy, zij []*big.Int, pi *NIZKProof) (bool, er
 	if left1x.Cmp(right1x) == 0 && lef1y.Cmp(right1y) == 0 {
 		t1 = true
 	}
+
 	pow, err := utils.VecPow(zij, cij, n2)
 	if err != nil {
 		return false, err
 	}
 	left2 := new(big.Int).Mod(new(big.Int).Mul(pi.e, pow), n2)
-	fmt.Printf("left2:\t%v\n", left2)
 	right2, err := zk.pk.EncryptWithR(pi.r, pi.q)
 	if err != nil {
 		return false, err
 	}
-	paillliertest, err := zk.sk.Decrypt(right2)
 
-	fmt.Printf("right encrypt %v\n", pi.r.Cmp(paillliertest) == 0)
-
-	//fmt.Printf("right2:\t %v\n", right2)
-	//right2 = new(big.Int).Mod(right2, n2)
-	fmt.Printf("right2:\t%v\n", right2)
 	if err != nil {
 		return false, err
 	}
@@ -147,7 +139,5 @@ func (zk *BatchNIZK) Verify(Aijx, Aijy, zij []*big.Int, pi *NIZKProof) (bool, er
 	if left2.Cmp(right2) == 0 {
 		t2 = true
 	}
-	fmt.Println(t1)
-	fmt.Println(t2)
 	return t1 && t2, nil
 }
