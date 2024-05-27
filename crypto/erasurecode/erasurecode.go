@@ -10,7 +10,7 @@ type ErasureCode interface {
 	Decode(shards []ErasureCodeChunk, v *Payload) error
 }
 
-// VIDChunk is the interface that an erasure coded chunk should implement.
+// ErasureCodeChunk VIDChunk is the interface that an erasure coded chunk should implement.
 type ErasureCodeChunk interface {
 	Size() int // Size returns the size of the object in the emulator.
 	GetData() []byte

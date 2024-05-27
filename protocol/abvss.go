@@ -17,7 +17,7 @@ type ABVSS struct {
 	batchsize int
 	vnum      int
 
-	sigma Sigma
+	Sigma
 	*ABVSSD
 	*ABVSSR
 	*ABVSSV
@@ -63,6 +63,6 @@ func NewVSS(index, nodenum, degree, batchsize, vnum int, p *big.Int, sigma Sigma
 		p:         p,
 		batchsize: batchsize,
 		vnum:      vnum,
-		sigma:     sigma,
+		Sigma:     sigma,
 	}, nil
 }

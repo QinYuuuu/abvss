@@ -1,8 +1,7 @@
-package erasurecode_test
+package erasurecode
 
 import (
 	"fmt"
-	. "github.com/QinYuuuu/abvss/crypto/erasurecode"
 	"log"
 	"testing"
 )
