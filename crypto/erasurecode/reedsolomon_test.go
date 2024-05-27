@@ -2,9 +2,9 @@ package erasurecode_test
 
 import (
 	"fmt"
+	. "github.com/QinYuuuu/abvss/crypto/erasurecode"
 	"log"
 	"testing"
-	. "TMAABE/erasurecode"
 )
 
 func TestReedSolomonCode(t *testing.T) {
@@ -34,7 +34,7 @@ func TestReedSolomonCode(t *testing.T) {
 	}
 
 	eschunk2 := make([]ErasureCodeChunk, N-F)
-	for i:=0;i<N-F;i++{
+	for i := 0; i < N-F; i++ {
 		eschunk2[i] = &rschunk[i]
 	}
 
