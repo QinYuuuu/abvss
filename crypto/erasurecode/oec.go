@@ -61,5 +61,14 @@ func (oec *OEC) Run() {
 			i++
 			shards[i] = &chunk
 		}
+		var message Payload
+		err := oec.rscode.Decode(shards, &message)
+		if err != nil {
+			for _, chunk := range shards {
+				oec.tuples <- *(chunk.(*ReedSolomonChunk))
+			}
+			continue
+		}
+
 	}
 }

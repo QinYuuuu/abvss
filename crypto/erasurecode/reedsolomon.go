@@ -85,13 +85,24 @@ func (rscode *ReedSolomonCode) Encode(input Payload) ([]ErasureCodeChunk, error)
 	return output, nil
 }
 
-func (rscode *ReedSolomonCode) Reconstruct(shards []ErasureCodeChunk) ([][]byte, error) {
+func (rscode *ReedSolomonCode) Reconstruct(shards []ErasureCodeChunk) ([]ErasureCodeChunk, error) {
 	input := make([][]byte, rscode.p)
 	for i := 0; i < len(shards); i++ {
 		input[shards[i].Index()] = shards[i].GetData()
 	}
 	err := rscode.Encoder.Reconstruct(input)
-	return input, err
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ErasureCodeChunk, rscode.p)
+	for i, v := range input {
+		out[i] = &ReedSolomonChunk{
+			DataSize: len(v),
+			Idx:      i,
+			Data:     v,
+		}
+	}
+	return out, err
 }
 
 /*
