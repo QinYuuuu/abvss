@@ -7,7 +7,6 @@ import (
 	//"math"
 	//"crypto/sha256"
 	"github.com/klauspost/reedsolomon"
-
 )
 
 type ReedSolomonCode struct {
@@ -36,11 +35,11 @@ type ReedSolomonChunk struct {
 	//Merkle   []byte
 }
 
-func (c *ReedSolomonChunk) Index() int{
+func (c *ReedSolomonChunk) Index() int {
 	return c.Idx
 }
 
-func (c *ReedSolomonChunk) GetData() []byte{
+func (c *ReedSolomonChunk) GetData() []byte {
 	return c.Data
 }
 
@@ -48,8 +47,8 @@ func (c *ReedSolomonChunk) Size() int {
 	return len(c.Data)
 }
 
-func (f *ReedSolomonCode) Encode(input Payload) ([]ErasureCodeChunk, error) {
-	output := make([]ErasureCodeChunk, f.p)
+func (rscode *ReedSolomonCode) Encode(input Payload) ([]ErasureCodeChunk, error) {
+	output := make([]ErasureCodeChunk, rscode.p)
 	buf := &bytes.Buffer{}
 	encoder := gob.NewEncoder(buf)
 	// this is tricky. why indirect input? it is because if we pass input to gob, it still appears
@@ -63,19 +62,19 @@ func (f *ReedSolomonCode) Encode(input Payload) ([]ErasureCodeChunk, error) {
 
 	b := buf.Bytes()
 	datasize := len(b)
-	shards, err := f.Split(b)
+	shards, err := rscode.Split(b)
 	if err != nil {
 		return output, err
 	}
-	err = f.Encoder.Encode(shards)
+	err = rscode.Encoder.Encode(shards)
 	if err != nil {
 		return output, err
 	}
-	if len(shards) != f.p {
+	if len(shards) != rscode.p {
 		panic("wrong number of shards")
 	}
 
-	for i := 0; i < f.p; i++ {
+	for i := 0; i < rscode.p; i++ {
 		output[i] = &ReedSolomonChunk{
 			DataSize: datasize,
 			Idx:      i,
@@ -86,24 +85,50 @@ func (f *ReedSolomonCode) Encode(input Payload) ([]ErasureCodeChunk, error) {
 	return output, nil
 }
 
-func (f *ReedSolomonCode) Decode(shards []ErasureCodeChunk, v *Payload) error {
+func (rscode *ReedSolomonCode) Reconstruct(shards []ErasureCodeChunk) ([][]byte, error) {
+	input := make([][]byte, rscode.p)
+	for i := 0; i < len(shards); i++ {
+		input[shards[i].Index()] = shards[i].GetData()
+	}
+	err := rscode.Encoder.Reconstruct(input)
+	return input, err
+}
+
+/*
+	func (rscode *ReedSolomonCode) Verify(shards []ErasureCodeChunk) (bool, error) {
+		fmt.Println(shards)
+		fmt.Println(shards[0].Size())
+		input := make([][]byte, rscode.p)
+		for i := 0; i < rscode.p; i++ {
+			input[i] = make([]byte, shards[0].Size())
+		}
+
+		for _, v := range shards {
+			ptr := v.(*ReedSolomonChunk)
+			input[ptr.Idx] = ptr.Data
+		}
+
+		fmt.Println(input)
+		return rscode.Encoder.Verify(input)
+	}
+*/
+func (rscode *ReedSolomonCode) Decode(shards []ErasureCodeChunk, v *Payload) error {
 	// TODO: we are trusting the first shard
 	datasize := shards[0].(*ReedSolomonChunk).DataSize
 
-	input := make([][]byte, f.p)
+	input := make([][]byte, rscode.p)
 	for _, v := range shards {
 		ptr := v.(*ReedSolomonChunk)
 		input[ptr.Idx] = ptr.Data
 	}
-
-	err := f.Encoder.Reconstruct(input)
+	err := rscode.Encoder.Reconstruct(input)
 	if err != nil {
 		return err
 	}
 
 	buf := &bytes.Buffer{}
 	decoder := gob.NewDecoder(buf)
-	err = f.Encoder.Join(buf, input, datasize)
+	err = rscode.Encoder.Join(buf, input, datasize)
 	if err != nil {
 		return err
 	}

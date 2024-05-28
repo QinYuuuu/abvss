@@ -2,11 +2,6 @@ package erasurecode
 
 import "sync"
 
-type tuple struct {
-	index    int
-	fragment []byte
-}
-
 type ChannelMonitor struct {
 	mu    sync.Mutex
 	count int
@@ -14,9 +9,11 @@ type ChannelMonitor struct {
 }
 
 type OEC struct {
-	tuples  chan tuple
+	tuples  chan ReedSolomonChunk
+	n       int
 	t       int
 	monitor *ChannelMonitor
+	rscode  *ReedSolomonCode
 }
 
 func NewChannelMonitor() *ChannelMonitor {
@@ -42,21 +39,27 @@ func (m *ChannelMonitor) WaitUntil(n int) {
 	}
 }
 
-func NewOEC(t int, monitor *ChannelMonitor) *OEC {
+func NewOEC(n, t int, monitor *ChannelMonitor) *OEC {
 	return &OEC{
-		tuples: make(chan tuple),
+		tuples: make(chan ReedSolomonChunk, n),
+		n:      n,
 		t:      t,
 	}
 }
 
-func (oec *OEC) Input(t tuple) {
+func (oec *OEC) Input(t ReedSolomonChunk) {
 	oec.tuples <- t
 	oec.monitor.Increment()
 }
 
 func (oec *OEC) Run() {
 	for r := 0; r < oec.t; r++ {
-		oec.monitor.WaitUntil(oec.t)
-		//rs := NewReedSolomonCode()
+		oec.monitor.WaitUntil(2*oec.t + r + 1)
+		shards := make([]ErasureCodeChunk, 2*oec.t+r+1)
+		i := 0
+		for chunk := range oec.tuples {
+			i++
+			shards[i] = &chunk
+		}
 	}
 }
