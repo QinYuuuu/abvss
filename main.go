@@ -2,38 +2,10 @@ package main
 
 import (
 	"fmt"
-	osv "github.com/QinYuuuu/abvss/crypto/onesidedvoting"
 	"sync"
+
+	osv "github.com/QinYuuuu/abvss/crypto/onesidedvoting"
 )
-
-/*
-	func main() {
-		var c curve.Curve
-		c = elliptic.P256()
-		param := c.Params()
-		generator := curve.NewECPoint(param.Gx, param.Gy)
-		batchsize := 3
-		//n := new(big.Int).Mul(param.P, big.NewInt(5))
-		//degree := 1
-		//randstate := rand.New(rand.NewSource(1))
-		_, pk, _ := paillier.KeyGen()
-		zk := zkp.NewBatchNIZK(c, generator, batchsize, pk)
-
-		fij := make([]*big.Int, batchsize)
-		zij := make([]*big.Int, batchsize)
-		rij := make([]*big.Int, batchsize)
-		Aijx := make([]*big.Int, batchsize)
-		Aijy := make([]*big.Int, batchsize)
-		for i := 0; i < batchsize; i++ {
-			fij[i] = utils.RandomNum(param.P)
-			zij[i], rij[i], _ = pk.Encrypt(fij[i])
-			Aijx[i], Aijy[i] = c.ScalarMult(generator.X(), generator.Y(), fij[i].Bytes())
-		}
-		pi, _ := zk.Prove(fij, rij)
-		result, _ := zk.Verify(Aijx, Aijy, zij, pi)
-		fmt.Println(result)
-	}
-*/
 
 type node struct {
 	in  chan osv.Message

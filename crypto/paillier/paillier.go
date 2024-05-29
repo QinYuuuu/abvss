@@ -16,6 +16,10 @@ const (
 )
 
 type (
+	Cipher struct {
+		z *big.Int
+		r *big.Int
+	}
 	PublicKey struct {
 		N *big.Int // g = n+1, n2 = n*n
 	}

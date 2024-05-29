@@ -53,12 +53,12 @@ func (poly Polynomial) GetLeadingCoefficient() *big.Int {
 }
 
 // GetCoefficient returns coeff[i]
-func (poly Polynomial) GetCoefficient(i int) (big.Int, error) {
+func (poly Polynomial) GetCoefficient(i int) (*big.Int, error) {
 	if i < 0 || i >= len(poly.coeff) {
-		return *big.NewInt(0), errors.New("out of boundary")
+		return big.NewInt(0), errors.New("out of boundary")
 	}
 
-	return *poly.coeff[i], nil
+	return poly.coeff[i], nil
 }
 
 // SetCoefficient sets the poly.coeff[i] to ci

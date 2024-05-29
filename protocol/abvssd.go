@@ -55,7 +55,7 @@ func (vss *ABVSS) GenerateShares(index int) ([]Cipher, []Cipher, error) {
 	zi := make([]Cipher, vss.batchsize)
 	xi := make([]Cipher, vss.vnum)
 	for i := 0; i < vss.batchsize; i++ {
-		fi := vss.polyf[i].EvalMod(new(big.Int).SetInt64(int64(index)), vss.p)
+		fi := vss.polyf[i].EvalMod(new(big.Int).SetInt64(int64(index+1)), vss.p)
 		tmp, err := vss.pk[index].Encrypt(fi)
 		if err != nil {
 			return nil, nil, err
@@ -63,7 +63,7 @@ func (vss *ABVSS) GenerateShares(index int) ([]Cipher, []Cipher, error) {
 		zi[i] = tmp
 	}
 	for i := 0; i < vss.vnum; i++ {
-		gi := vss.polyg[i].EvalMod(new(big.Int).SetInt64(int64(index)), vss.p)
+		gi := vss.polyg[i].EvalMod(new(big.Int).SetInt64(int64(index+1)), vss.p)
 		tmp, err := vss.pk[index].Encrypt(gi)
 		if err != nil {
 			return nil, nil, err

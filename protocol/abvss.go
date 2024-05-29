@@ -9,8 +9,11 @@ import (
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
 )
 
+const RAND_SEED = 1
+
 type ABVSS struct {
 	index     int
+	nodeid    int
 	degree    int
 	nodenum   int
 	p         *big.Int
@@ -50,7 +53,7 @@ type ABVSSV struct {
 	jlist []int
 }
 
-func NewVSS(index, nodenum, degree, batchsize, vnum int, p *big.Int) (*ABVSS, error) {
+func NewVSS(index, nodeid, nodenum, degree, batchsize, vnum int, p *big.Int) (*ABVSS, error) {
 	if nodenum < 3*degree+1 {
 		return nil, errors.New("must satisfy n >= 3f+1")
 	}
@@ -59,10 +62,12 @@ func NewVSS(index, nodenum, degree, batchsize, vnum int, p *big.Int) (*ABVSS, er
 	}
 	return &ABVSS{
 		index:     index,
+		nodeid:    nodeid,
 		degree:    degree,
 		nodenum:   nodenum,
 		p:         p,
 		batchsize: batchsize,
 		vnum:      vnum,
+		randState: rand.New(rand.NewSource(RAND_SEED)),
 	}, nil
 }
