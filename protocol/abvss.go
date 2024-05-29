@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"math/rand"
 
+	"github.com/QinYuuuu/abvss/crypto/onesidedvoting"
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
 )
 
@@ -16,8 +17,8 @@ type ABVSS struct {
 	randState *rand.Rand
 	batchsize int
 	vnum      int
+	onesidedvoting.OSV
 
-	Sigma
 	*ABVSSD
 	*ABVSSR
 	*ABVSSV
@@ -44,12 +45,12 @@ type ABVSSR struct {
 type ABVSSV struct {
 	ilist []struct {
 		index int
-		lcm   *big.Int
+		lcm   []*big.Int
 	}
 	jlist []int
 }
 
-func NewVSS(index, nodenum, degree, batchsize, vnum int, p *big.Int, sigma Sigma) (*ABVSS, error) {
+func NewVSS(index, nodenum, degree, batchsize, vnum int, p *big.Int) (*ABVSS, error) {
 	if nodenum < 3*degree+1 {
 		return nil, errors.New("must satisfy n >= 3f+1")
 	}
@@ -63,6 +64,5 @@ func NewVSS(index, nodenum, degree, batchsize, vnum int, p *big.Int, sigma Sigma
 		p:         p,
 		batchsize: batchsize,
 		vnum:      vnum,
-		Sigma:     sigma,
 	}, nil
 }

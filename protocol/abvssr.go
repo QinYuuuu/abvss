@@ -20,14 +20,14 @@ func (vss *ABVSS) ObtainShares(zi, xi []Cipher) error {
 	}
 
 	for i := 0; i < vss.batchsize; i++ {
-		tmp, err := vss.sigma.Decrypt(vss.sk, zi)
+		tmp, err := vss.sk.Decrypt(zi)
 		if err != nil {
 			return err
 		}
 		vss.fshares[i] = tmp
 	}
 	for i := 0; i < vss.vnum; i++ {
-		tmp, err := vss.sigma.Decrypt(vss.sk, xi)
+		tmp, err := vss.sk.Decrypt(xi)
 		if err != nil {
 			return err
 		}
@@ -54,7 +54,7 @@ func (vss *ABVSS) ConstructLCM(r [][]*big.Int) ([]*big.Int, error) {
 func (vss *ABVSS) GetRecoverShares(sk SecretKey, index int, r [][]*big.Int) error {
 	fj := make([]*big.Int, vss.batchsize)
 	for i := 0; i < vss.batchsize; i++ {
-		tmp, err := vss.sigma.Decrypt(sk, vss.zi[index])
+		tmp, err := sk.Decrypt(vss.zi[index])
 		if err != nil {
 			return err
 		}
@@ -62,7 +62,7 @@ func (vss *ABVSS) GetRecoverShares(sk SecretKey, index int, r [][]*big.Int) erro
 	}
 	gj := make([]*big.Int, vss.vnum)
 	for i := 0; i < vss.vnum; i++ {
-		tmp, err := vss.sigma.Decrypt(sk, vss.xi[index])
+		tmp, err := sk.Decrypt(vss.xi[index])
 		if err != nil {
 			return err
 		}

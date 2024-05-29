@@ -1,14 +1,15 @@
 package protocol
 
-import "math/big"
+import (
+	"math/big"
+)
 
-type PublicKey interface{}
+type PublicKey interface {
+	Encrypt(s *big.Int) (Cipher, error)
+}
 
-type SecretKey interface{}
+type SecretKey interface {
+	Decrypt(c Cipher) (*big.Int, error)
+}
 
 type Cipher interface{}
-
-type Sigma interface {
-	Encrypt(pk PublicKey, s *big.Int) (Cipher, error)
-	Decrypt(sk SecretKey, c Cipher) (*big.Int, error)
-}
