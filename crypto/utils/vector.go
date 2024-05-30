@@ -19,7 +19,7 @@ func DotProduct(v1, v2 []*big.Int) (*big.Int, error) {
 	}
 	dot := zero
 	for i := 0; i < len(v1); i++ {
-		dot.Add(dot, new(big.Int).Mul(v1[i], v2[i]))
+		dot = new(big.Int).Add(dot, new(big.Int).Mul(v1[i], v2[i]))
 	}
 	return dot, nil
 }

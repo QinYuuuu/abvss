@@ -6,23 +6,22 @@ import (
 	"math/big"
 	"testing"
 
-	"github.com/QinYuuuu/abvss/crypto/curve"
 	"github.com/QinYuuuu/abvss/crypto/paillier"
 	"github.com/QinYuuuu/abvss/crypto/utils"
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewVSS(t *testing.T) {
-	N := 4
-	f := 1
-	batchsize := 2
-	vnum := 1
+var N = 4
+var f = 1
+var batchsize = 2
+var vnum = 1
 
-	var c curve.Curve
-	c = elliptic.P224()
-	param := c.Params()
-	p := param.P
+var c = elliptic.P224()
+var param = c.Params()
+var p = param.P
+
+func TestNewVSS(t *testing.T) {
 	pk := make([]PublicKey, N)
 	sk := make([]SecretKey, N)
 	vss := make([]*ABVSS, N)
@@ -39,28 +38,17 @@ func TestNewVSS(t *testing.T) {
 	}
 }
 
-func TestABVSSD(t *testing.T) {
-	N := 4
-	f := 1
-	batchsize := 2
-	vnum := 1
-
-	var c curve.Curve
-	c = elliptic.P224()
-	param := c.Params()
-	p := param.P
+func TestABVSS_Distributor(t *testing.T) {
 	pk := make([]PublicKey, N)
 	sk := make([]SecretKey, N)
 	vss := make([]*ABVSS, N)
 	for i := 0; i < N; i++ {
-		ski, pki, err := paillier.KeyGen()
-		assert.Nil(t, err, "err in KeyGen")
+		ski, pki, _ := paillier.KeyGen()
 		sk[i] = &paillierSecretKey{ski}
 		pk[i] = &paillierPubKey{pki}
 	}
 	for i := 0; i < N; i++ {
-		vssi, err := NewVSS(0, i, N, f, batchsize, vnum, p)
-		assert.Nil(t, err, "err in NewVSSS")
+		vssi, _ := NewVSS(0, i, N, f, batchsize, vnum, p)
 		vss[i] = vssi
 	}
 	s := make([]*big.Int, batchsize)
@@ -90,4 +78,107 @@ func TestABVSSD(t *testing.T) {
 	assert.Nil(t, err, "err in LagrangeInterpolation")
 	getsecret, _ := poly.GetCoefficient(0)
 	assert.Equal(t, s[0], getsecret, "secret from LagrangeInterpolation")
+}
+
+func TestABVSS_Receiver(t *testing.T) {
+	pk := make([]PublicKey, N)
+	sk := make([]SecretKey, N)
+	vss := make([]*ABVSS, N)
+	for i := 0; i < N; i++ {
+		ski, pki, _ := paillier.KeyGen()
+		sk[i] = &paillierSecretKey{ski}
+		pk[i] = &paillierPubKey{pki}
+	}
+	for i := 0; i < N; i++ {
+		vssi, _ := NewVSS(0, i, N, f, batchsize, vnum, p)
+		vss[i] = vssi
+	}
+	s := make([]*big.Int, batchsize)
+	for i := 0; i < batchsize; i++ {
+		s[i] = utils.RandomNum(p)
+	}
+	fmt.Printf("secrets %v\n", s)
+	_ = vss[0].DistributorInit(pk, s)
+	_ = vss[0].SamplePoly()
+	fmt.Printf("polyf %v\n", vss[0].polyf)
+	fmt.Printf("polyg %v\n", vss[0].polyf)
+	zi := make([][]Cipher, N)
+	xi := make([][]Cipher, N)
+	for i := 0; i < N; i++ {
+		zii, xii, _ := vss[0].GenerateShares(i)
+		zi[i] = zii
+		xi[i] = xii
+	}
+	for i := 0; i < N; i++ {
+		vss[i].ReceiverInit(sk[i])
+	}
+	for i := 0; i < N; i++ {
+		err := vss[i].ObtainShares(zi[i], xi[i])
+		assert.Nil(t, err, "err in ObtainShares")
+		fmt.Printf("node %v get fshares %v, gshares %v\n", i, vss[i].fshares, vss[i].gshares)
+		lcm, err := vss[i].ConstructLCM()
+		assert.Nil(t, err, "err in ConstructLCM")
+		fmt.Printf("node %v lcm %v\n", i, lcm)
+	}
+}
+
+func TestABVSS_Verifier(t *testing.T) {
+	pk := make([]PublicKey, N)
+	sk := make([]SecretKey, N)
+	vss := make([]*ABVSS, N)
+	for i := 0; i < N; i++ {
+		ski, pki, _ := paillier.KeyGen()
+		sk[i] = &paillierSecretKey{ski}
+		pk[i] = &paillierPubKey{pki}
+	}
+	for i := 0; i < N; i++ {
+		vssi, _ := NewVSS(0, i, N, f, batchsize, vnum, p)
+		vss[i] = vssi
+	}
+	s := make([]*big.Int, batchsize)
+	for i := 0; i < batchsize; i++ {
+		s[i] = utils.RandomNum(p)
+	}
+	fmt.Printf("secrets %v\n", s)
+	_ = vss[0].DistributorInit(pk, s)
+	_ = vss[0].SamplePoly()
+	fmt.Printf("polyf %v\n", vss[0].polyf)
+	fmt.Printf("polyg %v\n", vss[0].polyf)
+	zi := make([][]Cipher, N)
+	xi := make([][]Cipher, N)
+	for i := 0; i < N; i++ {
+		zii, xii, _ := vss[0].GenerateShares(i)
+		zi[i] = zii
+		xi[i] = xii
+	}
+	for i := 0; i < N; i++ {
+		vss[i].ReceiverInit(sk[i])
+	}
+
+	lcm := make([][]*big.Int, N)
+	for i := 0; i < N; i++ {
+		lcm[i] = make([]*big.Int, vnum)
+	}
+	xlist := make([]*big.Int, N)
+	for i := 0; i < N; i++ {
+		_ = vss[i].ObtainShares(zi[i], xi[i])
+		fmt.Printf("node %v get fshares %v, gshares %v\n", i, vss[i].fshares, vss[i].gshares)
+		lcm[i], _ = vss[i].ConstructLCM()
+
+		xlist[i] = new(big.Int).SetInt64(int64(i + 1))
+	}
+	fmt.Printf("lcm %v\n", lcm)
+	fmt.Printf("xlist %v\n", xlist)
+	for j := 0; j < vnum; j++ {
+		ylist := make([]*big.Int, N)
+		for i := 0; i < N; i++ {
+			ylist[i] = lcm[i][j]
+		}
+		fmt.Printf("ylist %v\n", ylist)
+		poly, _ := polynomial.LagrangeInterpolation(xlist[:f+1], ylist[:f+1], p)
+		for i := f + 1; i < N; i++ {
+			tmp := poly.EvalMod(new(big.Int).SetInt64(int64(i+1)), p)
+			fmt.Printf("verify %v \n", tmp.Cmp(ylist[i]) == 0)
+		}
+	}
 }

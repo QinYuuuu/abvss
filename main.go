@@ -2,9 +2,8 @@ package main
 
 import (
 	"fmt"
+	osv "github.com/QinYuuuu/abvss/onesidedvoting"
 	"sync"
-
-	osv "github.com/QinYuuuu/abvss/crypto/onesidedvoting"
 )
 
 type node struct {

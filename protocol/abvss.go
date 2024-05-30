@@ -2,10 +2,10 @@ package protocol
 
 import (
 	"errors"
+	"github.com/QinYuuuu/abvss/onesidedvoting"
 	"math/big"
 	"math/rand"
 
-	"github.com/QinYuuuu/abvss/crypto/onesidedvoting"
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
 )
 
@@ -36,13 +36,15 @@ type ABVSSD struct {
 }
 
 type ABVSSR struct {
-	sk       SecretKey
-	zi       map[int][]Cipher
-	xi       map[int][]Cipher
-	fshares  []*big.Int
-	gshares  []*big.Int
-	complain bool
-	qlist    map[int][]*big.Int
+	sk           SecretKey
+	zi           map[int][]Cipher
+	xi           map[int][]Cipher
+	fshares      []*big.Int
+	gshares      []*big.Int
+	randombeacon *rand.Rand
+	r            [][]*big.Int
+	complain     bool
+	qlist        map[int][]*big.Int
 }
 
 type ABVSSV struct {
