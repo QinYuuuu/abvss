@@ -2,8 +2,8 @@ package main
 
 import (
 	"fmt"
-	osv "github.com/QinYuuuu/abvss/osv"
-	"sync"
+	"github.com/QinYuuuu/abvss/network"
+	"github.com/QinYuuuu/abvss/osv"
 )
 
 type node struct {
@@ -11,6 +11,18 @@ type node struct {
 	out chan osv.Message
 }
 
+func main() {
+	iplist := []string{"127.0.0.1:8000", "127.0.0.1:8001", "127.0.0.1:8002"}
+	for i := 0; i < 3; i++ {
+		peer, err := network.NewPeer(3, i, iplist)
+		if err != nil {
+			fmt.Println(err)
+		}
+		peer.Serve(false)
+	}
+}
+
+/*
 func main() {
 	n := 4
 	tnum := 1
@@ -61,3 +73,4 @@ func main() {
 	}()
 	wait.Wait()
 }
+*/
