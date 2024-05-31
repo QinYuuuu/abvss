@@ -1,7 +1,6 @@
 package network
 
 import (
-	pb "github.com/QinYuuuu/abvss/protobuf"
 	"google.golang.org/grpc"
 	"log"
 	"net"
@@ -23,8 +22,6 @@ func (p *Peer) Serve(aws bool) {
 		log.Fatalf("node failed to listen %v", err)
 	}
 	s := grpc.NewServer()
-	pb.
-		reflection.Register(s)
 	log.Printf("node %d serve on %s", p.id, addr)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("node failed to serve %v", err)

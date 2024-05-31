@@ -1,0 +1,48 @@
+syntax = "proto3";
+package services;
+
+option go_package = "/protobuf";
+
+service RBCService {
+  rpc Receive(Message) returns(AckMsg){}
+}
+
+// The one-sided voting service definition
+service ABVSSService {
+  rpc ReceiveShares(SharesMessage) returns (AckMsg){}
+  rpc ReceiveLCM(LCMMessage) returns (AckMsg){}
+}
+
+// The one-sided voting service definition
+service OSVService {
+  rpc Receive(OSVMessage)returns( AckMsg){}
+}
+
+message Message {
+  int64 FromID = 1;
+  int64 DestID = 2;
+  int64 Index = 3;
+  string Mtype = 4;
+  bytes Data = 5;
+}
+
+message SharesMessage{
+  int64 fromID = 1;
+  int64 destID = 2;
+  repeated bytes zi = 3;
+  repeated bytes xi = 4;
+}
+
+message LCMMessage{
+  int64 fromID = 1;
+  int64 destID = 2;
+  repeated bytes lcmi = 3;
+}
+
+message OSVMessage{
+  int64 fromID = 1;
+  int64 destID = 2;
+  string mtype = 3;
+}
+
+message AckMsg{}

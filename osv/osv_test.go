@@ -1,4 +1,4 @@
-package onesidedvoting
+package osv
 
 import (
 	"fmt"

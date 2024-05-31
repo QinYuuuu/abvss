@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	osv "github.com/QinYuuuu/abvss/onesidedvoting"
+	osv "github.com/QinYuuuu/abvss/osv"
 	"sync"
 )
 

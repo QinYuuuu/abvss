@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"errors"
-	"github.com/QinYuuuu/abvss/onesidedvoting"
 	"math/big"
 	"math/rand"
 
