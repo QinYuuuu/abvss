@@ -3,7 +3,7 @@ package services;
 option go_package = ".;protobuf";
 
 service ConnService {
-  rpc Receive(TestMessage) returns(TestMessage){}
+  rpc Receive(TestHelloMessage) returns(TestResMessage){}
 }
 
 service RBCService {
@@ -21,7 +21,13 @@ service OSVService {
   rpc Receive(OSVMessage)returns( AckMsg){}
 }
 
-message TestMessage {
+message TestHelloMessage {
+  int64 fromID = 1;
+  int64 destID = 2;
+  string content = 3;
+}
+
+message TestResMessage {
   int64 fromID = 1;
   int64 destID = 2;
   string content = 3;

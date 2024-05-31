@@ -6,6 +6,7 @@ import (
 	"github.com/QinYuuuu/abvss/network"
 	"github.com/QinYuuuu/abvss/osv"
 	"github.com/QinYuuuu/abvss/protobuf"
+	"time"
 )
 
 type node struct {
@@ -35,9 +36,10 @@ func main() {
 				continue
 			}
 			clients[i][j] = protobuf.NewConnServiceClient(peers[i].Conns[j])
-			rsp, err := clients[i][j].Receive(context.TODO(), &protobuf.TestMessage{
-				FromID: int64(i),
-				DestID: int64(j),
+			rsp, err := clients[i][j].Receive(context.TODO(), &protobuf.TestHelloMessage{
+				FromID:  int64(i),
+				DestID:  int64(j),
+				Content: "hello world",
 			})
 			if err != nil {
 				fmt.Println(err)
@@ -45,7 +47,7 @@ func main() {
 			fmt.Println(rsp)
 		}
 	}
-
+	time.Sleep(3 * time.Second)
 	for i := 0; i < 3; i++ {
 		peers[i].Close()
 	}

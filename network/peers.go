@@ -99,6 +99,6 @@ type Service struct {
 }
 
 func (n Service) Receive(ctx context.Context, req *protobuf.TestMessage) (*protobuf.TestMessage, error) {
-	fmt.Printf("request from node %v: %v", req.GetFromID(), req.GetContent())
-	return &protobuf.TestMessage{Content: "Hello ", FromID: int64(n.Id), DestID: req.GetFromID()}, nil
+	fmt.Printf("node %v receive request from node %v: %v", n.Id, req.GetFromID(), req.GetContent())
+	return &protobuf.TestMessage{Content: "have received Hello", FromID: int64(n.Id), DestID: req.GetFromID()}, nil
 }
