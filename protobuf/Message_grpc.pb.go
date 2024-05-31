@@ -19,6 +19,96 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
+	ConnService_Receive_FullMethodName = "/services.ConnService/Receive"
+)
+
+// ConnServiceClient is the client API for ConnService service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type ConnServiceClient interface {
+	Receive(ctx context.Context, in *TestMessage, opts ...grpc.CallOption) (*TestMessage, error)
+}
+
+type connServiceClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewConnServiceClient(cc grpc.ClientConnInterface) ConnServiceClient {
+	return &connServiceClient{cc}
+}
+
+func (c *connServiceClient) Receive(ctx context.Context, in *TestMessage, opts ...grpc.CallOption) (*TestMessage, error) {
+	out := new(TestMessage)
+	err := c.cc.Invoke(ctx, ConnService_Receive_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// ConnServiceServer is the server API for ConnService service.
+// All implementations must embed UnimplementedConnServiceServer
+// for forward compatibility
+type ConnServiceServer interface {
+	Receive(context.Context, *TestMessage) (*TestMessage, error)
+	mustEmbedUnimplementedConnServiceServer()
+}
+
+// UnimplementedConnServiceServer must be embedded to have forward compatible implementations.
+type UnimplementedConnServiceServer struct {
+}
+
+func (UnimplementedConnServiceServer) Receive(context.Context, *TestMessage) (*TestMessage, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Receive not implemented")
+}
+func (UnimplementedConnServiceServer) mustEmbedUnimplementedConnServiceServer() {}
+
+// UnsafeConnServiceServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to ConnServiceServer will
+// result in compilation errors.
+type UnsafeConnServiceServer interface {
+	mustEmbedUnimplementedConnServiceServer()
+}
+
+func RegisterConnServiceServer(s grpc.ServiceRegistrar, srv ConnServiceServer) {
+	s.RegisterService(&ConnService_ServiceDesc, srv)
+}
+
+func _ConnService_Receive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TestMessage)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConnServiceServer).Receive(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConnService_Receive_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConnServiceServer).Receive(ctx, req.(*TestMessage))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// ConnService_ServiceDesc is the grpc.ServiceDesc for ConnService service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var ConnService_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "services.ConnService",
+	HandlerType: (*ConnServiceServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Receive",
+			Handler:    _ConnService_Receive_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "Message.proto",
+}
+
+const (
 	RBCService_Receive_FullMethodName = "/services.RBCService/Receive"
 )
 

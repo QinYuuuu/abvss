@@ -1,7 +1,10 @@
 syntax = "proto3";
 package services;
+option go_package = ".;protobuf";
 
-option go_package = "/protobuf";
+service ConnService {
+  rpc Receive(TestMessage) returns(TestMessage){}
+}
 
 service RBCService {
   rpc Receive(Message) returns(AckMsg){}
@@ -16,6 +19,12 @@ service ABVSSService {
 // The one-sided voting service definition
 service OSVService {
   rpc Receive(OSVMessage)returns( AckMsg){}
+}
+
+message TestMessage {
+  int64 fromID = 1;
+  int64 destID = 2;
+  string content = 3;
 }
 
 message Message {

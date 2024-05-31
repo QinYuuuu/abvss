@@ -2,7 +2,11 @@ package network
 
 import (
 	"errors"
+	"fmt"
+	"github.com/QinYuuuu/abvss/protobuf"
+	"golang.org/x/net/context"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	"net"
 	"sync"
@@ -11,7 +15,7 @@ import (
 type Peer struct {
 	n, id  int
 	Server *grpc.Server
-	nConn  []*grpc.ClientConn
+	Conns  []*grpc.ClientConn
 	ipList []string // Node IP Address List
 }
 
@@ -19,7 +23,13 @@ func NewPeer(n, id int, iplist []string) (*Peer, error) {
 	if n != len(iplist) {
 		return nil, errors.New("n does not match iplist ")
 	}
-	return &Peer{n: n, id: id, ipList: iplist}, nil
+	return &Peer{
+		n:      n,
+		id:     id,
+		Conns:  make([]*grpc.ClientConn, n),
+		ipList: iplist,
+		Server: grpc.NewServer(),
+	}, nil
 }
 
 func (p *Peer) Serve(aws bool) {
@@ -31,11 +41,17 @@ func (p *Peer) Serve(aws bool) {
 	if err != nil {
 		log.Fatalf("node failed to listen %v", err)
 	}
-	p.Server = grpc.NewServer()
 	log.Printf("node %d serve on %s", p.id, addr)
 	if err := p.Server.Serve(lis); err != nil {
 		log.Fatalf("node failed to serve %v", err)
 	}
+	defer func() {
+		p.Server.Stop()
+		err := lis.Close()
+		if err != nil {
+			log.Printf("node failed to close listen %v", err)
+		}
+	}()
 }
 
 func (p *Peer) Connect() {
@@ -48,16 +64,41 @@ func (p *Peer) Connect() {
 		go func(i int) {
 			flag := false
 			for !flag {
-				nConn, err := grpc.NewClient(p.ipList[i])
+				nConn, err := grpc.NewClient(p.ipList[i], grpc.WithTransportCredentials(insecure.NewCredentials()))
 				if err != nil {
-					log.Printf("node did not connect to node: %v", err)
+					log.Printf("node %v did not connect to node %v: %v", p.id, i, err)
 					continue
 				}
 				flag = true
-				p.nConn[i] = nConn
+				p.Conns[i] = nConn
+				log.Printf("node %v connect to node %v", p.id, i)
 			}
 			wg.Done()
 		}(i)
 	}
 	wg.Wait()
+}
+
+func (p *Peer) Close() {
+	for i, Conn := range p.Conns {
+		if i == p.id {
+			continue
+		}
+		err := Conn.Close()
+		if err != nil {
+			log.Printf("node %v close %v", p.id, err)
+			continue
+		}
+		log.Printf("node %v close success", p.id)
+	}
+}
+
+type Service struct {
+	Id int
+	protobuf.UnimplementedConnServiceServer
+}
+
+func (n Service) Receive(ctx context.Context, req *protobuf.TestMessage) (*protobuf.TestMessage, error) {
+	fmt.Printf("request from node %v: %v", req.GetFromID(), req.GetContent())
+	return &protobuf.TestMessage{Content: "Hello ", FromID: int64(n.Id), DestID: req.GetFromID()}, nil
 }

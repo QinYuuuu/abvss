@@ -32,10 +32,6 @@ type Message struct {
 	data                  []byte
 }
 
-func ()  {
-	
-}
-
 // NewState creates a new protocol state based on an incoming message from a client
 func NewState(n int) *State {
 	state := &State{

@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"github.com/QinYuuuu/abvss/network"
 	"github.com/QinYuuuu/abvss/osv"
+	"github.com/QinYuuuu/abvss/protobuf"
 )
 
 type node struct {
@@ -13,12 +15,39 @@ type node struct {
 
 func main() {
 	iplist := []string{"127.0.0.1:8000", "127.0.0.1:8001", "127.0.0.1:8002"}
+	peers := make([]*network.Peer, 3)
 	for i := 0; i < 3; i++ {
 		peer, err := network.NewPeer(3, i, iplist)
 		if err != nil {
 			fmt.Println(err)
 		}
-		peer.Serve(false)
+		peers[i] = peer
+		service := network.Service{Id: i}
+		protobuf.RegisterConnServiceServer(peers[i].Server, service)
+		go peer.Serve(false)
+	}
+	clients := make([][]protobuf.ConnServiceClient, 3)
+	for i := 0; i < 3; i++ {
+		peers[i].Connect()
+		clients[i] = make([]protobuf.ConnServiceClient, 3)
+		for j := 0; j < 3; j++ {
+			if j == i {
+				continue
+			}
+			clients[i][j] = protobuf.NewConnServiceClient(peers[i].Conns[j])
+			rsp, err := clients[i][j].Receive(context.TODO(), &protobuf.TestMessage{
+				FromID: int64(i),
+				DestID: int64(j),
+			})
+			if err != nil {
+				fmt.Println(err)
+			}
+			fmt.Println(rsp)
+		}
+	}
+
+	for i := 0; i < 3; i++ {
+		peers[i].Close()
 	}
 }
 
