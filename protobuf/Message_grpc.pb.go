@@ -26,7 +26,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ConnServiceClient interface {
-	Receive(ctx context.Context, in *TestMessage, opts ...grpc.CallOption) (*TestMessage, error)
+	Receive(ctx context.Context, in *TestHelloMessage, opts ...grpc.CallOption) (*TestResMessage, error)
 }
 
 type connServiceClient struct {
@@ -37,8 +37,8 @@ func NewConnServiceClient(cc grpc.ClientConnInterface) ConnServiceClient {
 	return &connServiceClient{cc}
 }
 
-func (c *connServiceClient) Receive(ctx context.Context, in *TestMessage, opts ...grpc.CallOption) (*TestMessage, error) {
-	out := new(TestMessage)
+func (c *connServiceClient) Receive(ctx context.Context, in *TestHelloMessage, opts ...grpc.CallOption) (*TestResMessage, error) {
+	out := new(TestResMessage)
 	err := c.cc.Invoke(ctx, ConnService_Receive_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -50,7 +50,7 @@ func (c *connServiceClient) Receive(ctx context.Context, in *TestMessage, opts .
 // All implementations must embed UnimplementedConnServiceServer
 // for forward compatibility
 type ConnServiceServer interface {
-	Receive(context.Context, *TestMessage) (*TestMessage, error)
+	Receive(context.Context, *TestHelloMessage) (*TestResMessage, error)
 	mustEmbedUnimplementedConnServiceServer()
 }
 
@@ -58,7 +58,7 @@ type ConnServiceServer interface {
 type UnimplementedConnServiceServer struct {
 }
 
-func (UnimplementedConnServiceServer) Receive(context.Context, *TestMessage) (*TestMessage, error) {
+func (UnimplementedConnServiceServer) Receive(context.Context, *TestHelloMessage) (*TestResMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Receive not implemented")
 }
 func (UnimplementedConnServiceServer) mustEmbedUnimplementedConnServiceServer() {}
@@ -75,7 +75,7 @@ func RegisterConnServiceServer(s grpc.ServiceRegistrar, srv ConnServiceServer) {
 }
 
 func _ConnService_Receive_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TestMessage)
+	in := new(TestHelloMessage)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -87,7 +87,7 @@ func _ConnService_Receive_Handler(srv interface{}, ctx context.Context, dec func
 		FullMethod: ConnService_Receive_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ConnServiceServer).Receive(ctx, req.(*TestMessage))
+		return srv.(ConnServiceServer).Receive(ctx, req.(*TestHelloMessage))
 	}
 	return interceptor(ctx, in, info, handler)
 }

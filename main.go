@@ -6,6 +6,7 @@ import (
 	"github.com/QinYuuuu/abvss/network"
 	"github.com/QinYuuuu/abvss/osv"
 	"github.com/QinYuuuu/abvss/protobuf"
+	"log"
 	"time"
 )
 
@@ -44,7 +45,7 @@ func main() {
 			if err != nil {
 				fmt.Println(err)
 			}
-			fmt.Println(rsp)
+			log.Printf("node %v receive respond from node %v: %v", i, rsp.GetFromID(), rsp.GetContent())
 		}
 	}
 	time.Sleep(3 * time.Second)

@@ -14,6 +14,8 @@ service RBCService {
 service ABVSSService {
   rpc ReceiveShares(SharesMessage) returns (AckMsg){}
   rpc ReceiveLCM(LCMMessage) returns (AckMsg){}
+  rpc ReconstructLCM()
+  rpc SharerRecovery()
 }
 
 // The one-sided voting service definition

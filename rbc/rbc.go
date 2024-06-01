@@ -3,6 +3,7 @@ package rbc
 import (
 	"errors"
 	"github.com/QinYuuuu/abvss/crypto/hasher"
+	"log"
 )
 
 const SEND = "S"
@@ -12,14 +13,13 @@ const READY = "R"
 var ErrUnknownMessageType = errors.New("unknown protocol message type")
 
 type RBC struct {
-	id, n, f int
-	out      chan []byte
-	count    int
-	stateMap map[int]*State
+	id, n, f   int
+	instanceID int
+	leader     bool
+	*State
 }
 
 type State struct {
-	id, n, f        int
 	Data            []byte
 	Echos, Readys   int
 	nEchos, nReadys []bool
@@ -27,9 +27,92 @@ type State struct {
 	Output          bool
 }
 type Message struct {
+	instanceID            int
 	fromID, destID, index int
 	mtype                 string
 	data                  []byte
+}
+
+func NewRBC(id, n, f, instanceID int) *RBC {
+	return &RBC{id: id, n: n, f: f, instanceID: instanceID, State: NewState(n)}
+}
+
+func (r *RBC) SetLeader() {
+	r.leader = true
+}
+
+func (r *RBC) Send(data []byte) ([]Message, error) {
+	if !r.leader {
+		return nil, errors.New("not leader cannot send")
+	}
+	msgs := make([]Message, r.n)
+	for i := 0; i < r.n; i++ {
+		msgs[i] = Message{fromID: r.id, destID: i, mtype: SEND, data: data}
+	}
+	return msgs, nil
+}
+
+func (r *RBC) Recv(m Message) ([]Message, error) {
+	if r.instanceID != m.instanceID {
+		return nil, errors.New("wrong instanceID")
+	}
+	if m.destID != r.id {
+		return nil, errors.New("wrong receiver id")
+	}
+	log.Printf("node %v receieve %v from node %v", r.id, m.mtype, m.fromID)
+	var msgs []Message
+	switch m.mtype {
+	case SEND:
+		if r.Data != nil {
+			return nil, errors.New("duplicate send message")
+		}
+		r.Data = m.data
+		for i := 0; i < r.n; i++ {
+			msg := Message{fromID: r.id, destID: i, data: hasher.SHA256Hasher(r.Data), mtype: ECHO, index: m.index}
+			msgs = append(msgs, msg)
+		}
+	case ECHO:
+
+		if r.Data == nil {
+			return nil, errors.New("invalid echo message, no send")
+		}
+		if !r.nEchos[m.fromID] {
+			r.nEchos[m.fromID] = true
+			r.Echos++
+		} else {
+			return nil, nil
+		}
+
+	case READY:
+		if r.Data == nil {
+			return nil, errors.New("invalid ready message, no send")
+		}
+		if !r.nReadys[m.fromID] {
+			r.nReadys[m.fromID] = true
+			r.Readys++
+		} else {
+			return nil, nil
+		}
+	default:
+		return nil, ErrUnknownMessageType
+	}
+	if r.Echos >= (r.n+r.f+1)/2 {
+		for i := 0; i < r.n; i++ {
+			msg := Message{fromID: r.id, destID: i, data: hasher.SHA256Hasher(r.Data), mtype: READY, index: m.index}
+			msgs = append(msgs, msg)
+		}
+	}
+	if r.Readys >= r.f+1 {
+		for i := 0; i < r.n; i++ {
+			msg := Message{fromID: r.id, destID: i, data: hasher.SHA256Hasher(r.Data), mtype: READY, index: m.index}
+			msgs = append(msgs, msg)
+		}
+	}
+	if r.Readys >= 2*r.f+1 {
+		r.Output = true
+	}
+	log.Printf("node %v nECHOs %v nREADYs %v", r.id, r.Echos, r.Readys)
+	return msgs, nil
 }
 
 // NewState creates a new protocol state based on an incoming message from a client
@@ -43,59 +126,4 @@ func NewState(n int) *State {
 		Output:    false,
 	}
 	return state
-}
-
-func (s *State) Recv(m Message) ([]Message, error) {
-	var msgs []Message
-	switch m.mtype {
-	case SEND:
-		if s.Data != nil {
-			return nil, errors.New("duplicate send message")
-		}
-		s.Data = m.data
-		for i := 0; i < s.n; i++ {
-			msg := Message{fromID: s.id, destID: i, data: hasher.SHA256Hasher(s.Data), mtype: ECHO, index: m.index}
-			msgs = append(msgs, msg)
-		}
-	case ECHO:
-
-		if s.Data == nil {
-			return nil, errors.New("invalid echo message, no send")
-		}
-		if !s.nEchos[m.fromID] {
-			s.nEchos[m.fromID] = true
-			s.Echos++
-		} else {
-			return nil, errors.New("duplicate echo message")
-		}
-
-	case READY:
-		if s.Data == nil {
-			return nil, errors.New("invalid ready message, no send")
-		}
-		if !s.nReadys[m.fromID] {
-			s.nReadys[m.fromID] = true
-			s.Readys++
-		} else {
-			return nil, errors.New("duplicate ready message")
-		}
-	default:
-		return nil, ErrUnknownMessageType
-	}
-	if s.Echos >= (s.n+s.f+1)/2 {
-		for i := 0; i < s.n; i++ {
-			msg := Message{fromID: s.id, destID: i, data: hasher.SHA256Hasher(s.Data), mtype: READY, index: m.index}
-			msgs = append(msgs, msg)
-		}
-	}
-	if s.Readys >= s.f+1 {
-		for i := 0; i < s.n; i++ {
-			msg := Message{fromID: s.id, destID: i, data: hasher.SHA256Hasher(s.Data), mtype: READY, index: m.index}
-			msgs = append(msgs, msg)
-		}
-	}
-	if s.Readys >= 2*s.f+1 {
-		s.Output = true
-	}
-	return msgs, nil
 }

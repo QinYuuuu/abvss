@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"errors"
+	"github.com/QinYuuuu/abvss/osv"
 	"math/big"
 	"math/rand"
 
@@ -19,11 +20,18 @@ type ABVSS struct {
 	randState *rand.Rand
 	batchsize int
 	vnum      int
-	onesidedvoting.OSV
+	osv.OSV
 
 	*ABVSSD
 	*ABVSSR
 	*ABVSSV
+}
+
+func (vss *ABVSS) GetNodeID() int {
+	return vss.nodeid
+}
+func (vss *ABVSS) GetInstanceID() int {
+	return vss.index
 }
 
 type ABVSSD struct {

@@ -2,7 +2,6 @@ package network
 
 import (
 	"errors"
-	"fmt"
 	"github.com/QinYuuuu/abvss/protobuf"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -98,7 +97,7 @@ type Service struct {
 	protobuf.UnimplementedConnServiceServer
 }
 
-func (n Service) Receive(ctx context.Context, req *protobuf.TestMessage) (*protobuf.TestMessage, error) {
-	fmt.Printf("node %v receive request from node %v: %v", n.Id, req.GetFromID(), req.GetContent())
-	return &protobuf.TestMessage{Content: "have received Hello", FromID: int64(n.Id), DestID: req.GetFromID()}, nil
+func (n Service) Receive(ctx context.Context, req *protobuf.TestHelloMessage) (*protobuf.TestResMessage, error) {
+	log.Printf("node %v receive request from node %v: %v", n.Id, req.GetFromID(), req.GetContent())
+	return &protobuf.TestResMessage{Content: "have received Hello", FromID: int64(n.Id), DestID: req.GetFromID()}, nil
 }
