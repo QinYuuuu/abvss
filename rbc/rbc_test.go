@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestNewState(t *testing.T) {
+func TestNewRBC(t *testing.T) {
 	n := 4
 	f := 1
 	rbc := make([]*RBC, n)

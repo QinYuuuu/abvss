@@ -18,7 +18,7 @@ func TestPeer_Serve(t *testing.T) {
 		}
 		peers[i] = peer
 		service := Service{Id: i}
-		protobuf.RegisterConnServiceServer(peers[i].Server, service)
+		protobuf.RegisterConnServer(peers[i].Server, service)
 		go peer.Serve(false)
 	}
 	for i := 0; i < 3; i++ {
@@ -40,19 +40,19 @@ func TestPeer_Connect(t *testing.T) {
 		}
 		peers[i] = peer
 		service := Service{Id: i}
-		protobuf.RegisterConnServiceServer(peers[i].Server, service)
+		protobuf.RegisterConnServer(peers[i].Server, service)
 		go peer.Serve(false)
 	}
-	clients := make([][]protobuf.ConnServiceClient, 3)
+	clients := make([][]protobuf.ConnClient, 3)
 	for i := 0; i < 3; i++ {
 		peers[i].Connect()
-		clients[i] = make([]protobuf.ConnServiceClient, 3)
+		clients[i] = make([]protobuf.ConnClient, 3)
 		for j := 0; j < 3; j++ {
 			if j == i {
 				continue
 			}
-			clients[i][j] = protobuf.NewConnServiceClient(peers[i].Conns[j])
-			rsp, err := clients[i][j].Receive(context.TODO(), &protobuf.TestMessage{
+			clients[i][j] = protobuf.NewConnClient(peers[i].Conns[j])
+			rsp, err := clients[i][j].Receive(context.TODO(), &protobuf.TestHelloMessage{
 				FromID: int64(i),
 				DestID: int64(j),
 			})

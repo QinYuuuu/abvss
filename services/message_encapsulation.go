@@ -13,7 +13,7 @@ func Encapsulation(messageType string, from, dest, index int, payloadMessage any
 	var err error
 	switch messageType {
 	case "osv":
-		data, err = proto.Marshal((payloadMessage).(*protobuf.OSVMessage))
+		data, err = proto.Marshal((payloadMessage).(*protobuf.OSVMsg))
 	}
 
 	if err != nil {

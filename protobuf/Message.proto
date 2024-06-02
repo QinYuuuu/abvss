@@ -2,25 +2,25 @@ syntax = "proto3";
 package services;
 option go_package = ".;protobuf";
 
-service ConnService {
+service Conn {
   rpc Receive(TestHelloMessage) returns(TestResMessage){}
 }
 
-service RBCService {
+service RBC {
   rpc Receive(Message) returns(AckMsg){}
 }
 
-// The one-sided voting service definition
-service ABVSSService {
-  rpc ReceiveShares(SharesMessage) returns (AckMsg){}
-  rpc ReceiveLCM(LCMMessage) returns (AckMsg){}
-  rpc ReconstructLCM()
-  rpc SharerRecovery()
+// The Asynchronous Batched VSS service definition
+service ABVSS {
+  rpc ReceiveShares(SharesMsg) returns (AckMsg){}
+  rpc ReceiveLCM(LCMMsg) returns (AckMsg){}
+  rpc ReconstructLCM(SKMsg) returns (AckMsg){}
+  rpc ReceiveRecShares(SKMsg) returns (AckMsg) {}
 }
 
 // The one-sided voting service definition
-service OSVService {
-  rpc Receive(OSVMessage)returns( AckMsg){}
+service OSV {
+  rpc Receive(OSVMsg)returns (AckMsg){}
 }
 
 message TestHelloMessage {
@@ -43,20 +43,26 @@ message Message {
   bytes Data = 5;
 }
 
-message SharesMessage{
+message SharesMsg{
   int64 fromID = 1;
   int64 destID = 2;
   repeated bytes zi = 3;
   repeated bytes xi = 4;
 }
 
-message LCMMessage{
+message LCMMsg{
   int64 fromID = 1;
   int64 destID = 2;
   repeated bytes lcmi = 3;
 }
 
-message OSVMessage{
+message SKMsg{
+  int64 fromID = 1;
+  int64 destID = 2;
+  bytes sk = 3;
+}
+
+message OSVMsg{
   int64 fromID = 1;
   int64 destID = 2;
   string mtype = 3;

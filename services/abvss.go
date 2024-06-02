@@ -1,8 +1,7 @@
-package protocol
+package services
 
 import (
 	"errors"
-	"github.com/QinYuuuu/abvss/osv"
 	"math/big"
 	"math/rand"
 
@@ -20,7 +19,6 @@ type ABVSS struct {
 	randState *rand.Rand
 	batchsize int
 	vnum      int
-	osv.OSV
 
 	*ABVSSD
 	*ABVSSR

@@ -1,13 +1,8 @@
 package main
 
 import (
-	"context"
-	"fmt"
-	"github.com/QinYuuuu/abvss/network"
 	"github.com/QinYuuuu/abvss/osv"
-	"github.com/QinYuuuu/abvss/protobuf"
-	"log"
-	"time"
+	"github.com/QinYuuuu/abvss/services"
 )
 
 type node struct {
@@ -15,43 +10,48 @@ type node struct {
 	out chan osv.Message
 }
 
-func main() {
-	iplist := []string{"127.0.0.1:8000", "127.0.0.1:8001", "127.0.0.1:8002"}
-	peers := make([]*network.Peer, 3)
-	for i := 0; i < 3; i++ {
-		peer, err := network.NewPeer(3, i, iplist)
-		if err != nil {
-			fmt.Println(err)
-		}
-		peers[i] = peer
-		service := network.Service{Id: i}
-		protobuf.RegisterConnServiceServer(peers[i].Server, service)
-		go peer.Serve(false)
-	}
-	clients := make([][]protobuf.ConnServiceClient, 3)
-	for i := 0; i < 3; i++ {
-		peers[i].Connect()
-		clients[i] = make([]protobuf.ConnServiceClient, 3)
-		for j := 0; j < 3; j++ {
-			if j == i {
-				continue
-			}
-			clients[i][j] = protobuf.NewConnServiceClient(peers[i].Conns[j])
-			rsp, err := clients[i][j].Receive(context.TODO(), &protobuf.TestHelloMessage{
-				FromID:  int64(i),
-				DestID:  int64(j),
-				Content: "hello world",
-			})
+/*
+	func main() {
+		iplist := []string{"127.0.0.1:8000", "127.0.0.1:8001", "127.0.0.1:8002"}
+		peers := make([]*network.Peer, 3)
+		for i := 0; i < 3; i++ {
+			peer, err := network.NewPeer(3, i, iplist)
 			if err != nil {
 				fmt.Println(err)
 			}
-			log.Printf("node %v receive respond from node %v: %v", i, rsp.GetFromID(), rsp.GetContent())
+			peers[i] = peer
+			service := network.Service{Id: i}
+			protobuf.RegisterConnServer(peers[i].Server, service)
+			go peer.Serve(false)
+		}
+		clients := make([][]protobuf.ConnClient, 3)
+		for i := 0; i < 3; i++ {
+			peers[i].Connect()
+			clients[i] = make([]protobuf.ConnClient, 3)
+			for j := 0; j < 3; j++ {
+				if j == i {
+					continue
+				}
+				clients[i][j] = protobuf.NewConnClient(peers[i].Conns[j])
+				rsp, err := clients[i][j].Receive(context.TODO(), &protobuf.TestHelloMessage{
+					FromID:  int64(i),
+					DestID:  int64(j),
+					Content: "hello world",
+				})
+				if err != nil {
+					fmt.Println(err)
+				}
+				log.Printf("node %v receive respond from node %v: %v", i, rsp.GetFromID(), rsp.GetContent())
+			}
+		}
+		time.Sleep(3 * time.Second)
+		for i := 0; i < 3; i++ {
+			peers[i].Close()
 		}
 	}
-	time.Sleep(3 * time.Second)
-	for i := 0; i < 3; i++ {
-		peers[i].Close()
-	}
+*/
+func main() {
+	services.TestVSS()
 }
 
 /*
