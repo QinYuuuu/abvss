@@ -2,6 +2,7 @@ package services
 
 import (
 	"crypto/elliptic"
+	"fmt"
 	"github.com/QinYuuuu/abvss/crypto/paillier"
 	"github.com/QinYuuuu/abvss/crypto/utils"
 	"github.com/QinYuuuu/abvss/network"
@@ -35,26 +36,35 @@ func TestVSS() {
 	nodes := make([]*ABVSSNode, n)
 	for i := 0; i < n; i++ {
 		abvss, err := NewVSS(0, i, n, f, batchszie, vnum, p)
+		if err != nil {
+			log.Println("NewVSS err:", err)
+		}
+		abvss.ReceiverInit(sk[i])
+
 		peer, err := network.NewPeer(n, i, iplist)
 
 		if err != nil {
 			log.Println("NewPeer err:", err)
 		}
 		abvssservice := NewABVSSService(n)
-
+		abvssservice.ABVSS = abvss
 		protobuf.RegisterABVSSServer(peer.Server, abvssservice)
 		go peer.Serve(false)
 		peer.Connect()
 		for j := 0; j < n; j++ {
-			abvssservice.Clients[i] = protobuf.NewABVSSClient(peer.Conns[i])
+			if j == i {
+				continue
+			}
+			abvssservice.Clients[j] = protobuf.NewABVSSClient(peer.Conns[j])
 		}
-		abvssservice.ABVSS = abvss
 		nodes[i] = &ABVSSNode{ABVSSService: abvssservice, Peer: peer}
 	}
 	s := make([]*big.Int, batchszie)
 	for i := 0; i < batchszie; i++ {
 		s[i] = utils.RandomNum(p)
 	}
+	fmt.Println(nodes[0].Conns)
+	fmt.Println(nodes[0].Clients)
 	nodes[0].SecretSharing(pk, s)
 	for {
 

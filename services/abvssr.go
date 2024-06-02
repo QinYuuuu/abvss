@@ -17,11 +17,13 @@ func (vss *ABVSS) ReceiverInit(sk SecretKey) {
 		sk:           sk,
 		fshares:      make([]*big.Int, vss.batchsize),
 		gshares:      make([]*big.Int, vss.vnum),
+		xi:           make(map[int][]Cipher),
+		zi:           make(map[int][]Cipher),
 		randombeacon: rand.New(rand.NewSource(ReceiverRandSeed)),
 	}
 }
 
-func (vss *ABVSS) ObtainShares(zi, xi []Cipher) error {
+func (vss *ABVSS) ObtainShares(zi, xi []Cipher, index int) error {
 	if vss.ABVSSR == nil {
 		return errors.New("not a receiver")
 	}
@@ -31,19 +33,23 @@ func (vss *ABVSS) ObtainShares(zi, xi []Cipher) error {
 	if len(xi) != vss.vnum {
 		return errors.New("insufficient xi")
 	}
-	for i := 0; i < vss.batchsize; i++ {
-		tmp, err := vss.sk.Decrypt(zi[i])
-		if err != nil {
-			return err
+	vss.zi[index] = zi
+	vss.xi[index] = xi
+	if index == vss.index {
+		for i := 0; i < vss.batchsize; i++ {
+			tmp, err := vss.sk.Decrypt(zi[i])
+			if err != nil {
+				return err
+			}
+			vss.fshares[i] = tmp
 		}
-		vss.fshares[i] = tmp
-	}
-	for i := 0; i < vss.vnum; i++ {
-		tmp, err := vss.sk.Decrypt(xi[i])
-		if err != nil {
-			return err
+		for i := 0; i < vss.vnum; i++ {
+			tmp, err := vss.sk.Decrypt(xi[i])
+			if err != nil {
+				return err
+			}
+			vss.gshares[i] = tmp
 		}
-		vss.gshares[i] = tmp
 	}
 	return nil
 }

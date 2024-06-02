@@ -20,10 +20,6 @@ func NewABVSSService(n int) *ABVSSService {
 }
 
 func (vss *ABVSSService) ReceiveShares(ctx context.Context, shares *protobuf.SharesMsg) (*protobuf.AckMsg, error) {
-	if int(shares.DestID) != vss.GetNodeID() {
-		log.Printf("node %v receive shares wrong desID %v", vss.GetNodeID(), shares.GetDestID())
-		return &protobuf.AckMsg{}, nil
-	}
 	ziBytes := shares.GetZi()
 	xiBytes := shares.GetXi()
 	zi := make([]Cipher, len(ziBytes))
@@ -34,12 +30,12 @@ func (vss *ABVSSService) ReceiveShares(ctx context.Context, shares *protobuf.Sha
 	for i := range xiBytes {
 		xi[i] = new(big.Int).SetBytes(xiBytes[i])
 	}
-	err := vss.ObtainShares(zi, xi)
+	err := vss.ObtainShares(zi, xi, int(shares.Index))
 	if err != nil {
-		log.Printf("node %v receive shares from node %v error: %v", vss.GetNodeID(), shares.FromID, err)
+		log.Printf("node %v receive shares from node %v error: %v", vss.GetNodeID(), shares.GetFromID(), err)
 		return &protobuf.AckMsg{}, nil
 	}
-	log.Printf("node %v receive shares from node %v", vss.GetNodeID(), shares.FromID)
+	log.Printf("node %v receive shares %v from node %v", vss.GetNodeID(), shares.GetIndex(), shares.GetFromID())
 	return &protobuf.AckMsg{}, nil
 }
 
@@ -89,26 +85,43 @@ func (vss *ABVSSService) SecretSharing(pk []PublicKey, s []*big.Int) {
 		log.Printf("sample poly error: %v", err)
 	}
 	for i := 0; i < vss.nodenum; i++ {
-		zi, xi, err := vss.GenerateShares(i)
-		if err != nil {
-			log.Printf("generate shares error: %v", err)
-		}
-		ziBytes := make([][]byte, len(zi))
-		xiBytes := make([][]byte, len(xi))
-		for i := range ziBytes {
-			ziBytes[i] = zi[i].(*big.Int).Bytes()
-		}
-		for i := range xiBytes {
-			xiBytes[i] = xi[i].(*big.Int).Bytes()
-		}
-		_, err = vss.Clients[i].ReceiveShares(context.Background(), &protobuf.SharesMsg{
-			FromID: int64(vss.nodeid),
-			DestID: int64(i),
-			Zi:     ziBytes,
-			Xi:     xiBytes,
-		})
-		if err != nil {
-			log.Printf("send shares to node %v error: %v", i, err)
-		}
+		go func(i int) {
+			zi, xi, err := vss.GenerateShares(i)
+			if err != nil {
+				log.Printf("generate shares error: %v", err)
+			}
+
+			ziBytes := make([][]byte, len(zi))
+			xiBytes := make([][]byte, len(xi))
+			for j := range ziBytes {
+				ziBytes[j] = zi[j].(*big.Int).Bytes()
+			}
+			for j := range xiBytes {
+				xiBytes[j] = xi[j].(*big.Int).Bytes()
+			}
+			sharesmsg := &protobuf.SharesMsg{
+				FromID: int64(vss.nodeid),
+				Index:  int64(i),
+				Zi:     ziBytes,
+				Xi:     xiBytes,
+			}
+
+			ctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			for j := 0; j < vss.nodenum; j++ {
+				if j == vss.nodeid {
+					err := vss.ObtainShares(zi, xi, i)
+					if err != nil {
+						log.Printf("obtain shares error: %v", err)
+					}
+					return
+				}
+				_, err = vss.Clients[j].ReceiveShares(ctx, sharesmsg)
+				if err != nil {
+					log.Printf("send shares to node %v error: %v", i, err)
+				}
+			}
+		}(i)
+
 	}
 }
