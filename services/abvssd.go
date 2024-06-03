@@ -2,12 +2,13 @@ package services
 
 import (
 	"errors"
+	"github.com/QinYuuuu/abvss/crypto/paillier"
 	"math/big"
 
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
 )
 
-func (vss *ABVSS) DistributorInit(pk []PublicKey, s []*big.Int) error {
+func (vss *ABVSS) DistributorInit(pk []paillier.PublicKey, s []*big.Int) error {
 	if len(pk) != vss.nodenum {
 		return errors.New("node number mismatch PK number")
 	}
@@ -48,15 +49,15 @@ func (vss *ABVSS) SamplePoly() error {
 	return nil
 }
 
-func (vss *ABVSS) GenerateShares(index int) ([]Cipher, []Cipher, error) {
+func (vss *ABVSS) GenerateShares(index int) ([]*big.Int, []*big.Int, error) {
 	if vss.ABVSSD == nil {
 		return nil, nil, errors.New("not a distributor")
 	}
-	zi := make([]Cipher, vss.batchsize)
-	xi := make([]Cipher, vss.vnum)
+	zi := make([]*big.Int, vss.batchsize)
+	xi := make([]*big.Int, vss.vnum)
 	for i := 0; i < vss.batchsize; i++ {
 		fi := vss.polyf[i].EvalMod(new(big.Int).SetInt64(int64(index+1)), vss.p)
-		tmp, err := vss.pk[index].Encrypt(fi)
+		tmp, _, err := vss.pk[index].Encrypt(fi)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -64,7 +65,7 @@ func (vss *ABVSS) GenerateShares(index int) ([]Cipher, []Cipher, error) {
 	}
 	for i := 0; i < vss.vnum; i++ {
 		gi := vss.polyg[i].EvalMod(new(big.Int).SetInt64(int64(index+1)), vss.p)
-		tmp, err := vss.pk[index].Encrypt(gi)
+		tmp, _, err := vss.pk[index].Encrypt(gi)
 		if err != nil {
 			return nil, nil, err
 		}

@@ -113,7 +113,7 @@ func TestABVSS_Receiver(t *testing.T) {
 		vss[i].ReceiverInit(sk[i])
 	}
 	for i := 0; i < N; i++ {
-		err := vss[i].ObtainShares(zi[i], xi[i])
+		err := vss[i].ObtainShares(zi[i], xi[i], i)
 		assert.Nil(t, err, "err in ObtainShares")
 		fmt.Printf("node %v get fshares %v, gshares %v\n", i, vss[i].fshares, vss[i].gshares)
 		lcm, err := vss[i].ConstructLCM()
@@ -161,7 +161,7 @@ func TestABVSS_Verifier(t *testing.T) {
 	}
 	xlist := make([]*big.Int, N)
 	for i := 0; i < N; i++ {
-		_ = vss[i].ObtainShares(zi[i], xi[i])
+		_ = vss[i].ObtainShares(zi[i], xi[i], i)
 		fmt.Printf("node %v get fshares %v, gshares %v\n", i, vss[i].fshares, vss[i].gshares)
 		lcm[i], _ = vss[i].ConstructLCM()
 

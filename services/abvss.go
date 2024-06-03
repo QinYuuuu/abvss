@@ -2,6 +2,7 @@ package services
 
 import (
 	"errors"
+	"github.com/QinYuuuu/abvss/crypto/paillier"
 	"math/big"
 	"math/rand"
 
@@ -33,7 +34,7 @@ func (vss *ABVSS) GetInstanceID() int {
 }
 
 type ABVSSD struct {
-	pk     []PublicKey
+	pk     []paillier.PublicKey
 	secret []*big.Int
 	polyf  []polynomial.Polynomial
 	polyg  []polynomial.Polynomial
@@ -41,23 +42,29 @@ type ABVSSD struct {
 }
 
 type ABVSSR struct {
-	sk           SecretKey
-	zi           map[int][]Cipher
-	xi           map[int][]Cipher
+	sk paillier.PrivateKey
+
+	//zi           [][]Cipher
+	//xi           [][]Cipher
+	zi           [][]*big.Int
+	xi           [][]*big.Int
 	fshares      []*big.Int
 	gshares      []*big.Int
 	randombeacon *rand.Rand
 	r            [][]*big.Int
+	received     bool
 	complain     bool
 	qlist        map[int][]*big.Int
 }
 
 type ABVSSV struct {
+	count int
 	ilist []struct {
 		index int
 		lcm   []*big.Int
 	}
 	jlist []int
+	done  bool
 }
 
 func NewVSS(index, nodeid, nodenum, degree, batchsize, vnum int, p *big.Int) (*ABVSS, error) {

@@ -1,13 +1,12 @@
 package main
 
 import (
-	"github.com/QinYuuuu/abvss/osv"
 	"github.com/QinYuuuu/abvss/services"
 )
 
 type node struct {
-	in  chan osv.Message
-	out chan osv.Message
+	in  chan services.Message
+	out chan services.Message
 }
 
 /*

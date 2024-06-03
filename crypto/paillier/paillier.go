@@ -185,8 +185,11 @@ func (pk *PublicKey) G() *big.Int {
 // Decrypt m = L(c^lambda mod n^2) * mu mod n
 func (priv *PrivateKey) Decrypt(c *big.Int) (m *big.Int, err error) {
 	N2 := priv.N2()
-	if c.Cmp(zero) == -1 || c.Cmp(N2) != -1 { // 0 <= c < N2
-		return nil, fmt.Errorf("c range error")
+	if c.Cmp(zero) == -1 { // 0 <= c < N2
+		return nil, fmt.Errorf("c range error, c < 0")
+	}
+	if c.Cmp(N2) != -1 { // 0 <= c < N2
+		return nil, fmt.Errorf("c range error, c > N2")
 	}
 	cg := new(big.Int).GCD(nil, nil, c, N2)
 	if cg.Cmp(one) == 1 {

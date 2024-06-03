@@ -2,7 +2,7 @@ package services
 
 import (
 	"errors"
-	"fmt"
+	"github.com/QinYuuuu/abvss/crypto/paillier"
 	"math/big"
 	"math/rand"
 
@@ -12,18 +12,19 @@ import (
 
 const ReceiverRandSeed = 10
 
-func (vss *ABVSS) ReceiverInit(sk SecretKey) {
+func (vss *ABVSS) ReceiverInit(sk paillier.PrivateKey) {
 	vss.ABVSSR = &ABVSSR{
 		sk:           sk,
 		fshares:      make([]*big.Int, vss.batchsize),
 		gshares:      make([]*big.Int, vss.vnum),
-		xi:           make(map[int][]Cipher),
-		zi:           make(map[int][]Cipher),
+		xi:           make([][]*big.Int, vss.nodenum),
+		zi:           make([][]*big.Int, vss.nodenum),
+		received:     false,
 		randombeacon: rand.New(rand.NewSource(ReceiverRandSeed)),
 	}
 }
 
-func (vss *ABVSS) ObtainShares(zi, xi []Cipher, index int) error {
+func (vss *ABVSS) ObtainShares(zi, xi []*big.Int, index int) error {
 	if vss.ABVSSR == nil {
 		return errors.New("not a receiver")
 	}
@@ -38,18 +39,32 @@ func (vss *ABVSS) ObtainShares(zi, xi []Cipher, index int) error {
 	if index == vss.index {
 		for i := 0; i < vss.batchsize; i++ {
 			tmp, err := vss.sk.Decrypt(zi[i])
+
 			if err != nil {
-				return err
+				/*
+					log.Printf("wrong zi %v", zi[i])
+					return errors.Join(errors.New("decrypt zi failed"), err)*/
+				vss.fshares[i] = utils.RandomNum(vss.p)
+			} else {
+				vss.fshares[i] = tmp
 			}
-			vss.fshares[i] = tmp
+			//vss.fshares[i] = zi[i]
 		}
 		for i := 0; i < vss.vnum; i++ {
+
 			tmp, err := vss.sk.Decrypt(xi[i])
+
 			if err != nil {
-				return err
+				/*
+					log.Printf("wrong xi %v", xi[i])
+					return errors.Join(errors.New("decrypt xi failed"), err)*/
+				vss.gshares[i] = utils.RandomNum(vss.p)
+			} else {
+				vss.gshares[i] = tmp
 			}
-			vss.gshares[i] = tmp
+			//vss.gshares[i] = xi[i]
 		}
+		vss.received = true
 	}
 	return nil
 }
@@ -68,14 +83,14 @@ func (vss *ABVSS) ConstructLCM() ([]*big.Int, error) {
 		}
 	}
 	for i := 0; i < vss.vnum; i++ {
-		fmt.Println(r[i])
+		//fmt.Println(r[i])
 		tmp, err := utils.DotProduct(vss.fshares, r[i])
-		fmt.Printf("node %v get fshares %v\n", vss.nodeid, vss.fshares)
+		//fmt.Printf("node %v get fshares %v\n", vss.nodeid, vss.fshares)
 		if err != nil {
 			return nil, err
 		}
 		lcm[i] = new(big.Int).Mod(new(big.Int).Add(tmp, vss.gshares[i]), vss.p)
-		fmt.Printf("node %v %v li:%v\n", vss.nodeid, i, lcm[i])
+		//fmt.Printf("node %v %v li:%v\n", vss.nodeid, i, lcm[i])
 	}
 	return lcm, nil
 }
