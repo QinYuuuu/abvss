@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/QinYuuuu/abvss/services"
+	"github.com/QinYuuuu/abvss/internal/osv"
 )
 
 type node struct {
-	in  chan services.Message
-	out chan services.Message
+	in  chan osv.Message
+	out chan osv.Message
 }
 
 /*
@@ -50,7 +50,7 @@ type node struct {
 	}
 */
 func main() {
-	services.TestVSS()
+	TestVSS()
 }
 
 /*

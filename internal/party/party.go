@@ -22,7 +22,8 @@ type HonestParty struct {
 	N                 uint32
 	F                 uint32
 	PID               uint32
-	addressList       []string
+	ipList            []string
+	portList          []string
 	sendChannels      []chan *protobuf.Message
 	dispatcheChannels *sync.Map
 
@@ -35,12 +36,13 @@ type HonestParty struct {
 }
 
 // NewHonestParty return a new honest party object
-func NewHonestParty(N uint32, F uint32, pid uint32, addressList []string, sigPK *share.PubPoly, sigSK *share.PriShare, encPK kyber.Point, encVK []*share.PubShare, encSK *share.PriShare) *HonestParty {
+func NewHonestParty(N uint32, F uint32, pid uint32, ipList, portList []string, sigPK *share.PubPoly, sigSK *share.PriShare, encPK kyber.Point, encVK []*share.PubShare, encSK *share.PriShare) *HonestParty {
 	p := HonestParty{
 		N:            N,
 		F:            F,
 		PID:          pid,
-		addressList:  addressList,
+		ipList:       ipList,
+		portList:     portList,
 		sendChannels: make([]chan *protobuf.Message, N),
 
 		SigPK: sigPK,
@@ -56,14 +58,14 @@ func NewHonestParty(N uint32, F uint32, pid uint32, addressList []string, sigPK 
 
 // InitReceiveChannel setup the listener and Init the receiveChannel
 func (p *HonestParty) InitReceiveChannel() error {
-	p.dispatcheChannels = core.MakeDispatcheChannels(core.MakeReceiveChannel(p.addressList[p.PID]), p.N)
+	p.dispatcheChannels = core.MakeDispatcheChannels(core.MakeReceiveChannel(p.portList[p.PID]), p.N)
 	return nil
 }
 
 // InitSendChannel setup the sender and Init the sendChannel, please run this after initializing all party's receiveChannel
 func (p *HonestParty) InitSendChannel() error {
 	for i := uint32(0); i < p.N; i++ {
-		p.sendChannels[i] = core.MakeSendChannel(p.addressList[i])
+		p.sendChannels[i] = core.MakeSendChannel(p.ipList[i], p.portList[i])
 	}
 	return nil
 }
@@ -71,7 +73,7 @@ func (p *HonestParty) InitSendChannel() error {
 // Send a message to party des
 func (p *HonestParty) Send(m *protobuf.Message, des uint32) error {
 	if !p.checkInit() {
-		return errors.New("This party hasn't been initialized")
+		return errors.New("this party hasn't been initialized")
 	}
 	if des < p.N {
 		p.sendChannels[des] <- m
@@ -83,7 +85,7 @@ func (p *HonestParty) Send(m *protobuf.Message, des uint32) error {
 // Broadcast a message to all parties
 func (p *HonestParty) Broadcast(m *protobuf.Message) error {
 	if !p.checkInit() {
-		return errors.New("This party hasn't been initialized")
+		return errors.New("this party hasn't been initialized")
 	}
 	for i := uint32(0); i < p.N; i++ {
 		err := p.Send(m, i)

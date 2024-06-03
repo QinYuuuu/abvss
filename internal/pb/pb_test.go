@@ -3,13 +3,11 @@ package pb
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/QinYuuuu/abvss/internal/party"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/sign/bls"
 	"golang.org/x/crypto/sha3"
-	"os"
 	"sync"
 	"testing"
 )
@@ -20,28 +18,18 @@ type Address struct {
 }
 
 func TestPb(t *testing.T) {
-	ctx, _ := context.WithCancel(context.Background())
-	filePath := "../../iplist.json"
-	data, _ := os.Open(filePath)
-	decoder := json.NewDecoder(data)
-	// 解析JSON数据
-	var addresses []Address
-	_ = decoder.Decode(&addresses)
-	fmt.Println(addresses)
-	// 提取地址到列表
-	var addressList []string
-	for _, addr := range addresses {
-		addressList = append(addressList, addr.Addr)
-	}
+	ipList := []string{"127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1"}
+	portList := []string{"8880", "8881", "8882", "8883"}
 
-	N := uint32(16)
-	F := uint32(5)
+	N := uint32(4)
+	F := uint32(1)
 	sk, pk := party.SigKeyGen(N, 2*F+1)
 	epk, evk, esks := party.EncKeyGen(N, F+1)
+	ctx, _ := context.WithCancel(context.Background())
 
-	var p []*party.HonestParty = make([]*party.HonestParty, N)
+	var p = make([]*party.HonestParty, N)
 	for i := uint32(0); i < N; i++ {
-		p[i] = party.NewHonestParty(N, F, i, addressList, pk, sk[i], epk, evk, esks[i])
+		p[i] = party.NewHonestParty(N, F, i, ipList, portList, pk, sk[i], epk, evk, esks[i])
 	}
 
 	for i := uint32(0); i < N; i++ {

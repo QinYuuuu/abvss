@@ -1,4 +1,4 @@
-package services
+package abvss
 
 import (
 	"errors"
@@ -8,7 +8,7 @@ import (
 
 func (vss *ABVSS) VerifyInit() {
 	vss.ABVSSV = &ABVSSV{
-		count: 0,
+		Count: 0,
 		ilist: make([]struct {
 			index int
 			lcm   []*big.Int
@@ -27,9 +27,9 @@ func (vss *ABVSS) VerifyLCM(lcm []*big.Int, index int) error {
 		lcm   []*big.Int
 	}{index, lcm}
 	vss.ilist = append(vss.ilist, tuple)
-	vss.count++
+	vss.Count++
 
-	if vss.count == vss.nodenum-vss.degree && !vss.done {
+	if vss.Count == vss.nodenum-vss.degree && !vss.done {
 		//log.Printf("node %v verify", vss.nodeid)
 		xlist := make([]*big.Int, vss.nodenum-vss.degree)
 		for i := 0; i < vss.degree+1; i++ {

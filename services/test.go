@@ -1,10 +1,12 @@
-package services
+package main
 
 import (
 	"crypto/elliptic"
 	"fmt"
 	"github.com/QinYuuuu/abvss/crypto/paillier"
 	"github.com/QinYuuuu/abvss/crypto/utils"
+	"github.com/QinYuuuu/abvss/internal/abvss"
+	"github.com/QinYuuuu/abvss/internal/osv"
 	"github.com/QinYuuuu/abvss/network"
 	"github.com/QinYuuuu/abvss/protobuf"
 	"log"
@@ -13,8 +15,8 @@ import (
 )
 
 type ABVSSNode struct {
-	*ABVSSService
-	*OSVService
+	*abvss.ABVSSService
+	*osv.OSVService
 	*network.Peer
 }
 
@@ -48,23 +50,23 @@ func TestVSS() {
 	}
 	nodes := make([]*ABVSSNode, n)
 	for i := 0; i < n; i++ {
-		abvss, err := NewVSS(0, i, n, f, batchszie, vnum, p)
-		osv := NewOSV(n, f, i)
+		abvss_instance, err := abvss.NewVSS(0, i, n, f, batchszie, vnum, p)
+		osv_instance := osv.NewOSV(n, f, i)
 		if err != nil {
 			log.Println("NewVSS err:", err)
 		}
-		abvss.ReceiverInit(sk[i])
-		abvss.VerifyInit()
+		abvss_instance.ReceiverInit(sk[i])
+		abvss_instance.VerifyInit()
 		peer, err := network.NewPeer(n, i, iplist)
 
 		if err != nil {
 			log.Println("NewPeer err:", err)
 		}
-		abvssservice := NewABVSSService(n)
-		abvssservice.ABVSS = abvss
+		abvssservice := abvss.NewABVSSService(n)
+		abvssservice.ABVSS = abvss_instance
 		protobuf.RegisterABVSSServer(peer.Server, abvssservice)
-		osvservice := NewOSVService(n)
-		osvservice.OSV = osv
+		osvservice := osv.NewOSVService(n)
+		osvservice.OSV = osv_instance
 		protobuf.RegisterOSVServer(peer.Server, osvservice)
 		go peer.Serve(false)
 		peer.Connect()
@@ -89,7 +91,7 @@ func TestVSS() {
 	for i := 0; i < n; i++ {
 		go func(i int) {
 			for {
-				if nodes[i].received {
+				if nodes[i].Received {
 					nodes[i].BroadcastLCM()
 					return
 				}
@@ -100,7 +102,7 @@ func TestVSS() {
 	for i := 0; i < n; i++ {
 		go func(i int) {
 			for {
-				if nodes[i].count == n-f {
+				if nodes[i].Count == n-f {
 					nodes[i].OSVService.Init()
 					return
 				}

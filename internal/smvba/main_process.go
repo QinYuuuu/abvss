@@ -3,6 +3,7 @@ package smvba
 import (
 	"bytes"
 	"context"
+	"github.com/QinYuuuu/abvss/internal/party"
 	"sync"
 
 	"github.com/QinYuuuu/abvss/pkg/core"

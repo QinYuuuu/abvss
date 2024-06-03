@@ -1,7 +1,7 @@
 package protocol
 
 import (
-	"github.com/QinYuuuu/abvss/services"
+	"github.com/QinYuuuu/abvss/internal/abvss"
 	"math/big"
 	"math/rand"
 
@@ -10,7 +10,7 @@ import (
 )
 
 type ABDKG struct {
-	abvss     []*services.ABVSS
+	abvss     []*abvss.ABVSS
 	index     int
 	degree    int
 	nodenum   int

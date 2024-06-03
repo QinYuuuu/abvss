@@ -1,14 +1,14 @@
 package pb //provable broadcast
 
 import (
-	"abvss/internal/party"
 	"bytes"
 	"context"
+	"github.com/QinYuuuu/abvss/internal/party"
 	"log"
 	"sync"
 
-	"github.com/QinYuuuu/avid-d/pkg/core"
-	"github.com/QinYuuuu/avid-d/pkg/protobuf"
+	"github.com/QinYuuuu/abvss/pkg/core"
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
 
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/sign/tbls"

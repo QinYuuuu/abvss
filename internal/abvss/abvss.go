@@ -1,4 +1,4 @@
-package services
+package abvss
 
 import (
 	"errors"
@@ -52,13 +52,13 @@ type ABVSSR struct {
 	gshares      []*big.Int
 	randombeacon *rand.Rand
 	r            [][]*big.Int
-	received     bool
+	Received     bool
 	complain     bool
 	qlist        map[int][]*big.Int
 }
 
 type ABVSSV struct {
-	count int
+	Count int
 	ilist []struct {
 		index int
 		lcm   []*big.Int

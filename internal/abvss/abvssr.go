@@ -1,4 +1,4 @@
-package services
+package abvss
 
 import (
 	"errors"
@@ -19,7 +19,7 @@ func (vss *ABVSS) ReceiverInit(sk paillier.PrivateKey) {
 		gshares:      make([]*big.Int, vss.vnum),
 		xi:           make([][]*big.Int, vss.nodenum),
 		zi:           make([][]*big.Int, vss.nodenum),
-		received:     false,
+		Received:     false,
 		randombeacon: rand.New(rand.NewSource(ReceiverRandSeed)),
 	}
 }
@@ -64,7 +64,7 @@ func (vss *ABVSS) ObtainShares(zi, xi []*big.Int, index int) error {
 			}
 			//vss.gshares[i] = xi[i]
 		}
-		vss.received = true
+		vss.Received = true
 	}
 	return nil
 }
@@ -95,7 +95,7 @@ func (vss *ABVSS) ConstructLCM() ([]*big.Int, error) {
 	return lcm, nil
 }
 
-func (vss *ABVSS) GetRecoverShares(sk SecretKey, index int, r [][]*big.Int) error {
+func (vss *ABVSS) GetRecoverShares(sk services.SecretKey, index int, r [][]*big.Int) error {
 	fj := make([]*big.Int, vss.batchsize)
 	for i := 0; i < vss.batchsize; i++ {
 		tmp, err := sk.Decrypt(vss.zi[index])

@@ -3,28 +3,24 @@ package core
 import (
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"github.com/QinYuuuu/abvss/pkg/utils"
+	"google.golang.org/protobuf/proto"
 	"io"
 	"log"
 	"net"
-	"strings"
-
-	"google.golang.org/protobuf/proto"
 )
 
 // MakeReceiveChannel returns a channel receiving messages
-func MakeReceiveChannel(address string) chan *protobuf.Message {
+func MakeReceiveChannel(port string) chan *protobuf.Message {
 	var addr *net.TCPAddr
 	var lis *net.TCPListener
 	var err1, err2 error
 	retry := true
 	//Retry to make listener
 	for retry {
-		port := strings.Split(address, ":")[1]
 		addr, err1 = net.ResolveTCPAddr("tcp4", ":"+port)
 		lis, err2 = net.ListenTCP("tcp4", addr)
 		if err1 != nil || err2 != nil {
-			log.Fatalln(err1)
-			log.Fatalln(err2)
+			log.Println("make listener falied and retry", err1, err2)
 			retry = true
 		} else {
 			retry = false
@@ -52,7 +48,7 @@ func MakeReceiveChannel(address string) chan *protobuf.Message {
 					buf := make([]byte, length)
 					_, err2 := io.ReadFull(conn, buf)
 					if err1 != nil || err2 != nil {
-						log.Fatalln("The receive channel has break down", err1, err2)
+						log.Println("The receive channel has break down", err1, err2)
 						continue
 					}
 					//Do Unmarshal
@@ -62,7 +58,7 @@ func MakeReceiveChannel(address string) chan *protobuf.Message {
 						log.Fatalln(err3)
 					}
 					//Push protobuf.Message to receivechannel
-					(channel) <- &m
+					channel <- &m
 				}
 
 			}(conn, receiveChannel)

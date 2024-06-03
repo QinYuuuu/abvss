@@ -2,10 +2,9 @@ package smvba
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"os"
+	"github.com/QinYuuuu/abvss/internal/party"
 	"sync"
 	"testing"
 
@@ -24,27 +23,22 @@ type Address struct {
 }
 
 func TestMainProcess(t *testing.T) {
-	filePath := "../../iplist.json"
-	data, _ := os.Open(filePath)
-	decoder := json.NewDecoder(data)
-	// 解析JSON数据
-	var addresses []Address
-	_ = decoder.Decode(&addresses)
-	fmt.Println(addresses)
-	// 提取地址到列表
-	var addressList []string
-	for _, addr := range addresses {
-		addressList = append(addressList, addr.Addr)
-	}
+	ipList := []string{"127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1",
+		"127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1",
+		"127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1",
+		"127.0.0.1"}
+	portList := []string{"8880", "8881", "8882", "8883", "8884", "8885", "8886", "8887", "8888", "8889",
+		"8870", "8871", "8872", "8873", "8874", "8875", "8876", "8877", "8878", "8879",
+		"8860", "8861", "8862", "8863", "8864", "8865", "8866", "8867", "8868", "8869", "8859"}
 
-	N := uint32(16)
-	F := uint32(5)
-	sk, pk := party2.SigKeyGen(N, 2*F+1)
-	epk, evk, esks := party2.EncKeyGen(N, F+1)
+	N := uint32(4)
+	F := uint32(1)
+	sk, pk := party.SigKeyGen(N, 2*F+1)
+	epk, evk, esks := party.EncKeyGen(N, F+1)
 
-	var p []*party2.HonestParty = make([]*party2.HonestParty, N)
+	var p = make([]*party.HonestParty, N)
 	for i := uint32(0); i < N; i++ {
-		p[i] = party2.NewHonestParty(N, F, i, addressList, pk, sk[i], epk, evk, esks[i])
+		p[i] = party.NewHonestParty(N, F, i, ipList, portList, pk, sk[i], epk, evk, esks[i])
 	}
 
 	for i := uint32(0); i < N; i++ {
@@ -59,10 +53,10 @@ func TestMainProcess(t *testing.T) {
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	result := make([][][]byte, testNum)
-
+	fmt.Println("s")
 	for k := 0; k < testNum; k++ {
 		ID := utils.IntToBytes(k)
-		sigshare := [][]byte{}
+		var sigshare [][]byte
 		var buf bytes.Buffer
 		buf.Write([]byte("Echo"))
 		buf.Write(ID)
@@ -116,7 +110,7 @@ func TestMainProcess(t *testing.T) {
 	}
 }
 
-func Q(p *party2.HonestParty, ID []byte, value []byte, validation []byte, hashVerifyMap *sync.Map, sigVerifyMap *sync.Map) error {
+func Q(p *party.HonestParty, ID []byte, value []byte, validation []byte, hashVerifyMap *sync.Map, sigVerifyMap *sync.Map) error {
 	var L protobuf.BLockSetValue //L={(j,h)}
 	proto.Unmarshal(value, &L)
 
