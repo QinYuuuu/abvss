@@ -16,6 +16,7 @@ type Peer struct {
 	Server *grpc.Server
 	Conns  []*grpc.ClientConn
 	ipList []string // Node IP Address List
+	Ready  bool
 }
 
 func NewPeer(n, id int, iplist []string) (*Peer, error) {
@@ -28,6 +29,7 @@ func NewPeer(n, id int, iplist []string) (*Peer, error) {
 		Conns:  make([]*grpc.ClientConn, n),
 		ipList: iplist,
 		Server: grpc.NewServer(),
+		Ready:  false,
 	}, nil
 }
 
