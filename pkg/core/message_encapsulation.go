@@ -36,7 +36,14 @@ func Encapsulation(messageType string, ID []byte, sender uint32, payloadMessage 
 		data, err = proto.Marshal((payloadMessage).(*protobuf.Dec))
 	case "Help":
 		data, err = proto.Marshal((payloadMessage).(*protobuf.Help))
-
+	case "Shares":
+		data, err = proto.Marshal((payloadMessage).(*protobuf.SharesMsg))
+	case "LCM":
+		data, err = proto.Marshal((payloadMessage).(*protobuf.LCMMsg))
+	case "SK":
+		data, err = proto.Marshal((payloadMessage).(*protobuf.SKMsg))
+	case "OSV":
+		data, err = proto.Marshal((payloadMessage).(*protobuf.OSVMsg))
 	}
 
 	if err != nil {
@@ -99,6 +106,22 @@ func Decapsulation(messageType string, m *protobuf.Message) any {
 		return &payloadMessage
 	case "Dec":
 		var payloadMessage protobuf.Dec
+		proto.Unmarshal(m.Data, &payloadMessage)
+		return &payloadMessage
+	case "Shares":
+		var payloadMessage protobuf.SharesMsg
+		proto.Unmarshal(m.Data, &payloadMessage)
+		return &payloadMessage
+	case "LCM":
+		var payloadMessage protobuf.LCMMsg
+		proto.Unmarshal(m.Data, &payloadMessage)
+		return &payloadMessage
+	case "SK":
+		var payloadMessage protobuf.SKMsg
+		proto.Unmarshal(m.Data, &payloadMessage)
+		return &payloadMessage
+	case "OSV":
+		var payloadMessage protobuf.OSVMsg
 		proto.Unmarshal(m.Data, &payloadMessage)
 		return &payloadMessage
 	default:

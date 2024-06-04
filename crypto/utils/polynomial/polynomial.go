@@ -1,10 +1,10 @@
 package polynomial
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"math/big"
-	"math/rand"
 )
 
 type Polynomial struct {
@@ -142,16 +142,16 @@ func (poly Polynomial) IsZero() bool {
 
 // Rand sets the polynomial coefficients to a pseudo-random number in [0, n)
 // WARNING: Rand makes sure that the highest coefficient is not zero
-func (poly *Polynomial) Rand(rand *rand.Rand, mod *big.Int) {
+func (poly *Polynomial) Rand(mod *big.Int) {
 	for i := range poly.coeff {
-		poly.coeff[i].Rand(rand, mod)
+		poly.coeff[i], _ = rand.Int(rand.Reader, mod)
 	}
 
 	highest := len(poly.coeff) - 1
 
 	for {
 		if poly.coeff[highest].Int64() == 0 {
-			poly.coeff[highest].Rand(rand, mod)
+			poly.coeff[highest], _ = rand.Int(rand.Reader, mod)
 		} else {
 			break
 		}
@@ -181,13 +181,13 @@ func (poly *Polynomial) GrowCapTo(cap int) {
 
 // NewRand returns a randomized polynomial with specified degree
 // coefficients are pesudo-random numbers in [0, n)
-func NewRand(degree int, rand *rand.Rand, n *big.Int) (Polynomial, error) {
+func NewRand(degree int, n *big.Int) (Polynomial, error) {
 	p, e := New(degree)
 	if e != nil {
 		return Polynomial{}, e
 	}
 
-	p.Rand(rand, n)
+	p.Rand(n)
 
 	return p, nil
 }

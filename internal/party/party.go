@@ -2,6 +2,8 @@ package party
 
 import (
 	"errors"
+	"log"
+	"net"
 	"sync"
 
 	"github.com/QinYuuuu/abvss/pkg/core"
@@ -26,6 +28,8 @@ type HonestParty struct {
 	portList          []string
 	sendChannels      []chan *protobuf.Message
 	dispatcheChannels *sync.Map
+	lis               *net.TCPListener
+	conns             []*net.TCPConn
 
 	SigPK *share.PubPoly  //tss pk
 	SigSK *share.PriShare //tss sk
@@ -44,6 +48,7 @@ func NewHonestParty(N uint32, F uint32, pid uint32, ipList, portList []string, s
 		ipList:       ipList,
 		portList:     portList,
 		sendChannels: make([]chan *protobuf.Message, N),
+		conns:        make([]*net.TCPConn, N),
 
 		SigPK: sigPK,
 		SigSK: sigSK,
@@ -56,16 +61,31 @@ func NewHonestParty(N uint32, F uint32, pid uint32, ipList, portList []string, s
 	return &p
 }
 
+func (p *HonestParty) Close() {
+	for _, conn := range p.conns {
+		err := conn.Close()
+		if err != nil {
+			log.Println("close honest party conn error:", err)
+		}
+	}
+	err := p.lis.Close()
+	if err != nil {
+		log.Println("close honest party lis error:", err)
+	}
+}
+
 // InitReceiveChannel setup the listener and Init the receiveChannel
 func (p *HonestParty) InitReceiveChannel() error {
-	p.dispatcheChannels = core.MakeDispatcheChannels(core.MakeReceiveChannel(p.portList[p.PID]), p.N)
+	lis, receivechan := core.MakeReceiveChannel(p.portList[p.PID])
+	p.lis = lis
+	p.dispatcheChannels = core.MakeDispatcheChannels(receivechan, p.N)
 	return nil
 }
 
 // InitSendChannel setup the sender and Init the sendChannel, please run this after initializing all party's receiveChannel
 func (p *HonestParty) InitSendChannel() error {
 	for i := uint32(0); i < p.N; i++ {
-		p.sendChannels[i] = core.MakeSendChannel(p.ipList[i], p.portList[i])
+		p.conns[i], p.sendChannels[i] = core.MakeSendChannel(p.ipList[i], p.portList[i])
 	}
 	return nil
 }

@@ -2,24 +2,23 @@ package abvss
 
 import (
 	"errors"
-	"github.com/QinYuuuu/abvss/crypto/paillier"
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/group/curve25519"
 	"math/big"
 	"math/rand"
 
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
 )
 
-const RAND_SEED = 1
-
 type ABVSS struct {
-	index     int
-	nodeid    int
-	degree    int
-	nodenum   int
-	p         *big.Int
-	randState *rand.Rand
-	batchsize int
-	vnum      int
+	instanceid int
+	nodeid     int
+	degree     int
+	nodenum    int
+	p          *big.Int
+	batchsize  int
+	vnum       int
+	Curve      kyber.Group
 
 	*ABVSSD
 	*ABVSSR
@@ -30,11 +29,11 @@ func (vss *ABVSS) GetNodeID() int {
 	return vss.nodeid
 }
 func (vss *ABVSS) GetInstanceID() int {
-	return vss.index
+	return vss.instanceid
 }
 
 type ABVSSD struct {
-	pk     []paillier.PublicKey
+	pk     []kyber.Point
 	secret []*big.Int
 	polyf  []polynomial.Polynomial
 	polyg  []polynomial.Polynomial
@@ -42,12 +41,12 @@ type ABVSSD struct {
 }
 
 type ABVSSR struct {
-	sk paillier.PrivateKey
+	sk kyber.Scalar
 
-	//zi           [][]Cipher
-	//xi           [][]Cipher
-	zi           [][]*big.Int
-	xi           [][]*big.Int
+	zix          [][]kyber.Point
+	ziy          [][]kyber.Point
+	xix          [][]kyber.Point
+	xiy          [][]kyber.Point
 	fshares      []*big.Int
 	gshares      []*big.Int
 	randombeacon *rand.Rand
@@ -67,21 +66,29 @@ type ABVSSV struct {
 	done  bool
 }
 
-func NewVSS(index, nodeid, nodenum, degree, batchsize, vnum int, p *big.Int) (*ABVSS, error) {
+func NewVSS(index, nodeid, nodenum, degree, batchsize, vnum int, p *big.Int, flag int) (*ABVSS, error) {
 	if nodenum < 3*degree+1 {
 		return nil, errors.New("must satisfy n >= 3f+1")
 	}
 	if batchsize <= 0 || vnum <= 0 {
 		return nil, errors.New("batchsize/vnum must >= 1")
 	}
+	var curve kyber.Group
+	if flag == 1 {
+		curve = curve25519.NewBlakeSHA256Curve25519(true)
+	}
 	return &ABVSS{
-		index:     index,
-		nodeid:    nodeid,
-		degree:    degree,
-		nodenum:   nodenum,
-		p:         p,
-		batchsize: batchsize,
-		vnum:      vnum,
-		randState: rand.New(rand.NewSource(RAND_SEED)),
+		instanceid: index,
+		nodeid:     nodeid,
+		degree:     degree,
+		nodenum:    nodenum,
+		p:          p,
+		batchsize:  batchsize,
+		vnum:       vnum,
+		Curve:      curve,
 	}, nil
+}
+
+func (vss *ABVSS) GetN() int {
+	return vss.nodenum
 }

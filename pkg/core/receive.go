@@ -10,7 +10,7 @@ import (
 )
 
 // MakeReceiveChannel returns a channel receiving messages
-func MakeReceiveChannel(port string) chan *protobuf.Message {
+func MakeReceiveChannel(port string) (*net.TCPListener, chan *protobuf.Message) {
 	var addr *net.TCPAddr
 	var lis *net.TCPListener
 	var err1, err2 error
@@ -26,6 +26,7 @@ func MakeReceiveChannel(port string) chan *protobuf.Message {
 			retry = false
 		}
 	}
+	log.Printf("listen on port: %v", port)
 	//Make the receive channel and the handle func
 	var conn *net.TCPConn
 	var err3 error
@@ -34,10 +35,11 @@ func MakeReceiveChannel(port string) chan *protobuf.Message {
 		for {
 			//The handle func run forever
 			conn, err3 = lis.AcceptTCP()
-			conn.SetKeepAlive(true)
 			if err3 != nil {
 				log.Fatalln(err3)
 			}
+			conn.SetKeepAlive(true)
+
 			//Once connect to a node, make a sub-handle func to handle this connection
 			go func(conn *net.TCPConn, channel chan *protobuf.Message) {
 				for {
@@ -64,5 +66,5 @@ func MakeReceiveChannel(port string) chan *protobuf.Message {
 			}(conn, receiveChannel)
 		}
 	}()
-	return receiveChannel
+	return lis, receiveChannel
 }

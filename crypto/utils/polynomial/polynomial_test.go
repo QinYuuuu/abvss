@@ -2,15 +2,10 @@ package polynomial
 
 import (
 	"math/big"
-	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-const RAND_SEED = 1
-
-var randomness = rand.New(rand.NewSource(RAND_SEED))
 
 func TestNew(t *testing.T) {
 	ZERO := big.NewInt(0)
@@ -51,8 +46,7 @@ func TestNewRand(t *testing.T) {
 	var degree = 100
 	var n = big.NewInt(1000)
 
-	r := rand.New(rand.NewSource(RAND_SEED))
-	poly, err := NewRand(degree, r, n)
+	poly, err := NewRand(degree, n)
 	assert.Nil(t, err, "err in NewRand")
 
 	assert.Equal(t, degree+1, len(poly.coeff), "coeff len")
@@ -74,10 +68,10 @@ func TestPolynomial_Add(t *testing.T) {
 	var degree = 10
 	var n = big.NewInt(1000)
 
-	poly1, err := NewRand(degree, randomness, n)
+	poly1, err := NewRand(degree, n)
 	assert.Nil(t, err, "err in NewRand")
 
-	poly2, err := NewRand(degree, randomness, n)
+	poly2, err := NewRand(degree, n)
 	assert.Nil(t, err, "err in NewRand")
 
 	result := NewEmpty()

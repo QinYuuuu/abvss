@@ -3,7 +3,6 @@ package smvba
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/QinYuuuu/abvss/internal/party"
 	"sync"
 	"testing"
@@ -48,12 +47,15 @@ func TestMainProcess(t *testing.T) {
 	for i := uint32(0); i < N; i++ {
 		p[i].InitSendChannel()
 	}
-
+	defer func() {
+		for i := range p {
+			p[i].Close()
+		}
+	}()
 	testNum := 1
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	result := make([][][]byte, testNum)
-	fmt.Println("s")
 	for k := 0; k < testNum; k++ {
 		ID := utils.IntToBytes(k)
 		var sigshare [][]byte

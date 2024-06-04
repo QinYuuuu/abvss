@@ -1,6 +1,42 @@
 syntax = "proto3";
 
-option go_package = "/protobuf";
+option go_package = ".;protobuf";
+
+// The Asynchronous Batched VSS service definition
+service ABVSS {
+  rpc ReceiveShares(SharesMsg) returns (AckMsg){}
+  rpc ReceiveLCM(LCMMsg) returns (AckMsg){}
+  rpc ReconstructLCM(SKMsg) returns (AckMsg){}
+  rpc ReceiveRecShares(SKMsg) returns (AckMsg) {}
+}
+
+service ABDKG {
+  rpc ReceiveShares(SharesMsg) returns (AckMsg){}
+  rpc ReceiveLCM(LCMMsg) returns (AckMsg){}
+  rpc ReconstructLCM(SKMsg) returns (AckMsg){}
+  rpc ReceiveRecShares(SKMsg) returns (AckMsg) {}
+  rpc ReceiveOSV(OSVMsg)returns (AckMsg){}
+}
+
+// The one-sided voting service definition
+service OSV {
+  rpc Receive(OSVMsg)returns (AckMsg){}
+}
+service Conn {
+  rpc Receive(TestHelloMessage) returns(TestResMessage){}
+}
+
+message TestHelloMessage {
+  int64 fromID = 1;
+  int64 destID = 2;
+  string content = 3;
+}
+
+message TestResMessage {
+  int64 fromID = 1;
+  int64 destID = 2;
+  string content = 3;
+}
 
 message Message {
   string type = 1;// instance id
@@ -8,7 +44,6 @@ message Message {
   uint32 sender = 3;
   bytes data = 4;
 }
-
 
 // provable broadcast
 message Value{
@@ -86,3 +121,38 @@ message Dec{
   uint32 id = 1;
   bytes decShare = 2;
 }
+
+//ABVSS
+message SharesMsg{
+  int64 instanceID = 1;
+  int64 fromID = 2;
+  int64 index = 3;
+  repeated bytes zix = 4;
+  repeated bytes ziy = 5;
+  repeated bytes xix = 6;
+  repeated bytes xiy = 7;
+}
+
+message LCMMsg{
+  int64 instanceID = 1;
+  int64 fromID = 2;
+  int64 destID = 3;
+  repeated bytes lcmi = 4;
+}
+
+message SKMsg{
+  int64 instanceID = 1;
+  int64 fromID = 2;
+  int64 destID = 3;
+  bytes sk = 4;
+}
+
+//one-sided voting
+message OSVMsg{
+  int64 instanceID = 1;
+  int64 fromID = 2;
+  int64 destID = 3;
+  string mtype = 4;
+}
+
+message AckMsg{}

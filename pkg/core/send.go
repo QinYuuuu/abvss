@@ -13,7 +13,7 @@ import (
 var MAXMESSAGE = 1024
 
 // MakeSendChannel returns a channel to send messages to hostIP
-func MakeSendChannel(hostIP string, hostPort string) chan *protobuf.Message {
+func MakeSendChannel(hostIP string, hostPort string) (*net.TCPConn, chan *protobuf.Message) {
 	var addr *net.TCPAddr
 	var conn *net.TCPConn
 	var err1, err2 error
@@ -52,5 +52,5 @@ func MakeSendChannel(hostIP string, hostPort string) chan *protobuf.Message {
 		}
 	}(conn, sendChannel)
 
-	return sendChannel
+	return conn, sendChannel
 }

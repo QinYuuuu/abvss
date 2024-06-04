@@ -2,8 +2,8 @@ package abvss
 
 import (
 	"context"
-	"github.com/QinYuuuu/abvss/crypto/paillier"
-	"github.com/QinYuuuu/abvss/protobuf"
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
+	"go.dedis.ch/kyber/v3"
 	"log"
 	"math/big"
 )
@@ -21,22 +21,32 @@ func NewABVSSService(n int) *ABVSSService {
 }
 
 func (vss *ABVSSService) ReceiveShares(ctx context.Context, shares *protobuf.SharesMsg) (*protobuf.AckMsg, error) {
-	ziBytes := shares.GetZi()
-	xiBytes := shares.GetXi()
-	zi := make([]*big.Int, len(ziBytes))
-	xi := make([]*big.Int, len(xiBytes))
-	for i := range ziBytes {
-		zi[i] = new(big.Int).SetBytes(ziBytes[i])
+	zixBytes := shares.GetZix()
+	ziyBytes := shares.GetZiy()
+	xixBytes := shares.GetXix()
+	xiyBytes := shares.GetXiy()
+	zix := make([]kyber.Point, len(zixBytes))
+	ziy := make([]kyber.Point, len(ziyBytes))
+	xix := make([]kyber.Point, len(xixBytes))
+	xiy := make([]kyber.Point, len(xiyBytes))
+	for i := range zixBytes {
+		zix[i] = vss.Curve.Point()
+		ziy[i] = vss.Curve.Point()
+		_ = zix[i].UnmarshalBinary(zixBytes[i])
+		_ = ziy[i].UnmarshalBinary(ziyBytes[i])
 	}
-	for i := range xiBytes {
-		xi[i] = new(big.Int).SetBytes(xiBytes[i])
+	for i := range xixBytes {
+		xix[i] = vss.Curve.Point()
+		xiy[i] = vss.Curve.Point()
+		_ = xix[i].UnmarshalBinary(xixBytes[i])
+		_ = xiy[i].UnmarshalBinary(xiyBytes[i])
 	}
-	err := vss.ObtainShares(zi, xi, int(shares.Index))
+	err := vss.ObtainShares(zix, ziy, xix, xiy, int(shares.Index))
 	if err != nil {
 		log.Printf("node %v receive shares from node %v error: %v", vss.GetNodeID(), shares.GetFromID(), err)
 		return &protobuf.AckMsg{}, nil
 	}
-	//log.Printf("node %v receive shares %v from node %v", vss.GetNodeID(), shares.GetIndex(), shares.GetFromID())
+	log.Printf("node %v receive shares %v from node %v", vss.GetNodeID(), shares.GetIndex(), shares.GetFromID())
 	return &protobuf.AckMsg{}, nil
 }
 
@@ -71,7 +81,7 @@ func (vss *ABVSSService) ReceiveRecShares(ctx context.Context, sk *protobuf.SKMs
 	return &protobuf.AckMsg{}, nil
 }
 
-func (vss *ABVSSService) SecretSharing(pk []paillier.PublicKey, s []*big.Int) {
+func (vss *ABVSSService) SecretSharing(pk []kyber.Point, s []*big.Int) {
 	err := vss.DistributorInit(pk, s)
 	if err != nil {
 		log.Printf("init error: %v", err)
@@ -83,31 +93,37 @@ func (vss *ABVSSService) SecretSharing(pk []paillier.PublicKey, s []*big.Int) {
 	}
 	for i := 0; i < vss.nodenum; i++ {
 		go func(i int) {
-			zi, xi, err := vss.GenerateShares(i)
+			zix, ziy, xix, xiy, err := vss.GenerateShares(i)
 			if err != nil {
 				log.Printf("generate shares error: %v", err)
 			}
 
-			ziBytes := make([][]byte, len(zi))
-			xiBytes := make([][]byte, len(xi))
-			for j := range ziBytes {
-				ziBytes[j] = zi[j].Bytes()
+			zixBytes := make([][]byte, len(zix))
+			ziyBytes := make([][]byte, len(ziy))
+			xixBytes := make([][]byte, len(xix))
+			xiyBytes := make([][]byte, len(xiy))
+			for j := range zix {
+				zixBytes[j], _ = zix[j].MarshalBinary()
+				ziyBytes[j], _ = ziy[j].MarshalBinary()
 			}
-			for j := range xiBytes {
-				xiBytes[j] = xi[j].Bytes()
+			for j := range xix {
+				xixBytes[j], _ = xix[j].MarshalBinary()
+				xiyBytes[j], _ = xiy[j].MarshalBinary()
 			}
 			sharesmsg := &protobuf.SharesMsg{
 				FromID: int64(vss.nodeid),
 				Index:  int64(i),
-				Zi:     ziBytes,
-				Xi:     xiBytes,
+				Zix:    zixBytes,
+				Ziy:    ziyBytes,
+				Xix:    xixBytes,
+				Xiy:    xiyBytes,
 			}
 
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			for j := 0; j < vss.nodenum; j++ {
 				if j == vss.nodeid {
-					err := vss.ObtainShares(zi, xi, i)
+					err := vss.ObtainShares(zix, ziy, xix, xiy, i)
 					if err != nil {
 						log.Printf("obtain shares error: %v", err)
 					}

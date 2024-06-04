@@ -2,7 +2,8 @@ package abvss
 
 import (
 	"errors"
-	"github.com/QinYuuuu/abvss/crypto/paillier"
+	"github.com/QinYuuuu/abvss/crypto/elgamal"
+	"go.dedis.ch/kyber/v3"
 	"math/big"
 	"math/rand"
 
@@ -12,33 +13,37 @@ import (
 
 const ReceiverRandSeed = 10
 
-func (vss *ABVSS) ReceiverInit(sk paillier.PrivateKey) {
+func (vss *ABVSS) ReceiverInit(sk kyber.Scalar) {
 	vss.ABVSSR = &ABVSSR{
 		sk:           sk,
 		fshares:      make([]*big.Int, vss.batchsize),
 		gshares:      make([]*big.Int, vss.vnum),
-		xi:           make([][]*big.Int, vss.nodenum),
-		zi:           make([][]*big.Int, vss.nodenum),
+		xix:          make([][]kyber.Point, vss.nodenum),
+		xiy:          make([][]kyber.Point, vss.nodenum),
+		zix:          make([][]kyber.Point, vss.nodenum),
+		ziy:          make([][]kyber.Point, vss.nodenum),
 		Received:     false,
 		randombeacon: rand.New(rand.NewSource(ReceiverRandSeed)),
 	}
 }
 
-func (vss *ABVSS) ObtainShares(zi, xi []*big.Int, index int) error {
+func (vss *ABVSS) ObtainShares(zix, ziy, xix, xiy []kyber.Point, index int) error {
 	if vss.ABVSSR == nil {
 		return errors.New("not a receiver")
 	}
-	if len(zi) != vss.batchsize {
+	if len(zix) != vss.batchsize || len(ziy) != vss.batchsize {
 		return errors.New("insufficient zi")
 	}
-	if len(xi) != vss.vnum {
+	if len(xix) != vss.vnum || len(xix) != vss.vnum {
 		return errors.New("insufficient xi")
 	}
-	vss.zi[index] = zi
-	vss.xi[index] = xi
-	if index == vss.index {
+	vss.zix[index] = zix
+	vss.ziy[index] = ziy
+	vss.xix[index] = xix
+	vss.xiy[index] = xiy
+	if index == vss.nodeid {
 		for i := 0; i < vss.batchsize; i++ {
-			tmp, err := vss.sk.Decrypt(zi[i])
+			tmp, err := elgamal.Decrypt(vss.Curve, vss.sk, zix[i], ziy[i])
 
 			if err != nil {
 				/*
@@ -46,13 +51,13 @@ func (vss *ABVSS) ObtainShares(zi, xi []*big.Int, index int) error {
 					return errors.Join(errors.New("decrypt zi failed"), err)*/
 				vss.fshares[i] = utils.RandomNum(vss.p)
 			} else {
-				vss.fshares[i] = tmp
+				vss.fshares[i] = new(big.Int).SetBytes(tmp)
 			}
 			//vss.fshares[i] = zi[i]
 		}
 		for i := 0; i < vss.vnum; i++ {
 
-			tmp, err := vss.sk.Decrypt(xi[i])
+			tmp, err := elgamal.Decrypt(vss.Curve, vss.sk, xix[i], xiy[i])
 
 			if err != nil {
 				/*
@@ -60,7 +65,7 @@ func (vss *ABVSS) ObtainShares(zi, xi []*big.Int, index int) error {
 					return errors.Join(errors.New("decrypt xi failed"), err)*/
 				vss.gshares[i] = utils.RandomNum(vss.p)
 			} else {
-				vss.gshares[i] = tmp
+				vss.gshares[i] = new(big.Int).SetBytes(tmp)
 			}
 			//vss.gshares[i] = xi[i]
 		}
@@ -95,22 +100,22 @@ func (vss *ABVSS) ConstructLCM() ([]*big.Int, error) {
 	return lcm, nil
 }
 
-func (vss *ABVSS) GetRecoverShares(sk services.SecretKey, index int, r [][]*big.Int) error {
+func (vss *ABVSS) GetRecoverShares(sk kyber.Scalar, index int, r [][]*big.Int) error {
 	fj := make([]*big.Int, vss.batchsize)
 	for i := 0; i < vss.batchsize; i++ {
-		tmp, err := sk.Decrypt(vss.zi[index])
+		tmp, err := elgamal.Decrypt(vss.Curve, sk, vss.zix[index][i], vss.ziy[index][i])
 		if err != nil {
 			return err
 		}
-		fj[i] = tmp
+		fj[i] = new(big.Int).SetBytes(tmp)
 	}
 	gj := make([]*big.Int, vss.vnum)
 	for i := 0; i < vss.vnum; i++ {
-		tmp, err := sk.Decrypt(vss.xi[index])
+		tmp, err := elgamal.Decrypt(vss.Curve, sk, vss.xix[index][i], vss.xiy[index][i])
 		if err != nil {
 			return err
 		}
-		fj[i] = tmp
+		fj[i] = new(big.Int).SetBytes(tmp)
 	}
 	lcm := make([]*big.Int, vss.vnum)
 	for i := 0; i < vss.vnum; i++ {
@@ -151,7 +156,7 @@ func (vss *ABVSS) ShareRecovery() error {
 		if err != nil {
 			return err
 		}
-		vss.fshares[i] = f.EvalMod(new(big.Int).SetInt64(int64(vss.index)), vss.p)
+		vss.fshares[i] = f.EvalMod(new(big.Int).SetInt64(int64(vss.nodeid)), vss.p)
 	}
 	return nil
 }

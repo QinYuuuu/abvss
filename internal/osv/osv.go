@@ -9,21 +9,21 @@ const Echo string = "E"
 const Vote string = "V"
 
 type Message struct {
-	fromID int
-	destID int
-	mtype  string
+	FromID int
+	DestID int
+	Mtype  string
 }
 
 func (m Message) Dest() int {
-	return m.destID
+	return m.DestID
 }
 
 func (m Message) From() int {
-	return m.fromID
+	return m.FromID
 }
 
 func (m Message) Type() string {
-	return m.mtype
+	return m.Mtype
 }
 
 type OSV struct {
@@ -56,13 +56,13 @@ func (osv *OSV) Init() []Message {
 	if osv.acquired {
 		log.Printf("node has acquired")
 	}
-	log.Printf("node %v osv init", osv.id)
+	//log.Printf("node %v osv init", osv.id)
 	var msgs []Message
 	for i := 0; i < osv.n; i++ {
 		msg := Message{}
-		msg.fromID = osv.id
-		msg.destID = i
-		msg.mtype = Echo
+		msg.FromID = osv.id
+		msg.DestID = i
+		msg.Mtype = Echo
 		if i == osv.id {
 			newmsgs := osv.Loop(msg)
 			msgs = append(msgs, newmsgs...)
@@ -110,30 +110,30 @@ func (osv *OSV) Loop(m Message) []Message {
 
 func (osv *OSV) Recv(m Message) ([]Message, error) {
 	var msgs []Message
-	if m.destID != osv.id {
+	if m.DestID != osv.id {
 		return nil, errors.New("wrong destination id")
 	}
-	if m.mtype == Echo {
+	if m.Mtype == Echo {
 		//osv.handleEcho(m)
 		//log.Printf("[node %v] received ECHO from node %v", osv.id, m.fromID)
 		osv.echosNum += 1
 	}
-	if m.mtype == Vote {
+	if m.Mtype == Vote {
 		//osv.handleVote(m)
-		if osv.nVotes[m.fromID] {
+		if osv.nVotes[m.FromID] {
 			//log.Printf("node %v has already voted", m.fromID)
 			return nil, nil
 		}
 		//log.Printf("[node %v] received VOTE from node %v", osv.id, m.fromID)
 		osv.votesNum += 1
-		osv.nVotes[m.fromID] = true
+		osv.nVotes[m.FromID] = true
 	}
 	if osv.echosNum >= osv.n-osv.t && !osv.voted {
 		for i := 0; i < osv.n; i++ {
 			msg := Message{}
-			msg.fromID = osv.id
-			msg.destID = i
-			msg.mtype = Vote
+			msg.FromID = osv.id
+			msg.DestID = i
+			msg.Mtype = Vote
 			if i == osv.id {
 				newmsgs := osv.Loop(msg)
 				msgs = append(msgs, newmsgs...)
@@ -147,9 +147,9 @@ func (osv *OSV) Recv(m Message) ([]Message, error) {
 	if osv.votesNum >= osv.t+1 && !osv.voted {
 		for i := 0; i < osv.n; i++ {
 			msg := Message{}
-			msg.fromID = osv.id
-			msg.destID = i
-			msg.mtype = Vote
+			msg.FromID = osv.id
+			msg.DestID = i
+			msg.Mtype = Vote
 			if i == osv.id {
 				newmsgs := osv.Loop(msg)
 				msgs = append(msgs, newmsgs...)

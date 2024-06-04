@@ -2,7 +2,7 @@ package network
 
 import (
 	"errors"
-	"github.com/QinYuuuu/abvss/protobuf"
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

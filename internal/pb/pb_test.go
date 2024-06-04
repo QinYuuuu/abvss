@@ -39,7 +39,11 @@ func TestPb(t *testing.T) {
 	for i := uint32(0); i < N; i++ {
 		p[i].InitSendChannel()
 	}
-
+	defer func() {
+		for i := range p {
+			p[i].Close()
+		}
+	}()
 	value := make([]byte, 10)
 	validation := make([]byte, 1)
 	ID := []byte{1, 2}
@@ -64,6 +68,5 @@ func TestPb(t *testing.T) {
 	for i := uint32(0); i < N; i++ {
 		go Receiver(ctx, p[i], 0, ID, nil, nil, nil)
 	}
-
 	wg.Wait()
 }

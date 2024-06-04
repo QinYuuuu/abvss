@@ -3,7 +3,7 @@ package network
 import (
 	"context"
 	"fmt"
-	"github.com/QinYuuuu/abvss/protobuf"
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"testing"
 	"time"
 )

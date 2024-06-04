@@ -2,7 +2,7 @@ package osv
 
 import (
 	"context"
-	"github.com/QinYuuuu/abvss/protobuf"
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"log"
 )
 
@@ -24,11 +24,11 @@ func (s *OSVService) Init() {
 	defer cancel()
 	for _, msg := range msgs {
 		protonewmsg := &protobuf.OSVMsg{
-			FromID: int64(msg.fromID),
-			DestID: int64(msg.destID),
-			Mtype:  msg.mtype,
+			FromID: int64(msg.FromID),
+			DestID: int64(msg.DestID),
+			Mtype:  msg.Mtype,
 		}
-		_, err := s.Clients[msg.destID].Receive(ctx, protonewmsg)
+		_, err := s.Clients[msg.DestID].Receive(ctx, protonewmsg)
 		if err != nil {
 			log.Printf("node %v init err: %v", s.id, err)
 		}
@@ -37,9 +37,9 @@ func (s *OSVService) Init() {
 
 func (s *OSVService) Receive(ctx context.Context, osvmsg *protobuf.OSVMsg) (*protobuf.AckMsg, error) {
 	msg := Message{
-		fromID: int(osvmsg.GetFromID()),
-		destID: int(osvmsg.GetDestID()),
-		mtype:  osvmsg.GetMtype(),
+		FromID: int(osvmsg.GetFromID()),
+		DestID: int(osvmsg.GetDestID()),
+		Mtype:  osvmsg.GetMtype(),
 	}
 	recvmsgs, err := s.Recv(msg)
 	if err != nil {
@@ -50,11 +50,11 @@ func (s *OSVService) Receive(ctx context.Context, osvmsg *protobuf.OSVMsg) (*pro
 	defer cancel()
 	for _, newmsg := range recvmsgs {
 		protonewmsg := &protobuf.OSVMsg{
-			FromID: int64(newmsg.fromID),
-			DestID: int64(newmsg.destID),
-			Mtype:  newmsg.mtype,
+			FromID: int64(newmsg.FromID),
+			DestID: int64(newmsg.DestID),
+			Mtype:  newmsg.Mtype,
 		}
-		_, err := s.Clients[newmsg.destID].Receive(ctx, protonewmsg)
+		_, err := s.Clients[newmsg.DestID].Receive(ctx, protonewmsg)
 		if err != nil {
 			log.Printf("node %v receive msg err: %v", s.id, err)
 		}

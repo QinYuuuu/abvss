@@ -1,4 +1,4 @@
-package protocol
+package abdkg
 
 import (
 	"github.com/QinYuuuu/abvss/internal/abvss"
