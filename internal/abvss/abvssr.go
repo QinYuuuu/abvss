@@ -27,6 +27,10 @@ func (vss *ABVSS) ReceiverInit(sk kyber.Scalar) {
 	}
 }
 
+func (vss *ABVSS) GetShares() ([]*big.Int, []*big.Int) {
+	return vss.fshares, vss.gshares
+}
+
 func (vss *ABVSS) ObtainShares(zix, ziy, xix, xiy []kyber.Point, index int) error {
 	if vss.ABVSSR == nil {
 		return errors.New("not a receiver")
