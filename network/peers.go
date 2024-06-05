@@ -136,7 +136,7 @@ func (p *Peer) Connect() {
 		}
 		conn := p.Conns[i]
 		p.SendChannels[i] = make(chan *protobuf.Message, 2048)
-		go func(conn *net.TCPConn, channel chan *protobuf.Message) {
+		go func(conn *net.TCPConn, channel chan *protobuf.Message, i int) {
 			for {
 				//Pop protobuf.Message form sendchannel
 				m := <-(channel)
@@ -154,7 +154,7 @@ func (p *Peer) Connect() {
 					log.Fatalln("The send channel has break down!", err2, err3)
 				}
 			}
-		}(conn, p.SendChannels[i])
+		}(conn, p.SendChannels[i], i)
 	}
 	//fmt.Println(p.Conns)
 }
