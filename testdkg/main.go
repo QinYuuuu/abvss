@@ -115,7 +115,8 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	abvss_instance := make([]*abvss.ABVSS, n)
 	osv_instance := make([]*osv.OSV, n)
 	for i := 0; i < n; i++ {
-		abvss_instance[i], err = abvss.NewVSS(i, id, n, f, batchsize, vnum, pint, 1)
+		var mutex sync.Mutex
+		abvss_instance[i], err = abvss.NewVSS(i, id, n, f, batchsize, vnum, pint, 1, &mutex)
 		if err != nil {
 			log.Println("NewVSS err:", err)
 		}

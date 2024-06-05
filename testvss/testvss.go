@@ -39,8 +39,8 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 	iplist, _, _ := config.LoadIPList_Local(n, addr)
 	//iplist, _, _ := GenerateIplist(n)
 	node := new(ABVSSNode)
-
-	abvss_instance, err := abvss.NewVSS(0, id, n, f, batchsize, vnum, p, 1)
+	var mutex sync.Mutex
+	abvss_instance, err := abvss.NewVSS(0, id, n, f, batchsize, vnum, p, 1, &mutex)
 	osv_instance := osv.NewOSV(n, f, id)
 	if err != nil {
 		log.Println("NewVSS err:", err)
