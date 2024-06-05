@@ -92,7 +92,7 @@ func test(n, batchsize, f, id int, str string) {
 		signature[k], _ = tbls.Recover(pairing.NewSuiteBn256(), pk, sm, sigshare, 2*f+1, n)
 	}
 	//fmt.Println(len(signature[0]))
-	TestDKG(id, n, f, batchsize, vnum, p, pk1, sk1[id], pk, sk[id], epk, evk, esks[id], testNum, signature)
+	TestDKG(id, n, f, batchsize, vnum, p, pk1, sk1[id], pk, sk[id], epk, evk, esks[id], testNum, signature, str)
 }
 
 type ABDKGNode struct {
@@ -100,8 +100,8 @@ type ABDKGNode struct {
 	*network.Peer
 }
 
-func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk1 kyber.Scalar, pk *share.PubPoly, sk *share.PriShare, epk kyber.Point, evk []*share.PubShare, esk *share.PriShare, testNum int, signature [][]byte) {
-	iplist, ipList, portList := GenerateIplist(n)
+func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk1 kyber.Scalar, pk *share.PubPoly, sk *share.PriShare, epk kyber.Point, evk []*share.PubShare, esk *share.PriShare, testNum int, signature [][]byte, addr string) {
+	iplist, ipList, portList := config.LoadIPList_Local(n, addr)
 	node := new(ABDKGNode)
 	var err error
 	abvss_instance := make([]*abvss.ABVSS, n)
