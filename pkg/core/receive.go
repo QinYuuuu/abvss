@@ -51,7 +51,7 @@ func MakeReceiveChannel(port string) (*net.TCPListener, chan *protobuf.Message) 
 					_, err2 := io.ReadFull(conn, buf)
 					if err1 != nil || err2 != nil {
 						log.Println("The receive channel has break down", err1, err2)
-						continue
+						break
 					}
 					//Do Unmarshal
 					var m protobuf.Message

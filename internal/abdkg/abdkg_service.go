@@ -252,7 +252,7 @@ func (dkg *ABDKGService) BroadcastLCM(index int) {
 			}
 			continue
 		}
-		log.Printf("node %v send lcm to node %v in instance %v", dkg.id, j, index)
+		//log.Printf("node %v send lcm to node %v in instance %v", dkg.id, j, index)
 
 		m := core.Encapsulation("LCM", nil, uint32(dkg.id), lcmmsg)
 		dkg.Sendchannels[lcmmsg.DestID] <- m
