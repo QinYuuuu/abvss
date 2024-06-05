@@ -2,7 +2,6 @@ package network
 
 import (
 	"errors"
-	"fmt"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"github.com/QinYuuuu/abvss/pkg/utils"
 	"golang.org/x/net/context"
@@ -107,11 +106,12 @@ func (p *Peer) Connect() {
 			if err1 != nil {
 				log.Fatalf("node %v create addr err: %v\n", p.id, err1)
 			}
+			log.Printf("node %v try connect to node %v on %v", p.id, i, p.ipList[i])
 			for {
-				log.Printf("node %v try connect to node %v on %v", p.id, i, p.ipList[i])
+
 				nConn, err := net.DialTCP("tcp", nil, addr)
 				if err != nil {
-					log.Printf("node %v did not connect to node %v: %v", p.id, i, err)
+					//log.Printf("node %v did not connect to node %v: %v", p.id, i, err)
 					time.Sleep(3 * time.Second)
 					continue
 				} else {
@@ -151,7 +151,7 @@ func (p *Peer) Connect() {
 			}
 		}(conn, p.SendChannels[i])
 	}
-	fmt.Println(p.Conns)
+	//fmt.Println(p.Conns)
 }
 
 func (p *Peer) Close() {
