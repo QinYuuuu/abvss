@@ -31,3 +31,30 @@ func GenerateIPList_Local(n int, addr string) {
 	encoder.Encode(list)
 	file3.Close()
 }
+
+func LoadIPList_Local(n int, addr string) ([]string, []string, []string) {
+	list := make([]struct {
+		ID    int
+		IP    string
+		Port1 string
+		Port2 string
+	}, n)
+	tmp3 := fmt.Sprintf("%s/iplist.json", addr)
+	file3, _ := os.OpenFile(tmp3, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
+	encoder := json.NewEncoder(file3)
+	encoder.Encode(list)
+	file3.Close()
+	iplist1 := make([]string, n)
+	for i := 0; i < n; i++ {
+		iplist1[i] = list[i].IP + ":" + list[i].Port1
+	}
+	iplist2 := make([]string, n)
+	for i := 0; i < n; i++ {
+		iplist2[i] = list[i].IP
+	}
+	iplist3 := make([]string, n)
+	for i := 0; i < n; i++ {
+		iplist3[i] = list[i].Port2
+	}
+	return iplist1, iplist2, iplist3
+}

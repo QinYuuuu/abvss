@@ -33,5 +33,5 @@ func test(n, batchsize, f, id int, str string) {
 	param := c.Params()
 	p := param.P
 	pk1, sk1 := config.LoadElgamalCurve25519(n, str)
-	TestVSS(id, n, f, batchsize, vnum, p, pk1, sk1[id])
+	TestVSS(id, n, f, batchsize, vnum, p, pk1, sk1[id], str)
 }

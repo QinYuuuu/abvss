@@ -7,6 +7,7 @@ import (
 	"github.com/QinYuuuu/abvss/internal/abvss"
 	"github.com/QinYuuuu/abvss/internal/osv"
 	"github.com/QinYuuuu/abvss/network"
+	"github.com/QinYuuuu/abvss/pkg/config"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"go.dedis.ch/kyber/v3"
 	"log"
@@ -35,8 +36,8 @@ func GenerateIplist(n int) ([]string, []string, []string) {
 	return iplist, addlist, portlist
 }
 
-func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyber.Scalar) {
-	iplist, _, _ := GenerateIplist(n)
+func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyber.Scalar, addr string) {
+	iplist, _, _ := config.LoadIPList_Local(n, addr)
 
 	node := new(ABVSSNode)
 
