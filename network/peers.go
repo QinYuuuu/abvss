@@ -85,6 +85,7 @@ func (p *Peer) Serve() {
 					if err3 != nil {
 						log.Fatalln(err3)
 					}
+					log.Printf("node %v receive msg: %v from node %v", p.id, m.GetType(), m.Sender)
 					//Push protobuf.Message to receivechannel
 					channel <- &m
 				}
@@ -135,7 +136,6 @@ func (p *Peer) Connect() {
 			for {
 				//Pop protobuf.Message form sendchannel
 				m := <-(channel)
-				log.Printf("node %v going to send %v", p.id, m)
 				//Do Marshal
 				byt, err1 := proto.Marshal(m)
 				if err1 != nil {

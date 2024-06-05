@@ -33,13 +33,14 @@ func NewABDKGService(id, n int, send []chan *protobuf.Message, receive chan *pro
 }
 
 func (dkg *ABDKGService) Send(msgtype string, destID int, rawmsg any) {
-	log.Printf("node %v going to send %v to node %v", dkg.id, msgtype)
+	log.Printf("node %v going to send %v to node %v", dkg.id, msgtype, dkg.id)
 	msg := core.Encapsulation(msgtype, nil, uint32(dkg.id), rawmsg)
 	dkg.Sendchannels[destID] <- msg
 }
 
 func (dkg *ABDKGService) Receive() {
 	for msg := range dkg.Receivechannel {
+		log.Printf("node %v handle msg: %v from node %v", dkg.id, msg.GetType(), msg.Sender)
 		go func(msg *protobuf.Message) {
 			msgType := msg.GetType()
 			if msgType == "Share" {
