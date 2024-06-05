@@ -152,8 +152,8 @@ func (dkg *ABDKGService) SecretSharing(pk []kyber.Point, s []*big.Int) {
 	}
 }
 
-func (dkg *ABDKGService) BroadcastLCM(i int) {
-	vss := dkg.Vss[i]
+func (dkg *ABDKGService) BroadcastLCM(index int) {
+	vss := dkg.Vss[index]
 	lcm, err := vss.ConstructLCM()
 	if err != nil {
 		log.Printf("construct lcm error: %v", err)
@@ -164,22 +164,22 @@ func (dkg *ABDKGService) BroadcastLCM(i int) {
 	}
 	lcmmsg := &protobuf.LCMMsg{
 		FromID:     int64(dkg.id),
-		InstanceID: int64(i),
+		InstanceID: int64(index),
 		Lcmi:       lcmBytes,
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	for i := 0; i < dkg.nodenum; i++ {
-		if i == dkg.id {
+	for j := 0; j < dkg.nodenum; j++ {
+		if j == dkg.id {
 			err := vss.VerifyLCM(lcm, dkg.id)
 			if err != nil {
 				log.Printf("VerifyLCM error: %v", err)
 			}
 			continue
 		}
-		_, err = dkg.Clients[i].ReceiveLCM(ctx, lcmmsg)
+		_, err = dkg.Clients[j].ReceiveLCM(ctx, lcmmsg)
 		if err != nil {
-			log.Printf("send shares to node %v error: %v", i, err)
+			log.Printf("send shares to node %v error: %v", j, err)
 		}
 	}
 }
