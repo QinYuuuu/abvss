@@ -40,12 +40,12 @@ func (dkg *ABDKGService) Send(msgtype string, destID int, rawmsg any) {
 
 func (dkg *ABDKGService) Receive() {
 	for {
-		log.Printf("node %v waiting", dkg.id)
+		//log.Printf("node %v waiting", dkg.id)
 		msg := <-dkg.Receivechannel
-		log.Printf("node %v handle msg: %v from node %v", dkg.id, msg.GetType(), msg.Sender)
+		//log.Printf("node %v handle msg: %v from node %v", dkg.id, msg.GetType(), msg.Sender)
 		go func(msg *protobuf.Message) {
 			msgType := msg.GetType()
-			if msgType == "Share" {
+			if msgType == "Shares" {
 				newmsg := core.Decapsulation(msgType, msg).(*protobuf.SharesMsg)
 				instanceID := int(newmsg.GetInstanceID())
 				vss := dkg.Vss[instanceID]
