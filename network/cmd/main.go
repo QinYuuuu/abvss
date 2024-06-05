@@ -16,7 +16,10 @@ func main() {
 		}
 		peers[i] = peer
 		go peer.Serve()
-		peer.Connect()
+		go peer.Connect()
+	}
+	for {
+
 	}
 	for i := 0; i < 3; i++ {
 		peers[i].Close()
