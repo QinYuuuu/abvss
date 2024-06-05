@@ -171,13 +171,14 @@ func (dkg *ABDKGService) BroadcastLCM(index int) {
 	defer cancel()
 	for j := 0; j < dkg.nodenum; j++ {
 		if j == dkg.id {
+			log.Printf("node %v send lcm to node %v in instance %v", dkg.id, j, index)
 			err := vss.VerifyLCM(lcm, dkg.id)
 			if err != nil {
 				log.Printf("VerifyLCM error: %v", err)
 			}
 			continue
 		}
-		log.Printf("node %v send lcm to node %v", dkg.id, j)
+		log.Printf("node %v send lcm to node %v in instance %v", dkg.id, j, index)
 		_, err = dkg.Clients[j].ReceiveLCM(ctx, lcmmsg)
 		if err != nil {
 			log.Printf("send shares to node %v error: %v", j, err)
