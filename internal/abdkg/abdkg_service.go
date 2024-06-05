@@ -191,7 +191,7 @@ func (dkg *ABDKGService) SecretSharing(pk []kyber.Point, s []*big.Int) {
 				Xix:        xixBytes,
 				Xiy:        xiyBytes,
 			}
-			m := core.Encapsulation("OSV", nil, uint32(dkg.id), sharesmsg)
+			m := core.Encapsulation("Shares", nil, uint32(dkg.id), sharesmsg)
 
 			//ctx, cancel := context.WithCancel(context.Background())
 			//defer cancel()
@@ -248,7 +248,7 @@ func (dkg *ABDKGService) BroadcastLCM(index int) {
 		}
 		log.Printf("node %v send lcm to node %v in instance %v", dkg.id, j, index)
 
-		m := core.Encapsulation("OSV", nil, uint32(dkg.id), lcmmsg)
+		m := core.Encapsulation("LCM", nil, uint32(dkg.id), lcmmsg)
 		dkg.Sendchannels[lcmmsg.DestID] <- m
 
 		/*

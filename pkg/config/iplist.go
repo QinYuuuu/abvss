@@ -66,7 +66,7 @@ func LoadIPList_Local(n int, addr string) ([]string, []string, []string) {
 	}
 	iplist2 := make([]string, n)
 	for i := 0; i < n; i++ {
-		iplist2[i] = list[i].Port1
+		iplist2[i] = list[i].IP
 	}
 	iplist3 := make([]string, n)
 	for i := 0; i < n; i++ {
