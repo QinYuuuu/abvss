@@ -1,13 +1,11 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"github.com/QinYuuuu/abvss/crypto/utils"
 	"github.com/QinYuuuu/abvss/internal/abvss"
 	"github.com/QinYuuuu/abvss/internal/osv"
 	"github.com/QinYuuuu/abvss/network"
-	"github.com/QinYuuuu/abvss/pkg/config"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"go.dedis.ch/kyber/v3"
 	"log"
@@ -37,8 +35,8 @@ func GenerateIplist(n int) ([]string, []string, []string) {
 }
 
 func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyber.Scalar, addr string) {
-	iplist, _, _ := config.LoadIPList_Local(n, addr)
-
+	//iplist, _, _ := config.LoadIPList_Local(n, addr)
+	iplist, _, _ := GenerateIplist(n)
 	node := new(ABVSSNode)
 
 	abvss_instance, err := abvss.NewVSS(0, id, n, f, batchsize, vnum, p, 1)
@@ -73,32 +71,7 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 	}
 	node = &ABVSSNode{ABVSSService: abvssservice, OSVService: osvservice, Peer: peer}
 
-	clients := make([]protobuf.ConnClient, n)
 	var wg sync.WaitGroup
-	wg.Add(n - 1)
-	for j := 0; j < n; j++ {
-		if j == id {
-			continue
-		}
-		clients[j] = protobuf.NewConnClient(peer.Conns[j])
-		go func(j int) {
-			for {
-				rsp, err := clients[j].Receive(context.TODO(), &protobuf.TestHelloMessage{
-					FromID: int64(id),
-					DestID: int64(j),
-				})
-				if err != nil {
-					fmt.Println(err)
-					continue
-				}
-				fmt.Println(rsp)
-				wg.Done()
-				break
-			}
-		}(j)
-
-	}
-
 	s := make([]*big.Int, batchsize)
 	for i := 0; i < batchsize; i++ {
 		s[i] = utils.RandomNum(p)
@@ -146,5 +119,10 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 	end := time.Now()
 	//fmt.Println("SUCCESS")
 	fmt.Printf("node %v Time cost: %v\n", id, end.Sub(start))
+	if id == 1 {
+		fmt.Printf("node %v as dealer bandwidth cost: %v\n", id, abvssservice.DealerBandwidthUsage+osvservice.BandwidthUsage)
+	}
+	fmt.Printf("node %v as verifier bandwidth cost: %v\n", id, osvservice.BandwidthUsage)
+	fmt.Printf("node %v as receiver bandwidth cost: %v\n", id, abvssservice.BandwidthUsage+osvservice.BandwidthUsage)
 	time.Sleep(10 * time.Second)
 }

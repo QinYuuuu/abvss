@@ -16,13 +16,15 @@ type ABDKGService struct {
 	Osv         []*osv.OSV
 	Clients     []protobuf.ABDKGClient
 	protobuf.UnimplementedABDKGServer
+	Bandwidth int
 }
 
 func NewABDKGService(id, n int) *ABDKGService {
 	return &ABDKGService{
-		id:      id,
-		nodenum: n,
-		Clients: make([]protobuf.ABDKGClient, n),
+		id:        id,
+		nodenum:   n,
+		Bandwidth: 0,
+		Clients:   make([]protobuf.ABDKGClient, n),
 	}
 }
 func (dkg *ABDKGService) ReceiveShares(ctx context.Context, shares *protobuf.SharesMsg) (*protobuf.AckMsg, error) {

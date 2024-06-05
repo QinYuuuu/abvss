@@ -2,6 +2,7 @@ package network
 
 import (
 	"errors"
+	"fmt"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
@@ -9,6 +10,7 @@ import (
 	"log"
 	"net"
 	"sync"
+	"time"
 )
 
 type Peer struct {
@@ -63,21 +65,35 @@ func (p *Peer) Connect() {
 			continue
 		}
 		go func(i int) {
-			flag := false
-			for !flag {
+			for {
 				nConn, err := grpc.NewClient(p.ipList[i], grpc.WithTransportCredentials(insecure.NewCredentials()))
 				if err != nil {
 					log.Printf("node %v did not connect to node %v: %v", p.id, i, err)
+					time.Sleep(3 * time.Second)
 					continue
 				}
-				flag = true
-				p.Conns[i] = nConn
-				log.Printf("node %v connect to node %v", p.id, i)
+				client := protobuf.NewConnClient(nConn)
+				_, err = client.Receive(context.TODO(), &protobuf.TestHelloMessage{
+					FromID: int64(p.id),
+					DestID: int64(i),
+				})
+				if err != nil {
+					log.Printf("connect to node %v error: %v", i, err)
+					time.Sleep(3 * time.Second)
+					continue
+				} else {
+					//fmt.Println(rsp)
+					p.Conns[i] = nConn
+					log.Printf("node %v connect to node %v", p.id, i)
+					break
+				}
+
 			}
 			wg.Done()
 		}(i)
 	}
 	wg.Wait()
+	fmt.Println(p.Conns)
 }
 
 func (p *Peer) Close() {
@@ -100,6 +116,6 @@ type Service struct {
 }
 
 func (n Service) Receive(ctx context.Context, req *protobuf.TestHelloMessage) (*protobuf.TestResMessage, error) {
-	log.Printf("node %v receive request from node %v: %v", n.Id, req.GetFromID(), req.GetContent())
+	//log.Printf("node %v receive request from node %v: %v", n.Id, req.GetFromID(), req.GetContent())
 	return &protobuf.TestResMessage{Content: "have received Hello", FromID: int64(n.Id), DestID: req.GetFromID()}, nil
 }

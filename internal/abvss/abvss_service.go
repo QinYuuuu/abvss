@@ -6,17 +6,22 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"log"
 	"math/big"
+	"sync"
 )
 
 type ABVSSService struct {
 	*ABVSS
-	Clients []protobuf.ABVSSClient
+	DealerBandwidthUsage int
+	BandwidthUsage       int
+	Clients              []protobuf.ABVSSClient
 	protobuf.UnimplementedABVSSServer
 }
 
 func NewABVSSService(n int) *ABVSSService {
 	return &ABVSSService{
-		Clients: make([]protobuf.ABVSSClient, n),
+		DealerBandwidthUsage: 0,
+		BandwidthUsage:       0,
+		Clients:              make([]protobuf.ABVSSClient, n),
 	}
 }
 
@@ -46,7 +51,7 @@ func (vss *ABVSSService) ReceiveShares(ctx context.Context, shares *protobuf.Sha
 		log.Printf("node %v receive shares from node %v error: %v", vss.GetNodeID(), shares.GetFromID(), err)
 		return &protobuf.AckMsg{}, nil
 	}
-	log.Printf("node %v receive shares %v from node %v", vss.GetNodeID(), shares.GetIndex(), shares.GetFromID())
+	//log.Printf("node %v receive shares %v from node %v", vss.GetNodeID(), shares.GetIndex(), shares.GetFromID())
 	return &protobuf.AckMsg{}, nil
 }
 
@@ -86,7 +91,7 @@ func (vss *ABVSSService) SecretSharing(pk []kyber.Point, s []*big.Int) {
 	if err != nil {
 		log.Printf("init error: %v", err)
 	}
-
+	var mutex sync.Mutex
 	err = vss.SamplePoly()
 	if err != nil {
 		log.Printf("sample poly error: %v", err)
@@ -119,6 +124,10 @@ func (vss *ABVSSService) SecretSharing(pk []kyber.Point, s []*big.Int) {
 				Xiy:    xiyBytes,
 			}
 
+			mutex.Lock()
+			vss.DealerBandwidthUsage += vss.GetN() * (len(zixBytes)*len(zix)*2 + len(xix)*len(xixBytes)*2)
+			mutex.Unlock()
+
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			for j := 0; j < vss.nodenum; j++ {
@@ -129,6 +138,7 @@ func (vss *ABVSSService) SecretSharing(pk []kyber.Point, s []*big.Int) {
 					}
 					continue
 				}
+
 				_, err = vss.Clients[j].ReceiveShares(ctx, sharesmsg)
 				if err != nil {
 					log.Printf("send shares to node %v error: %v", i, err)
@@ -162,6 +172,7 @@ func (vss *ABVSSService) BroadcastLCM() {
 			}
 			continue
 		}
+		vss.BandwidthUsage += len(lcm) * len(lcmBytes[i])
 		_, err = vss.Clients[i].ReceiveLCM(ctx, lcmmsg)
 		if err != nil {
 			log.Printf("send shares to node %v error: %v", i, err)

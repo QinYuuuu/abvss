@@ -8,13 +8,15 @@ import (
 
 type OSVService struct {
 	*OSV
-	Clients []protobuf.OSVClient
+	Clients        []protobuf.OSVClient
+	BandwidthUsage int
 	protobuf.UnimplementedOSVServer
 }
 
 func NewOSVService(n int) *OSVService {
 	return &OSVService{
-		Clients: make([]protobuf.OSVClient, n),
+		BandwidthUsage: 0,
+		Clients:        make([]protobuf.OSVClient, n),
 	}
 }
 
@@ -54,6 +56,7 @@ func (s *OSVService) Receive(ctx context.Context, osvmsg *protobuf.OSVMsg) (*pro
 			DestID: int64(newmsg.DestID),
 			Mtype:  newmsg.Mtype,
 		}
+		s.BandwidthUsage += 64
 		_, err := s.Clients[newmsg.DestID].Receive(ctx, protonewmsg)
 		if err != nil {
 			log.Printf("node %v receive msg err: %v", s.id, err)

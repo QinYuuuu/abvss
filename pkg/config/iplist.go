@@ -41,8 +41,12 @@ func LoadIPList_Local(n int, addr string) ([]string, []string, []string) {
 	}, n)
 	tmp3 := fmt.Sprintf("%s/iplist.json", addr)
 	file3, _ := os.OpenFile(tmp3, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
-	encoder := json.NewEncoder(file3)
-	encoder.Encode(list)
+	decoder := json.NewDecoder(file3)
+	err := decoder.Decode(&list)
+	if err != nil {
+		fmt.Printf("error:%v", err)
+		return nil, nil, nil
+	}
 	file3.Close()
 	iplist1 := make([]string, n)
 	for i := 0; i < n; i++ {
