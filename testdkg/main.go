@@ -55,26 +55,28 @@ func main() {
 	f := flag.Int("f", 1, "number of faulty nodes to tolerate")
 	id := flag.Int("id", 0, "id of this server")
 	batchsize := flag.Int("s", 1, "num of secret")
+	aws := flag.Int("aws", 0, "1 means run on aws")
 	str := flag.String("path", "", "path of node information")
 
 	flag.Parse()
 	//go TestDKG(i, n, f, batchsize, vnum, p, pk1, sk1[i], pk, sk[i], epk, evk, esks[i], testNum, signature)
-	test(*n, *batchsize, *f, *id, *str)
+	test(*n, *batchsize, *f, *id, *str, *aws)
 	//time.Sleep(300 * time.Second)
 }
 
-func test(n, batchsize, f, id int, str string) {
+func test(n, batchsize, f, id int, str string, aws int) {
 	vnum := n
 	c := elliptic.P224()
 	param := c.Params()
 	p := param.P
 	pk1, sk1 := config.LoadElgamalCurve25519(n, str)
 	//sk, pk := party.SigKeyGen(uint32(n), uint32(2*f+1))
-	sk, pk := config.LoadSigKey(4, str)
+	sk, pk := config.LoadSigKey(n, str)
 	//epk, evk, esks := party.EncKeyGen(uint32(n), uint32(f+1))
-	epk, evk, esks := config.LoadEncKey(4, str)
+	epk, evk, esks := config.LoadEncKey(n, str)
 	testNum := 1
 	signature := make([][]byte, testNum)
+
 	for k := 0; k < testNum; k++ {
 		ID := utils2.IntToBytes(k)
 		var sigshare [][]byte
@@ -92,7 +94,7 @@ func test(n, batchsize, f, id int, str string) {
 		signature[k], _ = tbls.Recover(pairing.NewSuiteBn256(), pk, sm, sigshare, 2*f+1, n)
 	}
 	//fmt.Println(len(signature[0]))
-	TestDKG(id, n, f, batchsize, vnum, p, pk1, sk1[id], pk, sk[id], epk, evk, esks[id], testNum, signature, str)
+	TestDKG(id, n, f, batchsize, vnum, p, pk1, sk1[id], pk, sk[id], epk, evk, esks[id], testNum, signature, str, aws)
 }
 
 type ABDKGNode struct {
@@ -100,8 +102,14 @@ type ABDKGNode struct {
 	*network.Peer
 }
 
-func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk1 kyber.Scalar, pk *share.PubPoly, sk *share.PriShare, epk kyber.Point, evk []*share.PubShare, esk *share.PriShare, testNum int, signature [][]byte, addr string) {
-	iplist, ipList, portList := config.LoadIPList_Local(n, addr)
+func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk1 kyber.Scalar, pk *share.PubPoly, sk *share.PriShare, epk kyber.Point, evk []*share.PubShare, esk *share.PriShare, testNum int, signature [][]byte, addr string, aws int) {
+	var iplist, ipList, portList []string
+	if aws == 1 {
+		iplist, ipList, portList = config.LoadIPList_aws(n, addr)
+	} else {
+		log.Printf("node %v running local", id)
+		iplist, ipList, portList = config.LoadIPList_Local(n, addr)
+	}
 	node := new(ABDKGNode)
 	var err error
 	abvss_instance := make([]*abvss.ABVSS, n)
