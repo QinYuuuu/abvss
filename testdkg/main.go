@@ -105,10 +105,10 @@ type ABDKGNode struct {
 func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk1 kyber.Scalar, pk *share.PubPoly, sk *share.PriShare, epk kyber.Point, evk []*share.PubShare, esk *share.PriShare, testNum int, signature [][]byte, addr string, aws int) {
 	var portList1, ipList, portList []string
 	if aws == 1 {
-		_, ipList, portList = config.LoadIPList_aws(n, addr)
+		portList1, ipList, portList = config.LoadIPList_aws(n, addr)
 	} else {
 		log.Printf("node %v running local", id)
-		_, ipList, portList = config.LoadIPList_Local(n, addr)
+		portList1, ipList, portList = config.LoadIPList_Local(n, addr)
 	}
 	node := new(ABDKGNode)
 	var err error
