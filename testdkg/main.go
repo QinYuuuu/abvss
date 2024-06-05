@@ -244,8 +244,19 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	bandwidth := band1 + int(p.Bandwidth)
 	fmt.Printf("node %v Time cost: %v\n", id, timeusage)
 	fmt.Printf("node %v bandwidth cost: %v\n", id, bandwidth)
-	path := fmt.Sprintf("/home/ubuntu/test/%v_%v", n, batchsize)
-	file3, _ := os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
+	path := "/home/ubuntu/test"
+	exist, err := config.PathExists(path)
+	if err != nil {
+		fmt.Printf("get dir error: %v \n", err)
+	}
+	if !exist {
+		err = os.Mkdir("/home/ubuntu/test", 0777)
+		if err != nil {
+			fmt.Printf("make dir error: %v \n", err)
+			return
+		}
+	}
+	file3, _ := os.OpenFile(fmt.Sprintf("/home/ubuntu/test/%v_%v", n, batchsize), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
 	file3.WriteString(fmt.Sprintf("time\n%v\nband\n%v\n", timeusage, bandwidth))
 	time.Sleep(10 * time.Second)
 	peer.Close()
