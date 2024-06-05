@@ -177,6 +177,7 @@ func (dkg *ABDKGService) BroadcastLCM(index int) {
 			}
 			continue
 		}
+		log.Printf("node %v send lcm to node %v", dkg.id, j)
 		_, err = dkg.Clients[j].ReceiveLCM(ctx, lcmmsg)
 		if err != nil {
 			log.Printf("send shares to node %v error: %v", j, err)
