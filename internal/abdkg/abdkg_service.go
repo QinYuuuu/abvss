@@ -65,7 +65,7 @@ func (dkg *ABDKGService) ReceiveLCM(ctx context.Context, lcmmsg *protobuf.LCMMsg
 	for i := range lcmBytes {
 		lcm[i] = new(big.Int).SetBytes(lcmBytes[i])
 	}
-	log.Printf("node %v receive lcm from node %v in instance %v", vss.GetNodeID(), lcmmsg.FromID, lcmmsg.InstanceID)
+	log.Printf("node %v receive lcm from node %v in instance %v", dkg.id, lcmmsg.FromID, lcmmsg.InstanceID)
 	err := vss.VerifyLCM(lcm, int(lcmmsg.GetFromID()))
 	if err != nil {
 		log.Printf("node %v receive lcm from node %v error: %v", vss.GetNodeID(), lcmmsg.FromID, err)
@@ -163,14 +163,16 @@ func (dkg *ABDKGService) BroadcastLCM(index int) {
 	for i := range lcm {
 		lcmBytes[i] = lcm[i].Bytes()
 	}
-	lcmmsg := &protobuf.LCMMsg{
-		FromID:     int64(dkg.id),
-		InstanceID: int64(index),
-		Lcmi:       lcmBytes,
-	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	for j := 0; j < dkg.nodenum; j++ {
+		lcmmsg := &protobuf.LCMMsg{
+			FromID:     int64(dkg.id),
+			DestID:     int64(j),
+			InstanceID: int64(index),
+			Lcmi:       lcmBytes,
+		}
 		if j == dkg.id {
 			log.Printf("node %v send lcm to node %v in instance %v", dkg.id, j, index)
 			err := vss.VerifyLCM(lcm, dkg.id)

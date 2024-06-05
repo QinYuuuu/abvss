@@ -73,7 +73,7 @@ func (p *Peer) Connect() {
 					continue
 				}
 				client := protobuf.NewConnClient(nConn)
-				_, err = client.Receive(context.TODO(), &protobuf.TestHelloMessage{
+				rsp, err := client.Receive(context.TODO(), &protobuf.TestHelloMessage{
 					FromID: int64(p.id),
 					DestID: int64(i),
 				})
@@ -82,7 +82,7 @@ func (p *Peer) Connect() {
 					time.Sleep(5 * time.Second)
 					continue
 				} else {
-					//fmt.Println(rsp)
+					fmt.Println(rsp)
 					p.Conns[i] = nConn
 					log.Printf("node %v connect to node %v", p.id, i)
 					break
