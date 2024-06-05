@@ -39,7 +39,8 @@ func (dkg *ABDKGService) Send(msgtype string, destID int, rawmsg any) {
 }
 
 func (dkg *ABDKGService) Receive() {
-	for msg := range dkg.Receivechannel {
+	for {
+		msg := <-dkg.Receivechannel
 		log.Printf("node %v handle msg: %v from node %v", dkg.id, msg.GetType(), msg.Sender)
 		go func(msg *protobuf.Message) {
 			msgType := msg.GetType()
