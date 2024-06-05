@@ -24,6 +24,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"log"
 	"math/big"
+	"os"
 	"sync"
 	"time"
 )
@@ -235,9 +236,15 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	wg.Wait()
 	end2 := time.Now()
 	//fmt.Println("SUCCESS")
-	fmt.Printf("node %v Time cost: %v\n", id, end1.Sub(start1)+end2.Sub(start2))
-	fmt.Printf("node %v bandwidth cost: %v\n", id, abdkgservice.Bandwidth)
+	timeusage := end1.Sub(start1) + end2.Sub(start2)
+	bandwidth := abdkgservice.Bandwidth
+	fmt.Printf("node %v Time cost: %v\n", id, timeusage)
+	fmt.Printf("node %v bandwidth cost: %v\n", id, bandwidth)
+	path := fmt.Sprintf("/home/ubuntu/test/%v_%v", n, batchsize)
+	file3, _ := os.OpenFile(path, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
+	file3.WriteString(fmt.Sprintf("time\n%v\nband\n%v\n", timeusage, bandwidth))
 	time.Sleep(10 * time.Second)
+	peer.Close()
 }
 
 func Q(p *party.HonestParty, ID []byte, value []byte, validation []byte, hashVerifyMap *sync.Map, sigVerifyMap *sync.Map) error {
