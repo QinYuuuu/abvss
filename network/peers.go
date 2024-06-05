@@ -78,8 +78,8 @@ func (p *Peer) Connect() {
 					DestID: int64(i),
 				})
 				if err != nil {
-					log.Printf("connect to node %v error: %v", i, err)
-					time.Sleep(3 * time.Second)
+					log.Printf("node %v connect to node %v error", p.id, i)
+					time.Sleep(5 * time.Second)
 					continue
 				} else {
 					//fmt.Println(rsp)
