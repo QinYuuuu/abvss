@@ -155,8 +155,8 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 		go func(i int) {
 			for {
 				if node.Vss[i].Received {
-					fs, gs := node.Vss[i].GetShares()
-					log.Printf("node %v received shares %v\n%v", id, fs, gs)
+					//fs, gs := node.Vss[i].GetShares()
+					//log.Printf("node %v received shares %v\n%v", id, fs, gs)
 					node.BroadcastLCM(i)
 					return
 				}
