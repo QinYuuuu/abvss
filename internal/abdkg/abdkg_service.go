@@ -65,12 +65,13 @@ func (dkg *ABDKGService) ReceiveLCM(ctx context.Context, lcmmsg *protobuf.LCMMsg
 	for i := range lcmBytes {
 		lcm[i] = new(big.Int).SetBytes(lcmBytes[i])
 	}
+	log.Printf("node %v receive lcm from node %v in instance %v", vss.GetNodeID(), lcmmsg.FromID, lcmmsg.InstanceID)
 	err := vss.VerifyLCM(lcm, int(lcmmsg.GetFromID()))
 	if err != nil {
 		log.Printf("node %v receive lcm from node %v error: %v", vss.GetNodeID(), lcmmsg.FromID, err)
 		return &protobuf.AckMsg{}, nil
 	}
-	//log.Printf("node %v receive lcm from node %v in instance %v", vss.GetNodeID(), lcmmsg.FromID, lcmmsg.InstanceID)
+
 	return &protobuf.AckMsg{}, nil
 }
 
