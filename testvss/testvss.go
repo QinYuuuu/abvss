@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/QinYuuuu/abvss/crypto/elgamal"
 	"github.com/QinYuuuu/abvss/crypto/utils"
 	"github.com/QinYuuuu/abvss/internal/abvss"
 	"github.com/QinYuuuu/abvss/internal/osv"
 	"github.com/QinYuuuu/abvss/network"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/group/curve25519"
 	"log"
 	"math/big"
 	"sync"
@@ -35,17 +33,6 @@ func GenerateIplist(n int) ([]string, []string, []string) {
 		portlist[i] = fmt.Sprintf("%d", 9000+i)
 	}
 	return iplist, addlist, portlist
-}
-
-func GenerateElGamal(n int, addr string) {
-	pk := make([]kyber.Point, n)
-	sk := make([]kyber.Scalar, n)
-	suite := curve25519.NewBlakeSHA256Curve25519(true)
-	for i := 0; i < n; i++ {
-		pki, ski := elgamal.KeyGenCurve25519(suite)
-		sk[i] = ski
-		pk[i] = pki
-	}
 }
 
 func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyber.Scalar) {
