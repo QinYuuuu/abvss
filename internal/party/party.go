@@ -30,6 +30,7 @@ type HonestParty struct {
 	dispatcheChannels *sync.Map
 	lis               *net.TCPListener
 	conns             []*net.TCPConn
+	Bandwidth         uint64
 
 	SigPK *share.PubPoly  //tss pk
 	SigSK *share.PriShare //tss sk
@@ -49,6 +50,7 @@ func NewHonestParty(N uint32, F uint32, pid uint32, ipList, portList []string, s
 		portList:     portList,
 		sendChannels: make([]chan *protobuf.Message, N),
 		conns:        make([]*net.TCPConn, N),
+		Bandwidth:    0,
 
 		SigPK: sigPK,
 		SigSK: sigSK,
@@ -97,6 +99,7 @@ func (p *HonestParty) Send(m *protobuf.Message, des uint32) error {
 	}
 	if des < p.N {
 		p.sendChannels[des] <- m
+		p.Bandwidth += uint64(len(m.GetData()))
 		return nil
 	}
 	return errors.New("Destination id is too large")

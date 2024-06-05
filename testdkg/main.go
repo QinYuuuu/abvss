@@ -237,7 +237,7 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	end2 := time.Now()
 	//fmt.Println("SUCCESS")
 	timeusage := end1.Sub(start1) + end2.Sub(start2)
-	bandwidth := abdkgservice.Bandwidth
+	bandwidth := peer.Bandwidth
 	fmt.Printf("node %v Time cost: %v\n", id, timeusage)
 	fmt.Printf("node %v bandwidth cost: %v\n", id, bandwidth)
 	path := fmt.Sprintf("/home/ubuntu/test/%v_%v", n, batchsize)
@@ -281,6 +281,5 @@ func Q(p *party.HonestParty, ID []byte, value []byte, validation []byte, hashVer
 		hashVerifyMap.Store(L.Pid[i], L.Hash[i])
 		sigVerifyMap.Store(L.Pid[i], S.Sig[i])
 	}
-
 	return nil
 }

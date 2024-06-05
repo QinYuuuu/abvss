@@ -23,6 +23,7 @@ type Peer struct {
 	SendChannels   []chan *protobuf.Message
 	Closed         bool
 	Ready          bool
+	Bandwidth      []uint64
 }
 
 func NewPeer(n, id int, iplist []string, portList []string) (*Peer, error) {
@@ -38,6 +39,7 @@ func NewPeer(n, id int, iplist []string, portList []string) (*Peer, error) {
 		ipList:         iplist,
 		portList:       portList,
 		Ready:          false,
+		Bandwidth:      make([]uint64, n),
 	}, nil
 }
 
@@ -98,8 +100,10 @@ func (p *Peer) Connect() {
 	var wg sync.WaitGroup
 	wg.Add(p.n - 1)
 	for i := 0; i < len(p.ipList); i++ {
+		p.Bandwidth[i] = 0
 		if i == p.id {
 			continue
+
 		}
 		go func(i int) {
 			addr, err1 := net.ResolveTCPAddr("tcp4", p.ipList[i]+":"+p.portList[i])
@@ -145,6 +149,7 @@ func (p *Peer) Connect() {
 				length := len(byt)
 				_, err2 := conn.Write(utils.IntToBytes(length))
 				_, err3 := conn.Write(byt)
+				p.Bandwidth[i] += uint64(length)
 				if err2 != nil || err3 != nil {
 					log.Fatalln("The send channel has break down!", err2, err3)
 				}
@@ -165,7 +170,7 @@ func (p *Peer) Close() {
 			log.Printf("node %v close %v", p.id, err)
 			continue
 		}
-		log.Printf("node %v close success", p.id)
+		//log.Printf("node %v close success", p.id)
 	}
 }
 
