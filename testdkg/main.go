@@ -237,7 +237,11 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	end2 := time.Now()
 	//fmt.Println("SUCCESS")
 	timeusage := end1.Sub(start1) + end2.Sub(start2)
-	bandwidth := peer.Bandwidth
+	band1 := 0
+	for i := 0; i < n; i++ {
+		band1 += int(peer.Bandwidth[i])
+	}
+	bandwidth := band1 + int(p.Bandwidth)
 	fmt.Printf("node %v Time cost: %v\n", id, timeusage)
 	fmt.Printf("node %v bandwidth cost: %v\n", id, bandwidth)
 	path := fmt.Sprintf("/home/ubuntu/test/%v_%v", n, batchsize)
