@@ -103,12 +103,12 @@ type ABDKGNode struct {
 }
 
 func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk1 kyber.Scalar, pk *share.PubPoly, sk *share.PriShare, epk kyber.Point, evk []*share.PubShare, esk *share.PriShare, testNum int, signature [][]byte, addr string, aws int) {
-	var iplist, ipList, portList []string
+	var portList1, ipList, portList []string
 	if aws == 1 {
-		iplist, ipList, portList = config.LoadIPList_aws(n, addr)
+		_, ipList, portList = config.LoadIPList_aws(n, addr)
 	} else {
 		log.Printf("node %v running local", id)
-		iplist, ipList, portList = config.LoadIPList_Local(n, addr)
+		_, ipList, portList = config.LoadIPList_Local(n, addr)
 	}
 	node := new(ABDKGNode)
 	var err error
@@ -126,23 +126,25 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 		abvss_instance[i].ReceiverInit(sk1)
 		abvss_instance[i].VerifyInit()
 	}
-	peer, err := network.NewPeer(n, id, iplist)
-	abdkgservice := abdkg.NewABDKGService(id, n)
+	peer, err := network.NewPeer(n, id, ipList, portList1)
 
-	connservice := network.Service{Id: id}
-	protobuf.RegisterConnServer(peer.Server, connservice)
-
+	abdkgservice := abdkg.NewABDKGService(id, n, peer.SendChannels, peer.ReceiveChannel)
+	/*
+		connservice := network.Service{Id: id}
+		protobuf.RegisterConnServer(peer.Server, connservice)
+	*/
 	abdkgservice.Vss = abvss_instance
 	abdkgservice.Osv = osv_instance
-	protobuf.RegisterABDKGServer(peer.Server, abdkgservice)
-	go peer.Serve(false)
+	//protobuf.RegisterABDKGServer(peer.Server, abdkgservice)*/
+	go peer.Serve()
 	peer.Connect()
-	for j := 0; j < n; j++ {
-		if j == id {
-			continue
-		}
-		abdkgservice.Clients[j] = protobuf.NewABDKGClient(peer.Conns[j])
-	}
+	/*
+		for j := 0; j < n; j++ {
+			if j == id {
+				continue
+			}
+			abdkgservice.Clients[j] = protobuf.NewABDKGClient(peer.Conns[j])
+		}*/
 	node = &ABDKGNode{ABDKGService: abdkgservice, Peer: peer}
 	var wg sync.WaitGroup
 

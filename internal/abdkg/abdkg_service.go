@@ -1,9 +1,9 @@
 package abdkg
 
 import (
-	"context"
 	"github.com/QinYuuuu/abvss/internal/abvss"
 	"github.com/QinYuuuu/abvss/internal/osv"
+	"github.com/QinYuuuu/abvss/pkg/core"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"go.dedis.ch/kyber/v3"
 	"log"
@@ -11,54 +11,115 @@ import (
 )
 
 type ABDKGService struct {
-	id, nodenum int
-	Vss         []*abvss.ABVSS
-	Osv         []*osv.OSV
-	Clients     []protobuf.ABDKGClient
-	protobuf.UnimplementedABDKGServer
+	id, nodenum    int
+	Vss            []*abvss.ABVSS
+	Osv            []*osv.OSV
+	Receivechannel chan *protobuf.Message
+	Sendchannels   []chan *protobuf.Message
+	//Clients     []protobuf.ABDKGClient
+	//protobuf.UnimplementedABDKGServer
 	Bandwidth int
 }
 
-func NewABDKGService(id, n int) *ABDKGService {
+func NewABDKGService(id, n int, send []chan *protobuf.Message, receive chan *protobuf.Message) *ABDKGService {
 	return &ABDKGService{
-		id:        id,
-		nodenum:   n,
-		Bandwidth: 0,
-		Clients:   make([]protobuf.ABDKGClient, n),
+		id:             id,
+		nodenum:        n,
+		Bandwidth:      0,
+		Sendchannels:   send,
+		Receivechannel: receive,
+		//Clients:   make([]protobuf.ABDKGClient, n),
 	}
-}
-func (dkg *ABDKGService) ReceiveShares(ctx context.Context, shares *protobuf.SharesMsg) (*protobuf.AckMsg, error) {
-	vss := dkg.Vss[shares.GetInstanceID()]
-	zixBytes := shares.GetZix()
-	ziyBytes := shares.GetZiy()
-	xixBytes := shares.GetXix()
-	xiyBytes := shares.GetXiy()
-	zix := make([]kyber.Point, len(zixBytes))
-	ziy := make([]kyber.Point, len(ziyBytes))
-	xix := make([]kyber.Point, len(xixBytes))
-	xiy := make([]kyber.Point, len(xiyBytes))
-	for i := range zixBytes {
-		zix[i] = vss.Curve.Point()
-		ziy[i] = vss.Curve.Point()
-		_ = zix[i].UnmarshalBinary(zixBytes[i])
-		_ = ziy[i].UnmarshalBinary(ziyBytes[i])
-	}
-	for i := range xixBytes {
-		xix[i] = vss.Curve.Point()
-		xiy[i] = vss.Curve.Point()
-		_ = xix[i].UnmarshalBinary(xixBytes[i])
-		_ = xiy[i].UnmarshalBinary(xiyBytes[i])
-	}
-	err := vss.ObtainShares(zix, ziy, xix, xiy, int(shares.Index))
-	if err != nil {
-		log.Printf("node %v receive shares from node %v error: %v", vss.GetNodeID(), shares.GetFromID(), err)
-		return &protobuf.AckMsg{}, nil
-	}
-	//log.Printf("node %v receive shares %v from node %v in instance %v", vss.GetNodeID(), shares.GetIndex(), shares.GetFromID(), shares.GetInstanceID())
-	return &protobuf.AckMsg{}, nil
 }
 
-func (dkg *ABDKGService) ReceiveLCM(ctx context.Context, lcmmsg *protobuf.LCMMsg) (*protobuf.AckMsg, error) {
+func (dkg *ABDKGService) Send() {
+
+}
+
+func (dkg *ABDKGService) Receive() {
+	for msg := range dkg.Receivechannel {
+		go func(msg *protobuf.Message) {
+			msgType := msg.GetType()
+			if msgType == "Share" {
+				newmsg := core.Decapsulation(msgType, msg).(*protobuf.SharesMsg)
+				instanceID := int(newmsg.GetInstanceID())
+				vss := dkg.Vss[instanceID]
+				zixBytes := newmsg.GetZix()
+				ziyBytes := newmsg.GetZiy()
+				xiyBytes := newmsg.GetXiy()
+				xixBytes := newmsg.GetXix()
+				zix := make([]kyber.Point, len(zixBytes))
+				ziy := make([]kyber.Point, len(ziyBytes))
+				xix := make([]kyber.Point, len(xixBytes))
+				xiy := make([]kyber.Point, len(xiyBytes))
+				for i := range zixBytes {
+					zix[i] = vss.Curve.Point()
+					ziy[i] = vss.Curve.Point()
+					_ = zix[i].UnmarshalBinary(zixBytes[i])
+					_ = ziy[i].UnmarshalBinary(ziyBytes[i])
+				}
+				for i := range xixBytes {
+					xix[i] = vss.Curve.Point()
+					xiy[i] = vss.Curve.Point()
+					_ = xix[i].UnmarshalBinary(xixBytes[i])
+					_ = xiy[i].UnmarshalBinary(xiyBytes[i])
+				}
+				err := vss.ObtainShares(zix, ziy, xix, xiy, int(newmsg.GetIndex()))
+				if err != nil {
+					log.Printf("node %v receive shares from node %v error: %v", vss.GetNodeID(), newmsg.GetFromID(), err)
+				}
+				//log.Printf("node %v receive shares %v from node %v in instance %v", vss.GetNodeID(), shares.GetIndex(), shares.GetFromID(), shares.GetInstanceID())
+			}
+			if msgType == "LCM" {
+				newmsg := core.Decapsulation(msgType, msg).(*protobuf.LCMMsg)
+				dkg.ReceiveLCM(newmsg)
+			}
+			if msgType == "SK" {
+
+			}
+			if msgType == "OSV" {
+				newmsg := core.Decapsulation(msgType, msg).(*protobuf.OSVMsg)
+				dkg.ReceiveOSV(newmsg)
+			}
+		}(msg)
+
+	}
+
+}
+
+/*
+	func (dkg *ABDKGService) ReceiveShares(ctx context.Context, shares *protobuf.SharesMsg) (*protobuf.AckMsg, error) {
+		vss := dkg.Vss[shares.GetInstanceID()]
+		zixBytes := shares.GetZix()
+		ziyBytes := shares.GetZiy()
+		xixBytes := shares.GetXix()
+		xiyBytes := shares.GetXiy()
+		zix := make([]kyber.Point, len(zixBytes))
+		ziy := make([]kyber.Point, len(ziyBytes))
+		xix := make([]kyber.Point, len(xixBytes))
+		xiy := make([]kyber.Point, len(xiyBytes))
+		for i := range zixBytes {
+			zix[i] = vss.Curve.Point()
+			ziy[i] = vss.Curve.Point()
+			_ = zix[i].UnmarshalBinary(zixBytes[i])
+			_ = ziy[i].UnmarshalBinary(ziyBytes[i])
+		}
+		for i := range xixBytes {
+			xix[i] = vss.Curve.Point()
+			xiy[i] = vss.Curve.Point()
+			_ = xix[i].UnmarshalBinary(xixBytes[i])
+			_ = xiy[i].UnmarshalBinary(xiyBytes[i])
+		}
+		err := vss.ObtainShares(zix, ziy, xix, xiy, int(shares.Index))
+		if err != nil {
+			log.Printf("node %v receive shares from node %v error: %v", vss.GetNodeID(), shares.GetFromID(), err)
+			return &protobuf.AckMsg{}, nil
+		}
+		//log.Printf("node %v receive shares %v from node %v in instance %v", vss.GetNodeID(), shares.GetIndex(), shares.GetFromID(), shares.GetInstanceID())
+		return &protobuf.AckMsg{}, nil
+	}
+*/
+func (dkg *ABDKGService) ReceiveLCM(lcmmsg *protobuf.LCMMsg) {
 	vss := dkg.Vss[lcmmsg.GetInstanceID()]
 	lcmBytes := lcmmsg.GetLcmi()
 	lcm := make([]*big.Int, len(lcmBytes))
@@ -69,30 +130,28 @@ func (dkg *ABDKGService) ReceiveLCM(ctx context.Context, lcmmsg *protobuf.LCMMsg
 	err := vss.VerifyLCM(lcm, int(lcmmsg.GetFromID()))
 	if err != nil {
 		log.Printf("node %v receive lcm from node %v error: %v", vss.GetNodeID(), lcmmsg.FromID, err)
+	}
+}
+
+/*
+	func (dkg *ABDKGService) ReconstructLCM(ctx context.Context, sk *protobuf.SKMsg) (*protobuf.AckMsg, error) {
+		vss := dkg.Vss[sk.GetInstanceID()]
+		if int(sk.DestID) != vss.GetNodeID() {
+			log.Printf("node %v receive shares wrong desID %v", vss.GetNodeID(), sk.GetDestID())
+			return &protobuf.AckMsg{}, nil
+		}
 		return &protobuf.AckMsg{}, nil
 	}
 
-	return &protobuf.AckMsg{}, nil
-}
-
-func (dkg *ABDKGService) ReconstructLCM(ctx context.Context, sk *protobuf.SKMsg) (*protobuf.AckMsg, error) {
-	vss := dkg.Vss[sk.GetInstanceID()]
-	if int(sk.DestID) != vss.GetNodeID() {
-		log.Printf("node %v receive shares wrong desID %v", vss.GetNodeID(), sk.GetDestID())
+	func (dkg *ABDKGService) ReceiveRecShares(ctx context.Context, sk *protobuf.SKMsg) (*protobuf.AckMsg, error) {
+		vss := dkg.Vss[sk.GetInstanceID()]
+		if int(sk.DestID) != vss.GetNodeID() {
+			log.Printf("node %v receive shares wrong desID %v", vss.GetNodeID(), sk.GetDestID())
+			return &protobuf.AckMsg{}, nil
+		}
 		return &protobuf.AckMsg{}, nil
 	}
-	return &protobuf.AckMsg{}, nil
-}
-
-func (dkg *ABDKGService) ReceiveRecShares(ctx context.Context, sk *protobuf.SKMsg) (*protobuf.AckMsg, error) {
-	vss := dkg.Vss[sk.GetInstanceID()]
-	if int(sk.DestID) != vss.GetNodeID() {
-		log.Printf("node %v receive shares wrong desID %v", vss.GetNodeID(), sk.GetDestID())
-		return &protobuf.AckMsg{}, nil
-	}
-	return &protobuf.AckMsg{}, nil
-}
-
+*/
 func (dkg *ABDKGService) SecretSharing(pk []kyber.Point, s []*big.Int) {
 	vss := dkg.Vss[dkg.id]
 	err := vss.DistributorInit(pk, s)
@@ -132,9 +191,10 @@ func (dkg *ABDKGService) SecretSharing(pk []kyber.Point, s []*big.Int) {
 				Xix:        xixBytes,
 				Xiy:        xiyBytes,
 			}
+			m := core.Encapsulation("OSV", nil, uint32(dkg.id), sharesmsg)
 
-			ctx, cancel := context.WithCancel(context.Background())
-			defer cancel()
+			//ctx, cancel := context.WithCancel(context.Background())
+			//defer cancel()
 			for j := 0; j < dkg.nodenum; j++ {
 				if j == dkg.id {
 					err := vss.ObtainShares(zix, ziy, xix, xiy, i)
@@ -143,10 +203,15 @@ func (dkg *ABDKGService) SecretSharing(pk []kyber.Point, s []*big.Int) {
 					}
 					continue
 				}
-				_, err = dkg.Clients[j].ReceiveShares(ctx, sharesmsg)
-				if err != nil {
-					log.Printf("send shares to node %v error: %v", i, err)
-				}
+				dkg.Sendchannels[j] <- m
+				/*
+						put into send channel
+
+
+					//_, err = dkg.Clients[j].ReceiveShares(ctx, sharesmsg)
+					if err != nil {
+						log.Printf("send shares to node %v error: %v", i, err)
+					}*/
 			}
 		}(i)
 
@@ -164,8 +229,8 @@ func (dkg *ABDKGService) BroadcastLCM(index int) {
 		lcmBytes[i] = lcm[i].Bytes()
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	//ctx, cancel := context.WithCancel(context.Background())
+	//defer cancel()
 	for j := 0; j < dkg.nodenum; j++ {
 		lcmmsg := &protobuf.LCMMsg{
 			FromID:     int64(dkg.id),
@@ -182,10 +247,18 @@ func (dkg *ABDKGService) BroadcastLCM(index int) {
 			continue
 		}
 		log.Printf("node %v send lcm to node %v in instance %v", dkg.id, j, index)
-		_, err = dkg.Clients[j].ReceiveLCM(ctx, lcmmsg)
-		if err != nil {
-			log.Printf("send shares to node %v error: %v", j, err)
-		}
+
+		m := core.Encapsulation("OSV", nil, uint32(dkg.id), lcmmsg)
+		dkg.Sendchannels[lcmmsg.DestID] <- m
+
+		/*
+				put into send channel
+
+
+			//_, err = dkg.Clients[j].ReceiveLCM(ctx, lcmmsg)
+			if err != nil {
+				log.Printf("send shares to node %v error: %v", j, err)
+			}*/
 	}
 }
 
@@ -193,8 +266,8 @@ func (s *ABDKGService) Init(i int) {
 	osv := s.Osv[i]
 	//log.Printf("node %v osv init in instance %v", s.id, i)
 	msgs := osv.Init()
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	//ctx, cancel := context.WithCancel(context.Background())
+	//defer cancel()
 	for _, msg := range msgs {
 		protonewmsg := &protobuf.OSVMsg{
 			FromID:     int64(msg.FromID),
@@ -202,14 +275,20 @@ func (s *ABDKGService) Init(i int) {
 			InstanceID: int64(i),
 			Mtype:      msg.Mtype,
 		}
-		_, err := s.Clients[msg.DestID].ReceiveOSV(ctx, protonewmsg)
-		if err != nil {
-			log.Printf("node %v init err: %v", s.id, err)
-		}
+		m := core.Encapsulation("OSV", nil, uint32(s.id), protonewmsg)
+		s.Sendchannels[msg.DestID] <- m
+		/*
+				put into send channel
+
+
+			//_, err := s.Clients[msg.DestID].ReceiveOSV(ctx, protonewmsg)
+			if err != nil {
+				log.Printf("node %v init err: %v", s.id, err)
+			}*/
 	}
 }
 
-func (s *ABDKGService) ReceiveOSV(ctx context.Context, osvmsg *protobuf.OSVMsg) (*protobuf.AckMsg, error) {
+func (s *ABDKGService) ReceiveOSV(osvmsg *protobuf.OSVMsg) {
 	msg := osv.Message{
 		FromID: int(osvmsg.GetFromID()),
 		DestID: int(osvmsg.GetDestID()),
@@ -219,10 +298,8 @@ func (s *ABDKGService) ReceiveOSV(ctx context.Context, osvmsg *protobuf.OSVMsg) 
 	recvmsgs, err := s.Osv[osvmsg.InstanceID].Recv(msg)
 	if err != nil {
 		log.Printf("node %v receive msg err: %v", s.id, err)
-		return nil, err
+		return
 	}
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 	for _, newmsg := range recvmsgs {
 		protonewmsg := &protobuf.OSVMsg{
 			FromID:     int64(newmsg.FromID),
@@ -230,10 +307,14 @@ func (s *ABDKGService) ReceiveOSV(ctx context.Context, osvmsg *protobuf.OSVMsg) 
 			InstanceID: osvmsg.InstanceID,
 			Mtype:      newmsg.Mtype,
 		}
-		_, err := s.Clients[newmsg.DestID].ReceiveOSV(ctx, protonewmsg)
-		if err != nil {
-			log.Printf("node %v receive msg err: %v", s.id, err)
-		}
+		m := core.Encapsulation("OSV", nil, uint32(s.id), protonewmsg)
+		s.Sendchannels[newmsg.DestID] <- m
+		/*
+				put into send channel
+
+			//_, err := s.Clients[newmsg.DestID].ReceiveOSV(ctx, protonewmsg)
+			if err != nil {
+				log.Printf("node %v receive msg err: %v", s.id, err)
+			}*/
 	}
-	return &protobuf.AckMsg{}, nil
 }

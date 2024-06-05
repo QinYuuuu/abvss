@@ -4,9 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
+	"github.com/QinYuuuu/abvss/pkg/utils"
 	"golang.org/x/net/context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/proto"
+	"io"
 	"log"
 	"net"
 	"sync"
@@ -14,45 +15,80 @@ import (
 )
 
 type Peer struct {
-	n, id  int
-	Server *grpc.Server
-	Conns  []*grpc.ClientConn
-	ipList []string // Node IP Address List
-	Ready  bool
+	n, id          int
+	Lis            *net.TCPListener
+	Conns          []*net.TCPConn
+	ipList         []string
+	portList       []string // Node IP Address List
+	ReceiveChannel chan *protobuf.Message
+	SendChannels   []chan *protobuf.Message
+	Ready          bool
 }
 
-func NewPeer(n, id int, iplist []string) (*Peer, error) {
+func NewPeer(n, id int, iplist []string, portList []string) (*Peer, error) {
 	if n != len(iplist) {
 		return nil, errors.New("n does not match iplist ")
 	}
 	return &Peer{
-		n:      n,
-		id:     id,
-		Conns:  make([]*grpc.ClientConn, n),
-		ipList: iplist,
-		Server: grpc.NewServer(),
-		Ready:  false,
+		n:              n,
+		id:             id,
+		Conns:          make([]*net.TCPConn, n),
+		ReceiveChannel: make(chan *protobuf.Message),
+		SendChannels:   make([]chan *protobuf.Message, n),
+		ipList:         iplist,
+		portList:       portList,
+		Ready:          false,
 	}, nil
 }
 
-func (p *Peer) Serve(aws bool) {
-	addr := p.ipList[p.id]
-	if aws {
-		addr = "0.0.0.0:12001"
+func (p *Peer) Serve() {
+	addr, err1 := net.ResolveTCPAddr("tcp4", ":"+p.portList[p.id])
+	if err1 != nil {
+		log.Fatalf("node %v create addr err: %v\n", p.id, err1)
 	}
-	lis, err := net.Listen("tcp", addr)
+	lis, err := net.ListenTCP("tcp", addr)
 	if err != nil {
 		log.Fatalf("node %v failed to listen %v", p.id, err)
 	}
-	log.Printf("node %d serve on %s", p.id, addr)
-	if err := p.Server.Serve(lis); err != nil {
-		log.Fatalf("node failed to serve %v", err)
-	}
-	defer func() {
-		p.Server.Stop()
-		err := lis.Close()
-		if err != nil {
-			log.Printf("node failed to close listen %v", err)
+	log.Printf("node %d listen on %s", p.id, addr)
+
+	//Make the receive channel and the handle func
+	var conn *net.TCPConn
+	var err3 error
+	p.ReceiveChannel = make(chan *protobuf.Message, 2048)
+	go func() {
+		for {
+			//The handle func run forever
+			conn, err3 = lis.AcceptTCP()
+			if err3 != nil {
+				log.Fatalln(err3)
+			}
+			conn.SetKeepAlive(true)
+
+			//Once connect to a node, make a sub-handle func to handle this connection
+			go func(conn *net.TCPConn, channel chan *protobuf.Message) {
+				for {
+					//Receive bytes
+					lengthBuf := make([]byte, 4)
+					_, err1 := io.ReadFull(conn, lengthBuf)
+					length := utils.BytesToInt(lengthBuf)
+					buf := make([]byte, length)
+					_, err2 := io.ReadFull(conn, buf)
+					if err1 != nil || err2 != nil {
+						log.Println("The receive channel has break down", err1, err2)
+						continue
+					}
+					//Do Unmarshal
+					var m protobuf.Message
+					err3 := proto.Unmarshal(buf, &m)
+					if err3 != nil {
+						log.Fatalln(err3)
+					}
+					//Push protobuf.Message to receivechannel
+					channel <- &m
+				}
+
+			}(conn, p.ReceiveChannel)
 		}
 	}()
 }
@@ -65,24 +101,19 @@ func (p *Peer) Connect() {
 			continue
 		}
 		go func(i int) {
+			addr, err1 := net.ResolveTCPAddr("tcp4", p.ipList[i]+":"+p.portList[p.id])
+			if err1 != nil {
+				log.Fatalf("node %v create addr err: %v\n", p.id, err1)
+			}
 			for {
-				nConn, err := grpc.NewClient(p.ipList[i], grpc.WithTransportCredentials(insecure.NewCredentials()))
+				log.Printf("node %v try connect to node %v on %v", p.id, i, p.ipList[i])
+				nConn, err := net.DialTCP("tcp", nil, addr)
 				if err != nil {
 					log.Printf("node %v did not connect to node %v: %v", p.id, i, err)
 					time.Sleep(3 * time.Second)
 					continue
-				}
-				client := protobuf.NewConnClient(nConn)
-				rsp, err := client.Receive(context.TODO(), &protobuf.TestHelloMessage{
-					FromID: int64(p.id),
-					DestID: int64(i),
-				})
-				if err != nil {
-					log.Printf("node %v connect to node %v error", p.id, i)
-					time.Sleep(5 * time.Second)
-					continue
 				} else {
-					fmt.Println(rsp)
+					nConn.SetKeepAlive(true)
 					p.Conns[i] = nConn
 					log.Printf("node %v connect to node %v", p.id, i)
 					break
@@ -93,6 +124,31 @@ func (p *Peer) Connect() {
 		}(i)
 	}
 	wg.Wait()
+	for i := 0; i < len(p.ipList); i++ {
+		if i == p.id {
+			continue
+		}
+		conn := p.Conns[i]
+		p.SendChannels[i] = make(chan *protobuf.Message, 2048)
+		go func(conn *net.TCPConn, channel chan *protobuf.Message) {
+			for {
+				//Pop protobuf.Message form sendchannel
+				m := <-(channel)
+				//Do Marshal
+				byt, err1 := proto.Marshal(m)
+				if err1 != nil {
+					log.Fatalln("do marshal failed", err1)
+				}
+				//Send bytes
+				length := len(byt)
+				_, err2 := conn.Write(utils.IntToBytes(length))
+				_, err3 := conn.Write(byt)
+				if err2 != nil || err3 != nil {
+					log.Fatalln("The send channel has break down!", err2, err3)
+				}
+			}
+		}(conn, p.SendChannels[i])
+	}
 	fmt.Println(p.Conns)
 }
 
