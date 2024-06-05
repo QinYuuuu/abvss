@@ -131,7 +131,7 @@ func (dkg *ABDKGService) ReceiveLCM(lcmmsg *protobuf.LCMMsg) {
 	for i := range lcmBytes {
 		lcm[i] = new(big.Int).SetBytes(lcmBytes[i])
 	}
-	log.Printf("node %v receive lcm from node %v in instance %v", dkg.id, lcmmsg.FromID, lcmmsg.InstanceID)
+	//log.Printf("node %v receive lcm from node %v in instance %v", dkg.id, lcmmsg.FromID, lcmmsg.InstanceID)
 	err := vss.VerifyLCM(lcm, int(lcmmsg.GetFromID()))
 	if err != nil {
 		log.Printf("node %v receive lcm from node %v error: %v", vss.GetNodeID(), lcmmsg.FromID, err)
@@ -245,7 +245,7 @@ func (dkg *ABDKGService) BroadcastLCM(index int) {
 			Lcmi:       lcmBytes,
 		}
 		if j == dkg.id {
-			log.Printf("node %v send lcm to node %v in instance %v", dkg.id, j, index)
+			//log.Printf("node %v send lcm to node %v in instance %v", dkg.id, j, index)
 			err := vss.VerifyLCM(lcm, dkg.id)
 			if err != nil {
 				log.Printf("VerifyLCM error: %v", err)
