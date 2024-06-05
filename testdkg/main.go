@@ -128,16 +128,17 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	}
 	peer, err := network.NewPeer(n, id, ipList, portList1)
 
-	abdkgservice := abdkg.NewABDKGService(id, n, peer.SendChannels, peer.ReceiveChannel)
 	/*
 		connservice := network.Service{Id: id}
 		protobuf.RegisterConnServer(peer.Server, connservice)
 	*/
-	abdkgservice.Vss = abvss_instance
-	abdkgservice.Osv = osv_instance
+
 	//protobuf.RegisterABDKGServer(peer.Server, abdkgservice)*/
 	go peer.Serve()
 	peer.Connect()
+	abdkgservice := abdkg.NewABDKGService(id, n, peer.SendChannels, peer.ReceiveChannel)
+	abdkgservice.Vss = abvss_instance
+	abdkgservice.Osv = osv_instance
 	/*
 		for j := 0; j < n; j++ {
 			if j == id {
