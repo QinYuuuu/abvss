@@ -135,6 +135,7 @@ func (p *Peer) Connect() {
 			for {
 				//Pop protobuf.Message form sendchannel
 				m := <-(channel)
+				log.Printf("node %v going to send %v", p.id, m)
 				//Do Marshal
 				byt, err1 := proto.Marshal(m)
 				if err1 != nil {

@@ -33,6 +33,7 @@ func NewABDKGService(id, n int, send []chan *protobuf.Message, receive chan *pro
 }
 
 func (dkg *ABDKGService) Send(msgtype string, destID int, rawmsg any) {
+	log.Printf("node %v going to send %v to node %v", dkg.id, msgtype)
 	msg := core.Encapsulation(msgtype, nil, uint32(dkg.id), rawmsg)
 	dkg.Sendchannels[destID] <- msg
 }
@@ -204,7 +205,7 @@ func (dkg *ABDKGService) SecretSharing(pk []kyber.Point, s []*big.Int) {
 					}
 					continue
 				}
-				log.Printf("node %v send shares to node %v in instance %v", dkg.id, j, dkg.id)
+				//log.Printf("node %v send shares to node %v in instance %v", dkg.id, j, dkg.id)
 				dkg.Sendchannels[j] <- m
 				/*
 						put into send channel
