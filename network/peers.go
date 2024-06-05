@@ -101,7 +101,7 @@ func (p *Peer) Connect() {
 			continue
 		}
 		go func(i int) {
-			addr, err1 := net.ResolveTCPAddr("tcp4", p.ipList[i]+":"+p.portList[p.id])
+			addr, err1 := net.ResolveTCPAddr("tcp4", p.ipList[i]+":"+p.portList[i])
 			if err1 != nil {
 				log.Fatalf("node %v create addr err: %v\n", p.id, err1)
 			}
@@ -157,6 +157,7 @@ func (p *Peer) Close() {
 		if i == p.id {
 			continue
 		}
+		close(p.SendChannels[i])
 		err := Conn.Close()
 		if err != nil {
 			log.Printf("node %v close %v", p.id, err)
