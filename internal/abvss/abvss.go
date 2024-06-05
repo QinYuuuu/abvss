@@ -6,6 +6,7 @@ import (
 	"go.dedis.ch/kyber/v3/group/curve25519"
 	"math/big"
 	"math/rand"
+	"sync"
 
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
 )
@@ -19,7 +20,7 @@ type ABVSS struct {
 	batchsize  int
 	vnum       int
 	Curve      kyber.Group
-
+	mutex      *sync.Mutex
 	*ABVSSD
 	*ABVSSR
 	*ABVSSV
@@ -66,7 +67,7 @@ type ABVSSV struct {
 	done  bool
 }
 
-func NewVSS(index, nodeid, nodenum, degree, batchsize, vnum int, p *big.Int, flag int) (*ABVSS, error) {
+func NewVSS(index, nodeid, nodenum, degree, batchsize, vnum int, p *big.Int, flag int, mutex *sync.Mutex) (*ABVSS, error) {
 	if nodenum < 3*degree+1 {
 		return nil, errors.New("must satisfy n >= 3f+1")
 	}
@@ -86,6 +87,7 @@ func NewVSS(index, nodeid, nodenum, degree, batchsize, vnum int, p *big.Int, fla
 		batchsize:  batchsize,
 		vnum:       vnum,
 		Curve:      curve,
+		mutex:      mutex,
 	}, nil
 }
 

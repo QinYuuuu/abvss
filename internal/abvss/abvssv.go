@@ -27,8 +27,10 @@ func (vss *ABVSS) VerifyLCM(lcm []*big.Int, index int) error {
 		index int
 		lcm   []*big.Int
 	}{index, lcm}
+	vss.mutex.Lock()
 	vss.ilist = append(vss.ilist, tuple)
 	vss.Count++
+	vss.mutex.Unlock()
 	fmt.Printf("node %v count: %d\n", vss.nodeid, vss.Count)
 	fmt.Printf("node %v ilist: %d\n", vss.nodeid, vss, vss.ilist)
 	if vss.Count == vss.nodenum-vss.degree && !vss.done {
