@@ -77,8 +77,8 @@ func (p *Peer) Serve() {
 					buf := make([]byte, length)
 					_, err2 := io.ReadFull(conn, buf)
 					if err1 != nil || err2 != nil {
-						log.Println("The come in conn has break down", err1, err2)
-						break
+						//log.Println("The come in conn has break down", err1, err2)
+						continue
 					}
 					//Do Unmarshal
 					var m protobuf.Message

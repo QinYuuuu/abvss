@@ -12,4 +12,5 @@ func main() {
 	//config.GenerateIPList_Local(4, "D:/mycode/gocode/src/abvss")
 	//config.LoadIPList_Local(4, "D:/mycode/gocode/src/abvss")
 	config.LoadRawIP(64, "D:/mycode/gocode/src/abvss")
+	//config.SHRawIP(64)
 }

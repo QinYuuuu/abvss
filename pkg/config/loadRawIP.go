@@ -26,8 +26,8 @@ func LoadRawIP(n int, addr string) {
 	for i := 0; i < n; i++ {
 		id := i
 		ip := results[i]
-		port1 := fmt.Sprintf("%v", 8000+i)
-		port2 := fmt.Sprintf("%v", 9000+i)
+		port1 := fmt.Sprintf("%v", 8000)
+		port2 := fmt.Sprintf("%v", 9000)
 		list[i] = struct {
 			ID    int
 			IP    string
