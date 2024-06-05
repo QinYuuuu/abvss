@@ -42,7 +42,7 @@ func (p *Peer) Serve(aws bool) {
 	}
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
-		log.Fatalf("node failed to listen %v", err)
+		log.Fatalf("node %v failed to listen %v", p.id, err)
 	}
 	log.Printf("node %d serve on %s", p.id, addr)
 	if err := p.Server.Serve(lis); err != nil {

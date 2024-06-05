@@ -41,7 +41,7 @@ func LoadIPList_aws(n int, addr string) ([]string, []string, []string) {
 	json.Unmarshal(input, &list)
 	iplist1 := make([]string, n)
 	for i := 0; i < n; i++ {
-		iplist1[i] = list[i].IP + ":" + list[i].Port1
+		iplist1[i] = "127.0.0.1" + ":" + list[i].Port1
 	}
 	iplist2 := make([]string, n)
 	for i := 0; i < n; i++ {
