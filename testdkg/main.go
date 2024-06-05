@@ -152,6 +152,7 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	for i := 0; i < batchsize; i++ {
 		s[i] = utils.RandomNum(pint)
 	}
+	go abdkgservice.Receive()
 	start1 := time.Now()
 	node.SecretSharing(pk1, s)
 	for i := 0; i < n; i++ {
