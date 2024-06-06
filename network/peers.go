@@ -96,6 +96,14 @@ func (p *Peer) Serve() {
 	}()
 }
 
+func isBrokenPipeError(err error) bool {
+	if err == nil {
+		return false
+	}
+	// 检查错误信息中是否包含 "broken pipe"
+	return err.Error() == "write: broken pipe" || err.Error() == "write: connection reset by peer"
+}
+
 func (p *Peer) Connect() {
 	var wg sync.WaitGroup
 	wg.Add(p.n - 1)
@@ -149,10 +157,50 @@ func (p *Peer) Connect() {
 				//Send bytes
 				length := len(byt)
 				_, err2 := conn.Write(utils.IntToBytes(length))
+				if err2 != nil {
+					//log.Fatalln("The send channel has break down!", err2)
+					if isBrokenPipeError(err2) {
+						addr, _ := net.ResolveTCPAddr("tcp4", p.ipList[i]+":"+p.portList[i])
+						var err error
+						for {
+							conn, err = net.DialTCP("tcp", nil, addr)
+							if err != nil {
+								//log.Printf("node %v did not connect to node %v: %v", p.id, i, err)
+								time.Sleep(3 * time.Second)
+								continue
+							} else {
+								conn.SetKeepAlive(true)
+								p.Conns[i] = conn
+								//log.Printf("node %v connect to node %v", p.id, i)
+								break
+							}
+						}
+						_, err2 = conn.Write(utils.IntToBytes(length))
+					}
+				}
 				_, err3 := conn.Write(byt)
 				p.Bandwidth[i] += uint64(length)
-				if err2 != nil || err3 != nil {
-					log.Fatalln("The send channel has break down!", err2, err3)
+				if err3 != nil {
+					//log.Fatalln("The send channel has break down!", err3)
+					if isBrokenPipeError(err2) {
+						addr, _ := net.ResolveTCPAddr("tcp4", p.ipList[i]+":"+p.portList[i])
+						var err error
+						for {
+							conn, err = net.DialTCP("tcp", nil, addr)
+							if err != nil {
+								//log.Printf("node %v did not connect to node %v: %v", p.id, i, err)
+								time.Sleep(3 * time.Second)
+								continue
+							} else {
+								conn.SetKeepAlive(true)
+								p.Conns[i] = conn
+								//log.Printf("node %v connect to node %v", p.id, i)
+								break
+							}
+
+						}
+						_, err3 = conn.Write(byt)
+					}
 				}
 			}
 		}(conn, p.SendChannels[i], i)
