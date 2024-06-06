@@ -62,7 +62,7 @@ func (vss *ABVSSService) Receive() {
 				if err != nil {
 					log.Printf("node %v receive shares from node %v error: %v", vss.GetNodeID(), newmsg.GetFromID(), err)
 				}
-				//log.Printf("node %v receive shares %v from node %v in instance %v", vss.GetNodeID(), shares.GetIndex(), shares.GetFromID(), shares.GetInstanceID())
+				log.Printf("node %v receive shares %v from node %v in instance %v", vss.GetNodeID(), newmsg.GetIndex(), newmsg.GetFromID(), newmsg.GetInstanceID())
 			}
 			if msgType == "LCM" {
 				newmsg := core.Decapsulation(msgType, msg).(*protobuf.LCMMsg)
@@ -118,7 +118,7 @@ func (vss *ABVSSService) ReceiveLCM(lcmmsg *protobuf.LCMMsg) {
 		log.Printf("node %v receive lcm from node %v error: %v", vss.GetNodeID(), lcmmsg.FromID, err)
 		return
 	}
-	//log.Printf("node %v receive lcm from node %v", vss.GetNodeID(), lcmmsg.FromID)
+	log.Printf("node %v receive lcm from node %v", vss.GetNodeID(), lcmmsg.FromID)
 	return
 }
 
@@ -187,7 +187,7 @@ func (vss *ABVSSService) SecretSharing(pk []kyber.Point, s []*big.Int) {
 					}
 					continue
 				}
-				//log.Printf("node %v send shares to node %v in instance %v", dkg.id, j, dkg.id)
+				log.Printf("node %v send shares to node %v in instance %v", vss.nodeid, j)
 				vss.Sendchannels[j] <- m
 			}
 		}(i)
