@@ -204,12 +204,13 @@ func (vss *ABVSSService) BroadcastLCM() {
 	for i := range lcm {
 		lcmBytes[i] = lcm[i].Bytes()
 	}
-	lcmmsg := &protobuf.LCMMsg{
-		FromID: int64(vss.nodeid),
-		Lcmi:   lcmBytes,
-	}
 
 	for i := 0; i < vss.nodenum; i++ {
+		lcmmsg := &protobuf.LCMMsg{
+			FromID: int64(vss.nodeid),
+			DestID: int64(i),
+			Lcmi:   lcmBytes,
+		}
 		if i == vss.nodeid {
 			err := vss.VerifyLCM(lcm, vss.nodeid)
 			if err != nil {
@@ -218,7 +219,7 @@ func (vss *ABVSSService) BroadcastLCM() {
 			continue
 		}
 		m := core.Encapsulation("LCM", nil, uint32(vss.nodeid), lcmmsg)
-		vss.Sendchannels[lcmmsg.DestID] <- m
+		vss.Sendchannels[i] <- m
 	}
 }
 
