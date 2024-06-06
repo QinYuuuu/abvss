@@ -138,10 +138,6 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	abdkgservice.Vss = abvss_instance
 	abdkgservice.Osv = osv_instance
 
-	defer peer.Close()
-
-	defer p.Close()
-
 	node = &ABDKGNode{ABDKGService: abdkgservice, Peer: peer}
 	var wg sync.WaitGroup
 
