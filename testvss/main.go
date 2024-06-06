@@ -163,7 +163,7 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 		}
 	}
 
-	for i := 0; i < batchsize; i++ {
+	for i := 0; i < n; i++ {
 		bandwidth += int(peer.Bandwidth[i])
 	}
 	fmt.Printf("node %v Time cost: %v\n", id, timeusage)
