@@ -110,7 +110,7 @@ func (p *Peer) Connect() {
 			if err1 != nil {
 				log.Fatalf("node %v create addr err: %v\n", p.id, err1)
 			}
-			log.Printf("node %v try connect to node %v on %v", p.id, i, p.ipList[i])
+			//log.Printf("node %v try connect to node %v on %v", p.id, i, p.ipList[i])
 			for {
 
 				nConn, err := net.DialTCP("tcp", nil, addr)
@@ -121,7 +121,7 @@ func (p *Peer) Connect() {
 				} else {
 					nConn.SetKeepAlive(true)
 					p.Conns[i] = nConn
-					log.Printf("node %v connect to node %v", p.id, i)
+					//log.Printf("node %v connect to node %v", p.id, i)
 					break
 				}
 
@@ -130,6 +130,7 @@ func (p *Peer) Connect() {
 		}(i)
 	}
 	wg.Wait()
+	log.Printf("node %v connect to other nodes", p.id)
 	for i := 0; i < len(p.ipList); i++ {
 		if i == p.id {
 			continue
