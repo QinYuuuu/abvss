@@ -166,7 +166,7 @@ func (p *Peer) Connect() {
 							conn, err = net.DialTCP("tcp", nil, addr)
 							if err != nil {
 								//log.Printf("node %v did not connect to node %v: %v", p.id, i, err)
-								time.Sleep(3 * time.Second)
+								time.Sleep(10 * time.Second)
 								continue
 							} else {
 								conn.SetKeepAlive(true)
@@ -189,7 +189,7 @@ func (p *Peer) Connect() {
 							conn, err = net.DialTCP("tcp", nil, addr)
 							if err != nil {
 								//log.Printf("node %v did not connect to node %v: %v", p.id, i, err)
-								time.Sleep(3 * time.Second)
+								time.Sleep(10 * time.Second)
 								continue
 							} else {
 								conn.SetKeepAlive(true)
