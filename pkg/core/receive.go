@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"time"
 )
 
 // MakeReceiveChannel returns a channel receiving messages
@@ -20,8 +21,9 @@ func MakeReceiveChannel(port string) (*net.TCPListener, chan *protobuf.Message) 
 		addr, err1 = net.ResolveTCPAddr("tcp4", ":"+port)
 		lis, err2 = net.ListenTCP("tcp4", addr)
 		if err1 != nil || err2 != nil {
-			log.Println("make listener falied and retry", err1, err2)
+			log.Println("In mvba make listener falied and retry", err1, err2)
 			retry = true
+			time.Sleep(3 * time.Second)
 		} else {
 			retry = false
 		}
