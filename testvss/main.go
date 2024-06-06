@@ -24,6 +24,12 @@ type node struct {
 }
 */
 
+type ABVSSNode struct {
+	*abvss.ABVSSService
+	*osv.OSVService
+	*network.Peer
+}
+
 func main() {
 
 	n := flag.Int("n", 4, "number of nodes in the cluster")
