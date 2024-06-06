@@ -147,16 +147,15 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	}
 	go abdkgservice.Receive()
 	start1 := time.Now()
-	node.SecretSharing(pk1, s)
+	go node.SecretSharing(pk1, s)
 	for i := 0; i < n; i++ {
 		go func(i int) {
-			for {
-				if node.Vss[i].Received {
-					//fs, gs := node.Vss[i].GetShares()
-					//log.Printf("node %v received shares %v\n%v", id, fs, gs)
-					node.BroadcastLCM(i)
-					return
-				}
+			receive := <-node.Vss[i].Received
+			if receive {
+				//fs, gs := node.Vss[i].GetShares()
+				//log.Printf("node %v received shares %v\n%v", id, fs, gs)
+				node.BroadcastLCM(i)
+				return
 			}
 		}(i)
 	}

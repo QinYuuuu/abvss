@@ -52,7 +52,7 @@ type ABVSSR struct {
 	gshares      []*big.Int
 	randombeacon *rand.Rand
 	r            [][]*big.Int
-	Received     bool
+	Received     chan bool
 	complain     bool
 	qlist        map[int][]*big.Int
 }

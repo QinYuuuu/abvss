@@ -22,7 +22,7 @@ func (vss *ABVSS) ReceiverInit(sk kyber.Scalar) {
 		xiy:          make([][]kyber.Point, vss.nodenum),
 		zix:          make([][]kyber.Point, vss.nodenum),
 		ziy:          make([][]kyber.Point, vss.nodenum),
-		Received:     false,
+		Received:     make(chan bool),
 		randombeacon: rand.New(rand.NewSource(ReceiverRandSeed)),
 	}
 }
@@ -73,7 +73,7 @@ func (vss *ABVSS) ObtainShares(zix, ziy, xix, xiy []kyber.Point, index int) erro
 			}
 			//vss.gshares[i] = xi[i]
 		}
-		vss.Received = true
+		vss.Received <- true
 	}
 	return nil
 }

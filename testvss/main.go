@@ -112,11 +112,10 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 	}
 
 	go func() {
-		for {
-			if node.Received {
-				node.BroadcastLCM()
-				return
-			}
+		flag1 := <-node.Received
+		if flag1 {
+			node.BroadcastLCM()
+			return
 		}
 	}()
 
