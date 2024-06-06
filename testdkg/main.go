@@ -191,7 +191,7 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	result := make([][][]byte, testNum)
 	start2 := time.Now()
 	for k := 0; k < testNum; k++ {
-		ID := utils2.IntToBytes(0)
+		ID := utils2.IntToBytes(k)
 		pids := make([]uint32, 2*f+1)
 		hashes := make([][]byte, 2*f+1)
 		sigs := make([][]byte, 2*f+1)
