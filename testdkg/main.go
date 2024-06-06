@@ -229,7 +229,7 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 		band1 += int(peer.Bandwidth[i])
 	}
 	bandwidth := band1 + int(p.Bandwidth)
-	fmt.Printf("node %v Time cost: %v\n", id, timeusage)
+	fmt.Printf("node %v Time cost: %v %v %v\n", id, timeusage, end1.Sub(start1), end2.Sub(start2))
 	fmt.Printf("node %v bandwidth cost: %v\n", id, bandwidth)
 	path := "/home/ubuntu/test"
 	exist, err := config.PathExists(path)
