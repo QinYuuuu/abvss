@@ -4,13 +4,13 @@ import "github.com/QinYuuuu/abvss/pkg/config"
 
 func main() {
 	//config.ElgamalCurve25519KeyGen(128, "D:/mycode/gocode/src/abvss")
-	//config.SigKeyGen(7, 2, "D:/mycode/gocode/src/abvss")
-	//config.EncKeyGen(7, 2, "D:/mycode/gocode/src/abvss")
+	config.SigKeyGen(64, 21, "D:/mycode/gocode/src/abvss")
+	config.EncKeyGen(64, 21, "D:/mycode/gocode/src/abvss")
 	//config.LoadSigKey(4, "D:/mycode/gocode/src/abvss")
 	//ip1, ip2, ip3 := config.LoadIPList_Local(4, "D:/mycode/gocode/src/abvss")
 	//fmt.Println(ip1, ip2, ip3)
 	//config.GenerateIPList_Local(4, "D:/mycode/gocode/src/abvss")
 	//config.LoadIPList_Local(4, "D:/mycode/gocode/src/abvss")
-	config.LoadRawIP_2(16, 4, "D:/mycode/gocode/src/abvss")
-	config.SHRawIP(16)
+	//config.LoadRawIP_2(16, 4, "D:/mycode/gocode/src/abvss")
+	//config.SHRawIP(16)
 }
