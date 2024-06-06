@@ -96,6 +96,7 @@ func test(n, batchsize, f, id int, str string, aws int) {
 	}
 	//fmt.Println(len(signature[0]))
 	time1, band1 := TestDKG(id, n, f, batchsize, vnum, p, pk1, sk1[id], str, aws)
+	log.Printf("node %v finsish share", id)
 	time2, band2 := TestDKGStep2(id, n, f, batchsize, pk, sk[id], epk, evk, esks[id], testNum, signature, str, aws)
 	timeusage := time1 + time2
 	bandwidth := band1 + band2
@@ -115,7 +116,7 @@ func test(n, batchsize, f, id int, str string, aws int) {
 	}
 	file3, _ := os.OpenFile(fmt.Sprintf("/home/ubuntu/test/node%v_%v_%v", id, n, batchsize), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
 	file3.WriteString(fmt.Sprintf("time\n%v\nband\n%v\n", timeusage, bandwidth))
-	time.Sleep(30 * time.Second)
+	time.Sleep(10 * time.Second)
 }
 
 type ABDKGNode struct {
