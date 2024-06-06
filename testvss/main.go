@@ -130,7 +130,7 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 			}
 		}
 	}()
-	log.Printf("node %v osv INIT", id)
+	//log.Printf("node %v osv INIT", id)
 	flag1 := false
 
 	go func() {
@@ -168,5 +168,5 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 
 	file3, _ := os.OpenFile(fmt.Sprintf("/home/ubuntu/testvss/%v_%v", n, batchsize), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
 	file3.WriteString(fmt.Sprintf("time\n%v\nband\n%v\n", timeusage, bandwidth))
-	time.Sleep(10 * time.Second)
+	time.Sleep(3 * time.Second)
 }

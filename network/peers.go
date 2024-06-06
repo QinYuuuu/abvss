@@ -86,7 +86,7 @@ func (p *Peer) Serve() {
 					if err3 != nil {
 						log.Fatalln(err3)
 					}
-					log.Printf("node %v receive msg: %v from node %v", p.id, m.GetType(), m.Sender)
+					//log.Printf("node %v receive msg: %v from node %v", p.id, m.GetType(), m.Sender)
 					//Push protobuf.Message to receivechannel
 					channel <- &m
 				}
