@@ -125,7 +125,7 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 	go func() {
 		for {
 			if node.Count >= n-f {
-				node.OSV.Init()
+				node.OSVInit()
 				return
 			}
 		}

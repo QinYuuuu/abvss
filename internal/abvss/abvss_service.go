@@ -71,6 +71,10 @@ func (vss *ABVSSService) Receive() {
 			if msgType == "SK" {
 
 			}
+			if msgType == "OSV" {
+				newmsg := core.Decapsulation(msgType, msg).(*protobuf.OSVMsg)
+				vss.ReceiveOSV(newmsg)
+			}
 		}(msg)
 
 	}
@@ -223,7 +227,7 @@ func (vss *ABVSSService) BroadcastLCM() {
 	}
 }
 
-func (s *ABVSSService) Init(i int) {
+func (s *ABVSSService) OSVInit() {
 	osv := s.OSV
 	//log.Printf("node %v osv init in instance %v", s.id, i)
 	msgs := osv.Init()
@@ -233,7 +237,7 @@ func (s *ABVSSService) Init(i int) {
 		protonewmsg := &protobuf.OSVMsg{
 			FromID:     int64(msg.FromID),
 			DestID:     int64(msg.DestID),
-			InstanceID: int64(i),
+			InstanceID: 0,
 			Mtype:      msg.Mtype,
 		}
 		m := core.Encapsulation("OSV", nil, uint32(s.nodeid), protonewmsg)
