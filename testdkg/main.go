@@ -179,7 +179,10 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 			}
 		}(i)
 	}
-	abdkg.IIPA_Prover1(batchsize)
+	for i := 0; i < 2*f+1; i++ {
+		abdkg.IIPA_Prover1(batchsize)
+	}
+
 	wg.Wait()
 	end1 := time.Now()
 	time.Sleep(10 * time.Second)
