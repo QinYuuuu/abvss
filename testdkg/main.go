@@ -194,6 +194,7 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	abdkg.IIPA_Prover1(batchsize)
 	wg.Wait()
 	end1 := time.Now()
+	peer.Close()
 	p := party.NewHonestParty(uint32(n), uint32(f), uint32(id), ipList, portList, pk, sk, epk, evk, esk)
 
 	p.InitReceiveChannel()
@@ -259,7 +260,6 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	file3, _ := os.OpenFile(fmt.Sprintf("/home/ubuntu/test/node%v_%v_%v", id, n, batchsize), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
 	file3.WriteString(fmt.Sprintf("time\n%v\nband\n%v\n", timeusage, bandwidth))
 	time.Sleep(30 * time.Second)
-	peer.Close()
 }
 
 func Q(p *party.HonestParty, ID []byte, value []byte, validation []byte, hashVerifyMap *sync.Map, sigVerifyMap *sync.Map) error {

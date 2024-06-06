@@ -162,7 +162,7 @@ func (p *Peer) Connect() {
 					if isBrokenPipeError(err2) {
 						addr, _ := net.ResolveTCPAddr("tcp4", p.ipList[i]+":"+p.portList[i])
 						var err error
-						for {
+						for j := 0; j < 5; j++ {
 							conn, err = net.DialTCP("tcp", nil, addr)
 							if err != nil {
 								//log.Printf("node %v did not connect to node %v: %v", p.id, i, err)
@@ -185,7 +185,7 @@ func (p *Peer) Connect() {
 					if isBrokenPipeError(err2) {
 						addr, _ := net.ResolveTCPAddr("tcp4", p.ipList[i]+":"+p.portList[i])
 						var err error
-						for {
+						for j := 0; j < 5; j++ {
 							conn, err = net.DialTCP("tcp", nil, addr)
 							if err != nil {
 								//log.Printf("node %v did not connect to node %v: %v", p.id, i, err)
