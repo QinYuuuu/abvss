@@ -11,6 +11,6 @@ func main() {
 	//fmt.Println(ip1, ip2, ip3)
 	//config.GenerateIPList_Local(4, "D:/mycode/gocode/src/abvss")
 	//config.LoadIPList_Local(4, "D:/mycode/gocode/src/abvss")
-	config.LoadRawIP_2(64, 1, "D:/mycode/gocode/src/abvss")
-	config.SHRawIP(64)
+	config.LoadRawIP_2(4, 1, "D:/mycode/gocode/src/abvss")
+	config.SHRawIP(4)
 }

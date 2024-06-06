@@ -132,12 +132,6 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	}
 	peer, err := network.NewPeer(n, id, ipList, portList1)
 
-	/*
-		connservice := network.Service{Id: id}
-		protobuf.RegisterConnServer(peer.Server, connservice)
-	*/
-
-	//protobuf.RegisterABDKGServer(peer.Server, abdkgservice)*/
 	go peer.Serve()
 	peer.Connect()
 	abdkgservice := abdkg.NewABDKGService(id, n, peer.SendChannels, peer.ReceiveChannel)
@@ -147,13 +141,7 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	defer peer.Close()
 
 	defer p.Close()
-	/*
-		for j := 0; j < n; j++ {
-			if j == id {
-				continue
-			}
-			abdkgservice.Clients[j] = protobuf.NewABDKGClient(peer.Conns[j])
-		}*/
+
 	node = &ABDKGNode{ABDKGService: abdkgservice, Peer: peer}
 	var wg sync.WaitGroup
 
@@ -179,7 +167,7 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	for i := 0; i < n; i++ {
 		go func(i int) {
 			for {
-				if node.Vss[i].Count == n-f {
+				if node.Vss[i].Count >= n-f {
 					node.Init(i)
 					return
 				}

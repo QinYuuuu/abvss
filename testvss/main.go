@@ -95,8 +95,6 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 	abvssservice.OSV = osv_instance
 	/*
 		protobuf.RegisterABVSSServer(peer.Server, abvssservice)*/
-	osvservice := osv.NewOSVService(n)
-	osvservice.OSV = osv_instance
 	node = &ABVSSNode{ABVSSService: abvssservice, Peer: peer}
 
 	var wg sync.WaitGroup
