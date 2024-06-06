@@ -36,6 +36,7 @@ type OSV struct {
 	acquired bool
 	voted    bool
 	done     bool
+	OutPut   chan bool
 }
 
 func NewOSV(n, t, id int) *OSV {
@@ -49,6 +50,7 @@ func NewOSV(n, t, id int) *OSV {
 		acquired: false,
 		voted:    false,
 		done:     false,
+		OutPut:   make(chan bool),
 	}
 }
 
@@ -161,7 +163,10 @@ func (osv *OSV) Recv(m Message) ([]Message, error) {
 		return msgs, nil
 	}
 	if osv.votesNum >= osv.n-osv.t && osv.voted {
-		osv.done = true
+		if osv.done == false {
+			osv.done = true
+			osv.OutPut <- true
+		}
 		//log.Printf("[node %v] output %v", osv.id, osv.done)
 		return nil, nil
 	}

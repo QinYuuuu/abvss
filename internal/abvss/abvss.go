@@ -65,6 +65,7 @@ type ABVSSV struct {
 	}
 	jlist []int
 	done  bool
+	Ready chan bool
 }
 
 func NewVSS(index, nodeid, nodenum, degree, batchsize, vnum int, p *big.Int, flag int, mutex *sync.Mutex) (*ABVSS, error) {

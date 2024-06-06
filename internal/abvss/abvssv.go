@@ -14,6 +14,7 @@ func (vss *ABVSS) VerifyInit() {
 			lcm   []*big.Int
 		}, 0),
 		jlist: make([]int, 0),
+		Ready: make(chan bool),
 	}
 }
 
@@ -29,6 +30,9 @@ func (vss *ABVSS) VerifyLCM(lcm []*big.Int, index int) error {
 	vss.mutex.Lock()
 	vss.ilist = append(vss.ilist, tuple)
 	vss.Count++
+	if vss.Count == vss.degree+1 {
+		vss.Ready <- true
+	}
 	vss.mutex.Unlock()
 	/*
 		fmt.Printf("node %v count: %d\n", vss.nodeid, vss.Count)

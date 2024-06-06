@@ -161,11 +161,10 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	}
 	for i := 0; i < f+1; i++ {
 		go func(i int) {
-			for {
-				if node.Vss[i].Count >= n-f {
-					node.Init(i)
-					return
-				}
+			ready := <-node.Vss[i].Ready
+			if ready {
+				node.Init(i)
+				return
 			}
 		}(i)
 	}
@@ -173,11 +172,10 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	wg.Add(f + 1)
 	for i := 0; i < f+1; i++ {
 		go func(i int) {
-			for {
-				if node.Osv[i].Done() {
-					wg.Done()
-					return
-				}
+			output := <-node.Osv[i].OutPut
+			if output {
+				wg.Done()
+				return
 			}
 		}(i)
 	}
