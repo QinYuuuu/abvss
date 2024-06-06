@@ -107,6 +107,7 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 	wg.Wait()
 	//fmt.Println(nodes[0].Conns)
 	//fmt.Println(nodes[0].Clients)
+	go abvssservice.Receive()
 	start := time.Now()
 	if id == 1 {
 		node.SecretSharing(pk, s)

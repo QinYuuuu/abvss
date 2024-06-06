@@ -187,7 +187,7 @@ func (vss *ABVSSService) SecretSharing(pk []kyber.Point, s []*big.Int) {
 					}
 					continue
 				}
-				log.Printf("node %v send shares to node %v in instance %v", vss.nodeid, j)
+				log.Printf("node %v send shares to node %v", vss.nodeid, j)
 				vss.Sendchannels[j] <- m
 			}
 		}(i)
