@@ -186,7 +186,6 @@ func (p *Peer) Close() {
 
 type Service struct {
 	Id int
-	protobuf.UnimplementedConnServer
 }
 
 func (n Service) Receive(ctx context.Context, req *protobuf.TestHelloMessage) (*protobuf.TestResMessage, error) {
