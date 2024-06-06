@@ -95,7 +95,27 @@ func test(n, batchsize, f, id int, str string, aws int) {
 		signature[k], _ = tbls.Recover(pairing.NewSuiteBn256(), pk, sm, sigshare, 2*f+1, n)
 	}
 	//fmt.Println(len(signature[0]))
-	TestDKG(id, n, f, batchsize, vnum, p, pk1, sk1[id], pk, sk[id], epk, evk, esks[id], testNum, signature, str, aws)
+	time1, band1 := TestDKG(id, n, f, batchsize, vnum, p, pk1, sk1[id], str, aws)
+	time2, band2 := TestDKGStep2(id, n, f, batchsize, pk, sk[id], epk, evk, esks[id], testNum, signature, str, aws)
+	timeusage := time1 + time2
+	bandwidth := band1 + band2
+	fmt.Printf("node %v Time cost: %v\n", id, timeusage)
+	fmt.Printf("node %v bandwidth cost: %v\n", id, bandwidth)
+	path := "/home/ubuntu/test"
+	exist, err := config.PathExists(path)
+	if err != nil {
+		fmt.Printf("get dir error: %v \n", err)
+	}
+	if !exist {
+		err = os.Mkdir("/home/ubuntu/test", 0777)
+		if err != nil {
+			fmt.Printf("make dir error: %v \n", err)
+			return
+		}
+	}
+	file3, _ := os.OpenFile(fmt.Sprintf("/home/ubuntu/test/node%v_%v_%v", id, n, batchsize), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
+	file3.WriteString(fmt.Sprintf("time\n%v\nband\n%v\n", timeusage, bandwidth))
+	time.Sleep(30 * time.Second)
 }
 
 type ABDKGNode struct {
@@ -103,13 +123,13 @@ type ABDKGNode struct {
 	*network.Peer
 }
 
-func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk1 kyber.Scalar, pk *share.PubPoly, sk *share.PriShare, epk kyber.Point, evk []*share.PubShare, esk *share.PriShare, testNum int, signature [][]byte, addr string, aws int) {
-	var portList1, ipList, portList []string
+func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk1 kyber.Scalar, addr string, aws int) (time.Duration, int) {
+	var portList1, ipList []string
 	if aws == 1 {
-		portList1, ipList, portList = config.LoadIPList_aws(n, addr)
+		portList1, ipList, _ = config.LoadIPList_aws(n, addr)
 	} else {
 		log.Printf("node %v running local", id)
-		portList1, ipList, portList = config.LoadIPList_Local(n, addr)
+		portList1, ipList, _ = config.LoadIPList_Local(n, addr)
 	}
 	node := new(ABDKGNode)
 	var err error
@@ -195,13 +215,28 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	wg.Wait()
 	end1 := time.Now()
 	peer.Close()
-	time.Sleep(10 * time.Second)
+	time.Sleep(3 * time.Second)
+	timeusage := end1.Sub(start1)
+	band1 := 0
+	for i := 0; i < n; i++ {
+		band1 += int(peer.Bandwidth[i])
+	}
+	return timeusage, band1
+}
 
+func TestDKGStep2(id, n, f, batchsize int, pk *share.PubPoly, sk *share.PriShare, epk kyber.Point, evk []*share.PubShare, esk *share.PriShare, testNum int, signature [][]byte, addr string, aws int) (time.Duration, int) {
+	var ipList, portList []string
+	if aws == 1 {
+		_, ipList, portList = config.LoadIPList_aws(n, addr)
+	} else {
+		log.Printf("node %v running local", id)
+		_, ipList, portList = config.LoadIPList_Local(n, addr)
+	}
 	p := party.NewHonestParty(uint32(n), uint32(f), uint32(id), ipList, portList, pk, sk, epk, evk, esk)
 
 	p.InitReceiveChannel()
 	p.InitSendChannel()
-
+	var wg sync.WaitGroup
 	defer p.Close()
 	var mu sync.Mutex
 	result := make([][][]byte, testNum)
@@ -239,29 +274,8 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	wg.Wait()
 	end2 := time.Now()
 	//fmt.Println("SUCCESS")
-	timeusage := end1.Sub(start1) + end2.Sub(start2)
-	band1 := 0
-	for i := 0; i < n; i++ {
-		band1 += int(peer.Bandwidth[i])
-	}
-	bandwidth := band1 + int(p.Bandwidth)
-	fmt.Printf("node %v Time cost: %v\n", id, timeusage)
-	fmt.Printf("node %v bandwidth cost: %v\n", id, bandwidth)
-	path := "/home/ubuntu/test"
-	exist, err := config.PathExists(path)
-	if err != nil {
-		fmt.Printf("get dir error: %v \n", err)
-	}
-	if !exist {
-		err = os.Mkdir("/home/ubuntu/test", 0777)
-		if err != nil {
-			fmt.Printf("make dir error: %v \n", err)
-			return
-		}
-	}
-	file3, _ := os.OpenFile(fmt.Sprintf("/home/ubuntu/test/node%v_%v_%v", id, n, batchsize), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
-	file3.WriteString(fmt.Sprintf("time\n%v\nband\n%v\n", timeusage, bandwidth))
-	time.Sleep(30 * time.Second)
+	timeusage := end2.Sub(start2)
+	return timeusage, int(p.Bandwidth)
 }
 
 func Q(p *party.HonestParty, ID []byte, value []byte, validation []byte, hashVerifyMap *sync.Map, sigVerifyMap *sync.Map) error {
