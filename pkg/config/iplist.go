@@ -35,7 +35,7 @@ func GenerateIPList_Local(n int, addr string) {
 }
 
 func LoadIPList_aws(n int, addr string) ([]string, []string, []string) {
-	list := make([]IPJson, n)
+	var list []IPJson
 	tmp3 := fmt.Sprintf("%s/iplist.json", addr)
 	input, _ := os.ReadFile(tmp3)
 	json.Unmarshal(input, &list)
