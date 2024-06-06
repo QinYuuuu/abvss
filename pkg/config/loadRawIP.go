@@ -42,7 +42,7 @@ func LoadRawIP(n int, addr string) {
 	file3.Close()
 }
 
-func LoadRawIP_2(n int, addr string) {
+func LoadRawIP_2(n int, times int, addr string) {
 	file, _ := os.OpenFile(fmt.Sprintf("rawip_%v", n), os.O_RDONLY, 0666)
 	defer file.Close()
 	reader := bufio.NewReader(file)
@@ -56,14 +56,14 @@ func LoadRawIP_2(n int, addr string) {
 		}
 		results = append(results, string(line))
 	}
-	list := make([]IPJson, 2*n)
+	list := make([]IPJson, times*n)
 	for i := 0; i < n; i++ {
-		for j := 0; j < 2; j++ {
-			id := 2*i + j
+		for j := 0; j < times; j++ {
+			id := times*i + j
 			ip := results[i]
 			port1 := fmt.Sprintf("%v", 8000+j)
 			port2 := fmt.Sprintf("%v", 9000+j)
-			list[2*i+j] = struct {
+			list[times*i+j] = struct {
 				ID    int
 				IP    string
 				Port1 string
