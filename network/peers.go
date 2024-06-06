@@ -78,7 +78,7 @@ func (p *Peer) Serve() {
 					_, err2 := io.ReadFull(conn, buf)
 					if err1 != nil || err2 != nil {
 						log.Println("The come in conn has break down", err1, err2)
-						continue
+						break
 					}
 					//Do Unmarshal
 					var m protobuf.Message
@@ -120,7 +120,6 @@ func (p *Peer) Connect() {
 			}
 			//log.Printf("node %v try connect to node %v on %v", p.id, i, p.ipList[i])
 			for {
-
 				nConn, err := net.DialTCP("tcp", nil, addr)
 				if err != nil {
 					//log.Printf("node %v did not connect to node %v: %v", p.id, i, err)

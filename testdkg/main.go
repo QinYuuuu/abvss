@@ -199,7 +199,7 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 			}
 		}(i)
 	}
-
+	log.Printf("node %v finsish share", id)
 	wg.Add(n)
 	for i := 0; i < n; i++ {
 		go func(i int) {
@@ -214,7 +214,7 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	abdkg.IIPA_Prover1(batchsize)
 	wg.Wait()
 	end1 := time.Now()
-	peer.Close()
+	//peer.Close()
 	time.Sleep(3 * time.Second)
 	timeusage := end1.Sub(start1)
 	band1 := 0
