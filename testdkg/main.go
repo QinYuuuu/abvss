@@ -20,6 +20,7 @@ import (
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/share"
 	"go.dedis.ch/kyber/v3/sign/bls"
+	"go.dedis.ch/kyber/v3/sign/tbls"
 	"google.golang.org/protobuf/proto"
 	"log"
 	"math/big"
@@ -71,34 +72,34 @@ func test(n, batchsize, f, id int, str string, aws int) {
 	p := param.P
 	pk1, sk1 := config.LoadElgamalCurve25519(n, str)
 	//sk, pk := party.SigKeyGen(uint32(n), uint32(2*f+1))
-	//sk, pk := config.LoadSigKey(n, str)
+	sk, pk := config.LoadSigKey(n, str)
 	//epk, evk, esks := party.EncKeyGen(uint32(n), uint32(f+1))
-	//epk, evk, esks := config.LoadEncKey(n, str)
-	//testNum := 1
-	//signature := make([][]byte, testNum)
-	/*
-		for k := 0; k < testNum; k++ {
-			ID := utils2.IntToBytes(k)
-			var sigshare [][]byte
-			var buf bytes.Buffer
-			buf.Write([]byte("Echo"))
-			buf.Write([]byte(ID))
-			buf.Write(utils2.Uint32ToBytes(0))
-			h := []byte("TEST")
-			buf.Write(h)
-			sm := buf.Bytes()
-			for i := 0; i < 2*f+1; i++ {
-				sigShare, _ := tbls.Sign(pairing.NewSuiteBn256(), sk[i], sm)
-				sigshare = append(sigshare, sigShare)
-			}
-			signature[k], _ = tbls.Recover(pairing.NewSuiteBn256(), pk, sm, sigshare, 2*f+1, n)
-		}*/
+	epk, evk, esks := config.LoadEncKey(n, str)
+	testNum := 1
+	signature := make([][]byte, testNum)
+
+	for k := 0; k < testNum; k++ {
+		ID := utils2.IntToBytes(k)
+		var sigshare [][]byte
+		var buf bytes.Buffer
+		buf.Write([]byte("Echo"))
+		buf.Write([]byte(ID))
+		buf.Write(utils2.Uint32ToBytes(0))
+		h := []byte("TEST")
+		buf.Write(h)
+		sm := buf.Bytes()
+		for i := 0; i < 2*f+1; i++ {
+			sigShare, _ := tbls.Sign(pairing.NewSuiteBn256(), sk[i], sm)
+			sigshare = append(sigshare, sigShare)
+		}
+		signature[k], _ = tbls.Recover(pairing.NewSuiteBn256(), pk, sm, sigshare, 2*f+1, n)
+	}
 	//fmt.Println(len(signature[0]))
 	time1, band1 := TestDKG(id, n, f, batchsize, vnum, p, pk1, sk1[id], str, aws)
 	//log.Printf("node %v finsish share", id)
-	//time2, band2 := TestDKGStep2(id, n, f, batchsize, pk, sk[id], epk, evk, esks[id], testNum, signature, str, aws)
-	timeusage := time1
-	bandwidth := band1
+	time2, band2 := TestDKGStep2(id, n, f, batchsize, pk, sk[id], epk, evk, esks[id], testNum, signature, str, aws)
+	timeusage := time1 + time2
+	bandwidth := band1 + band2
 	fmt.Printf("node %v Time cost: %v\n", id, timeusage)
 	fmt.Printf("node %v bandwidth cost: %v\n", id, bandwidth)
 	path := "/home/ubuntu/test"
@@ -199,7 +200,7 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 			}
 		}(i)
 	}
-	log.Printf("node %v finsish share", id)
+	//log.Printf("node %v finsish share", id)
 	wg.Add(n)
 	for i := 0; i < n; i++ {
 		go func(i int) {
