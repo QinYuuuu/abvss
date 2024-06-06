@@ -195,6 +195,8 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	wg.Wait()
 	end1 := time.Now()
 	peer.Close()
+	time.Sleep(10 * time.Second)
+
 	p := party.NewHonestParty(uint32(n), uint32(f), uint32(id), ipList, portList, pk, sk, epk, evk, esk)
 
 	p.InitReceiveChannel()
