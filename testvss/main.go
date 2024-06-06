@@ -148,6 +148,7 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 	end := time.Now()
 	timeusage := end.Sub(start)
 	bandwidth := 0
+
 	//fmt.Println("SUCCESS")
 	path := "/home/ubuntu/testvss"
 	exist, err := config.PathExists(path)
@@ -165,7 +166,8 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 	for i := 0; i < batchsize; i++ {
 		bandwidth += int(peer.Bandwidth[i])
 	}
-
+	fmt.Printf("node %v Time cost: %v\n", id, timeusage)
+	fmt.Printf("node %v bandwidth cost: %v\n", id, bandwidth)
 	file3, _ := os.OpenFile(fmt.Sprintf("/home/ubuntu/testvss/%v_%v", n, batchsize), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
 	file3.WriteString(fmt.Sprintf("time\n%v\nband\n%v\n", timeusage, bandwidth))
 	time.Sleep(3 * time.Second)
