@@ -77,7 +77,7 @@ func (p *Peer) Serve() {
 					buf := make([]byte, length)
 					_, err2 := io.ReadFull(conn, buf)
 					if err1 != nil || err2 != nil {
-						//log.Println("The come in conn has break down", err1, err2)
+						log.Println("The come in conn has break down", err1, err2)
 						continue
 					}
 					//Do Unmarshal
@@ -157,50 +157,10 @@ func (p *Peer) Connect() {
 				//Send bytes
 				length := len(byt)
 				_, err2 := conn.Write(utils.IntToBytes(length))
-				if err2 != nil {
-					//log.Fatalln("The send channel has break down!", err2)
-					if isBrokenPipeError(err2) {
-						addr, _ := net.ResolveTCPAddr("tcp4", p.ipList[i]+":"+p.portList[i])
-						var err error
-						for j := 0; j < 5; j++ {
-							conn, err = net.DialTCP("tcp", nil, addr)
-							if err != nil {
-								//log.Printf("node %v did not connect to node %v: %v", p.id, i, err)
-								time.Sleep(10 * time.Second)
-								continue
-							} else {
-								conn.SetKeepAlive(true)
-								p.Conns[i] = conn
-								//log.Printf("node %v connect to node %v", p.id, i)
-								break
-							}
-						}
-						_, err2 = conn.Write(utils.IntToBytes(length))
-					}
-				}
 				_, err3 := conn.Write(byt)
 				p.Bandwidth[i] += uint64(length)
-				if err3 != nil {
-					//log.Fatalln("The send channel has break down!", err3)
-					if isBrokenPipeError(err2) {
-						addr, _ := net.ResolveTCPAddr("tcp4", p.ipList[i]+":"+p.portList[i])
-						var err error
-						for j := 0; j < 5; j++ {
-							conn, err = net.DialTCP("tcp", nil, addr)
-							if err != nil {
-								//log.Printf("node %v did not connect to node %v: %v", p.id, i, err)
-								time.Sleep(10 * time.Second)
-								continue
-							} else {
-								conn.SetKeepAlive(true)
-								p.Conns[i] = conn
-								//log.Printf("node %v connect to node %v", p.id, i)
-								break
-							}
-
-						}
-						_, err3 = conn.Write(byt)
-					}
+				if err2 != nil || err3 != nil {
+					log.Fatalln("The send channel has break down!", err2, err3)
 				}
 			}
 		}(conn, p.SendChannels[i], i)
