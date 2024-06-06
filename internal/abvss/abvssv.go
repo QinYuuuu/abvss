@@ -2,6 +2,7 @@ package abvss
 
 import (
 	"errors"
+	"fmt"
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
 	"math/big"
 )
@@ -30,8 +31,8 @@ func (vss *ABVSS) VerifyLCM(lcm []*big.Int, index int) error {
 	vss.ilist = append(vss.ilist, tuple)
 	vss.Count++
 	vss.mutex.Unlock()
-	//fmt.Printf("node %v count: %d\n", vss.nodeid, vss.Count)
-	//fmt.Printf("node %v ilist: %d\n", vss.nodeid, vss.ilist)
+	fmt.Printf("node %v count: %d\n", vss.nodeid, vss.Count)
+	fmt.Printf("node %v ilist: %d\n", vss.nodeid, vss.ilist)
 	if vss.Count == vss.nodenum-vss.degree && !vss.done {
 		//log.Printf("node %v verify", vss.nodeid)
 		xlist := make([]*big.Int, vss.nodenum-vss.degree)
