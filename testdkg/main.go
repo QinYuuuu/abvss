@@ -111,6 +111,9 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 		log.Printf("node %v running local", id)
 		portList1, ipList, portList2 = config.LoadIPList_Local(n, addr)
 	}
+	p := party.NewHonestParty(uint32(n), uint32(f), uint32(id), ipList, portList2, pk, sk, epk, evk, esk)
+	p.InitReceiveChannel()
+	p.InitSendChannel()
 	node := new(ABDKGNode)
 	var err error
 	abvss_instance := make([]*abvss.ABVSS, n)
@@ -142,10 +145,7 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	abdkgservice.Osv = osv_instance
 
 	defer peer.Close()
-	p := party.NewHonestParty(uint32(n), uint32(f), uint32(id), ipList, portList2, pk, sk, epk, evk, esk)
 
-	p.InitReceiveChannel()
-	p.InitSendChannel()
 	defer p.Close()
 	/*
 		for j := 0; j < n; j++ {
