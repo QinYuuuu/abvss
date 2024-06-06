@@ -150,13 +150,13 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 	bandwidth := 0
 
 	//fmt.Println("SUCCESS")
-	path := "/home/ubuntu/testvss"
+	path := "/home/ubuntu/new_testvss"
 	exist, err := config.PathExists(path)
 	if err != nil {
 		fmt.Printf("get dir error: %v \n", err)
 	}
 	if !exist {
-		err = os.Mkdir("/home/ubuntu/testvss", 0777)
+		err = os.Mkdir("/home/ubuntu/new_testvss", 0777)
 		if err != nil {
 			fmt.Printf("make dir error: %v \n", err)
 			return
@@ -168,7 +168,7 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 	}
 	fmt.Printf("node %v Time cost: %v\n", id, timeusage)
 	fmt.Printf("node %v bandwidth cost: %v\n", id, bandwidth)
-	file3, _ := os.OpenFile(fmt.Sprintf("/home/ubuntu/testvss/node%v_%v_%v", id, n, batchsize), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
+	file3, _ := os.OpenFile(fmt.Sprintf("%s/node%v_%v_%v", path, id, n, batchsize), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
 	file3.WriteString(fmt.Sprintf("time\n%v\nband\n%v\n", timeusage, bandwidth))
 	time.Sleep(3 * time.Second)
 }

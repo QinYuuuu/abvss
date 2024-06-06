@@ -77,13 +77,15 @@ func (p *Peer) Serve() {
 					buf := make([]byte, length)
 					_, err2 := io.ReadFull(conn, buf)
 					if err1 != nil || err2 != nil {
-						log.Fatal("The come in conn has break down", err1, err2)
+						//log.Fatal("The come in conn has break down", err1, err2)
+						break
 					}
 					//Do Unmarshal
 					var m protobuf.Message
 					err3 := proto.Unmarshal(buf, &m)
 					if err3 != nil {
-						log.Fatalln(err3)
+						//log.Fatalln(err3)
+						break
 					}
 					//log.Printf("node %v receive msg: %v from node %v", p.id, m.GetType(), m.Sender)
 					//Push protobuf.Message to receivechannel
@@ -158,7 +160,8 @@ func (p *Peer) Connect() {
 				_, err3 := conn.Write(byt)
 				p.Bandwidth[i] += uint64(length)
 				if err2 != nil || err3 != nil {
-					log.Fatalln("The send channel has break down!", err2, err3)
+					//log.Fatalln("The send channel has break down!", err2, err3)
+					break
 				}
 			}
 		}(conn, p.SendChannels[i], i)
