@@ -125,17 +125,17 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 	go func() {
 		for {
 			if node.Count >= n-f {
-				node.ABVSSService.OSV.Init()
+				node.OSV.Init()
 				return
 			}
 		}
 	}()
-
+	log.Printf("node %v osv INIT", id)
 	flag1 := false
 
 	go func() {
 		for {
-			if node.Done() {
+			if node.OSV.Done() {
 				flag1 = true
 				break
 			}
