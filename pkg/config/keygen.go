@@ -56,6 +56,49 @@ func ElgamalCurve25519KeyGen(n int, addr string) {
 		}
 	}
 }
+
+/*
+func ElgamalBLS12381KeyGen(n int, addr string) {
+	exist, err := PathExists(addr + "/keypairs/BLS12381")
+	if err != nil {
+		fmt.Printf("get dir error: %v \n", err)
+		return
+	}
+	if !exist {
+		err = os.Mkdir(addr+"/keypairs/BLS12381", 0777)
+		if err != nil {
+			fmt.Printf("make dir error: %v \n", err)
+			return
+		}
+	}
+	suite := bls12381.NewG1()
+	for i := 0; i < n; i++ {
+		pk, sk := elgamal.KeyGenCurve25519(suite)
+		tmp1 := fmt.Sprintf("%s/keypairs/BLS12381/Node%v.pub", addr, i)
+		file1, _ := os.OpenFile(tmp1, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
+		pkBytes, _ := pk.MarshalBinary()
+		_, err := file1.Write(pkBytes)
+		if err != nil {
+			fmt.Printf("encode error: %v \n", err)
+		}
+		err = file1.Close()
+		if err != nil {
+			fmt.Printf("close error: %v \n", err)
+		}
+		tmp2 := fmt.Sprintf("%s/keypairs/BLS12381/Node%v.priv", addr, i)
+		file2, _ := os.OpenFile(tmp2, os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
+		skBytes, _ := sk.MarshalBinary()
+		_, err = file2.Write(skBytes)
+		if err != nil {
+			fmt.Printf("encode error: %v \n", err)
+		}
+		err = file2.Close()
+		if err != nil {
+			fmt.Printf("close error: %v \n", err)
+		}
+	}
+}*/
+
 func PathExists(path string) (bool, error) {
 	_, err := os.Stat(path)
 	if err == nil {
