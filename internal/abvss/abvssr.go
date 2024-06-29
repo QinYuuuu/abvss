@@ -135,8 +135,14 @@ func (vss *ABVSS) GetRecoverShares(sk kyber.Scalar, index int, r [][]*big.Int) e
 	return nil
 }
 
-func (vss *ABVSS) HandleComplain() error {
-	return nil
+func (vss *ABVSS) Complain() error {
+
+	return errors.New("do not need to complain")
+}
+
+func (vss *ABVSS) HandleComplain(sk[]) error {
+
+	return errors.New("do not need to complain")
 }
 
 func (vss *ABVSS) ShareRecovery() error {
