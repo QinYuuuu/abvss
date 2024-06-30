@@ -1,6 +1,9 @@
-package erasurecode
+package oec
 
-import "sync"
+import (
+	"github.com/QinYuuuu/abvss/crypto/erasurecode"
+	"sync"
+)
 
 type ChannelMonitor struct {
 	mu    sync.Mutex
@@ -9,11 +12,11 @@ type ChannelMonitor struct {
 }
 
 type OEC struct {
-	tuples  chan ReedSolomonChunk
+	tuples  chan erasurecode.ReedSolomonChunk
 	n       int
 	t       int
 	monitor *ChannelMonitor
-	rscode  *ReedSolomonCode
+	rscode  *erasurecode.ReedSolomonCode
 }
 
 func NewChannelMonitor() *ChannelMonitor {
@@ -41,13 +44,13 @@ func (m *ChannelMonitor) WaitUntil(n int) {
 
 func NewOEC(n, t int, monitor *ChannelMonitor) *OEC {
 	return &OEC{
-		tuples: make(chan ReedSolomonChunk, n),
+		tuples: make(chan erasurecode.ReedSolomonChunk, n),
 		n:      n,
 		t:      t,
 	}
 }
 
-func (oec *OEC) Input(t ReedSolomonChunk) {
+func (oec *OEC) Input(t erasurecode.ReedSolomonChunk) {
 	oec.tuples <- t
 	oec.monitor.Increment()
 }
@@ -55,17 +58,17 @@ func (oec *OEC) Input(t ReedSolomonChunk) {
 func (oec *OEC) Run() {
 	for r := 0; r < oec.t; r++ {
 		oec.monitor.WaitUntil(2*oec.t + r + 1)
-		shards := make([]ErasureCodeChunk, 2*oec.t+r+1)
+		shards := make([]erasurecode.ErasureCodeChunk, 2*oec.t+r+1)
 		i := 0
 		for chunk := range oec.tuples {
 			i++
 			shards[i] = &chunk
 		}
-		var message Payload
+		var message erasurecode.Payload
 		err := oec.rscode.Decode(shards, &message)
 		if err != nil {
 			for _, chunk := range shards {
-				oec.tuples <- *(chunk.(*ReedSolomonChunk))
+				oec.tuples <- *(chunk.(*erasurecode.ReedSolomonChunk))
 			}
 			continue
 		}

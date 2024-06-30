@@ -2,12 +2,8 @@ package erasurecode
 
 import (
 	"bytes"
-	"encoding/gob"
-	"fmt"
-	"log"
-	//"math"
-	//"crypto/sha256"
 	"github.com/klauspost/reedsolomon"
+	"log"
 )
 
 type ReedSolomonCode struct {
@@ -48,23 +44,10 @@ func (c *ReedSolomonChunk) Size() int {
 	return len(c.Data)
 }
 
-func (rscode *ReedSolomonCode) Encode(input Payload) ([]ErasureCodeChunk, error) {
-	output := make([]ErasureCodeChunk, rscode.p)
-	buf := &bytes.Buffer{}
-	encoder := gob.NewEncoder(buf)
-	// this is tricky. why indirect input? it is because if we pass input to gob, it still appears
-	// to gob as the concrete type. the receiving end is expecting an interface, and will complain.
-	// we use indirect here so that gob cannot figure out the concrete type, and will thus happily
-	// encode it as an interface
-	err := encoder.Encode(&input)
-	if err != nil {
-		return output, err
-	}
-
-	b := buf.Bytes()
-	fmt.Println(string(b))
-	datasize := len(b)
-	shards, err := rscode.Split(b)
+func (rscode *ReedSolomonCode) Encode(input []byte) ([]ReedSolomonChunk, error) {
+	output := make([]ReedSolomonChunk, rscode.p)
+	datasize := len(input)
+	shards, err := rscode.Split(input)
 	if err != nil {
 		return output, err
 	}
@@ -77,17 +60,16 @@ func (rscode *ReedSolomonCode) Encode(input Payload) ([]ErasureCodeChunk, error)
 	}
 
 	for i := 0; i < rscode.p; i++ {
-		output[i] = &ReedSolomonChunk{
+		output[i] = ReedSolomonChunk{
 			DataSize: datasize,
 			Idx:      i,
 			Data:     shards[i],
-			//Merkle:   bytes.Repeat([]byte("a"), int(math.Log2(float64(f.p)))*32),
 		}
 	}
 	return output, nil
 }
 
-func (rscode *ReedSolomonCode) Reconstruct(shards []ErasureCodeChunk) ([]ErasureCodeChunk, error) {
+func (rscode *ReedSolomonCode) Reconstruct(shards []ReedSolomonChunk) ([]ReedSolomonChunk, error) {
 	input := make([][]byte, rscode.p)
 	for i := 0; i < len(shards); i++ {
 		input[shards[i].Index()] = shards[i].GetData()
@@ -96,9 +78,9 @@ func (rscode *ReedSolomonCode) Reconstruct(shards []ErasureCodeChunk) ([]Erasure
 	if err != nil {
 		return nil, err
 	}
-	out := make([]ErasureCodeChunk, rscode.p)
+	out := make([]ReedSolomonChunk, rscode.p)
 	for i, v := range input {
-		out[i] = &ReedSolomonChunk{
+		out[i] = ReedSolomonChunk{
 			DataSize: len(v),
 			Idx:      i,
 			Data:     v,
@@ -125,30 +107,26 @@ func (rscode *ReedSolomonCode) Reconstruct(shards []ErasureCodeChunk) ([]Erasure
 		return rscode.Encoder.Verify(input)
 	}
 */
-func (rscode *ReedSolomonCode) Decode(shards []ErasureCodeChunk, v *Payload) error {
+
+func (rscode *ReedSolomonCode) Decode(shards []ReedSolomonChunk) ([]byte, error) {
 	// TODO: we are trusting the first shard
-	datasize := shards[0].(*ReedSolomonChunk).DataSize
+	datasize := shards[0].DataSize
 
 	input := make([][]byte, rscode.p)
 	for _, v := range shards {
-		ptr := v.(*ReedSolomonChunk)
+		ptr := v
 		input[ptr.Idx] = ptr.Data
 	}
 	err := rscode.Encoder.Reconstruct(input)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	buf := &bytes.Buffer{}
-	decoder := gob.NewDecoder(buf)
 	err = rscode.Encoder.Join(buf, input, datasize)
 	if err != nil {
-		return err
-	}
-	err = decoder.Decode(v)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return buf.Bytes(), nil
 }

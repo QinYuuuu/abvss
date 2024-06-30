@@ -1,4 +1,4 @@
-package erasurecode
+package oec
 
 import (
 	"fmt"

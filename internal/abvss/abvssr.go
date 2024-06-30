@@ -140,8 +140,8 @@ func (vss *ABVSS) Complain() error {
 	return errors.New("do not need to complain")
 }
 
-func (vss *ABVSS) HandleComplain(sk[]) error {
-
+func (vss *ABVSS) HandleComplain(sk kyber.Scalar, index int) error {
+	
 	return errors.New("do not need to complain")
 }
 
