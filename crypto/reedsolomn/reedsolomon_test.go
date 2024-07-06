@@ -1,4 +1,4 @@
-package erasurecode
+package reedsolomn
 
 import (
 	"fmt"
@@ -30,8 +30,7 @@ func TestReedSolomonCode(t *testing.T) {
 	fmt.Println(string(message))
 }
 
-
-// If some chunks miss, RSCode.Decode may return error or return a wrong message
+// If some chunk missed, RSCode.Decode may return error or return a wrong message
 func TestReedSolomonCode_Reconstruct1(t *testing.T) {
 	N := 4 //"number of servers in the cluster"
 	F := 1 //"number of faulty servers to tolerate"
@@ -63,7 +62,7 @@ func TestReedSolomonCode_Reconstruct1(t *testing.T) {
 	for i := 0; i < N-1; i++ {
 		fmt.Printf("the %v chunk %v\n", rschunk2[i].Index(), rschunk2[i].GetData())
 	}
-	rechunk, err := rscode.Reconstruct(eschunk2)
+	rechunk, err := rscode.Reconstruct(rschunk2)
 	assert.Nil(t, err, "err in RSReconstruct")
 	fmt.Println("reconstruct chunks")
 	for i := 0; i < N; i++ {
@@ -78,19 +77,9 @@ func TestReedSolomonCode_Reconstruct2(t *testing.T) {
 	rscode := NewReedSolomonCode(N-2*F, N)
 	data := []byte("a test message")
 
-	var payload Payload = data
-
-	eschunk, err := rscode.Encode(payload)
+	rschunk, err := rscode.Encode(data)
 	assert.Nil(t, err, "err in RSEnc")
-	rschunk := make([]ReedSolomonChunk, N)
-	for i := 0; i < N; i++ {
-		if tmp, ok := eschunk[i].(*ReedSolomonChunk); ok {
-			rschunk[i] = *tmp
-			//fmt.Println("Ok Value =", rschunk, "Ok =", ok)
-		} else {
-			fmt.Println("Failed Value =", rschunk, "Ok =", ok)
-		}
-	}
+
 	fmt.Println("the init chunks")
 	for i := 0; i < N; i++ {
 		fmt.Printf("the %v chunk %v\n", i, rschunk[i].Data)
@@ -108,18 +97,17 @@ func TestReedSolomonCode_Reconstruct2(t *testing.T) {
 	for i := 0; i < N-1; i++ {
 		fmt.Printf("the %v chunk %v\n", rschunk[i].Index(), rschunk[i].GetData())
 	}
-	eschunk2 := make([]ErasureCodeChunk, N-1)
+	rschunk2 := make([]ReedSolomonChunk, N-1)
 	for i := 0; i < N-1; i++ {
-		eschunk2[i] = &rschunk[i]
+		rschunk2[i] = rschunk[i]
 	}
-	rechunk2, err := rscode.Reconstruct(eschunk2)
+	rechunk2, err := rscode.Reconstruct(rschunk2)
 	assert.Nil(t, err, "err in RSReconstruct")
 	fmt.Println("reconstruct chunks")
 	for i := 0; i < N; i++ {
 		fmt.Printf("the %v chunk %v\n", i, rechunk2[i].GetData())
 	}
-	var message Payload
-	rscode.Decode(eschunk2, &message)
-	fmt.Println(message)
+	message, err := rscode.Decode(rschunk2)
+	assert.Nil(t, err, "err in RSDec")
+	fmt.Println(string(message))
 }
-*/

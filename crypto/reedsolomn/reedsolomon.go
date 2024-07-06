@@ -1,4 +1,4 @@
-package erasurecode
+package reedsolomn
 
 import (
 	"bytes"
