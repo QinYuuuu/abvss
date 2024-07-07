@@ -2,6 +2,7 @@ package reedsolomn
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/klauspost/reedsolomon"
 	"log"
 )
@@ -89,24 +90,22 @@ func (rscode *ReedSolomonCode) Reconstruct(shards []ReedSolomonChunk) ([]ReedSol
 	return out, err
 }
 
-/*
-	func (rscode *ReedSolomonCode) Verify(shards []ErasureCodeChunk) (bool, error) {
-		fmt.Println(shards)
-		fmt.Println(shards[0].Size())
-		input := make([][]byte, rscode.p)
-		for i := 0; i < rscode.p; i++ {
-			input[i] = make([]byte, shards[0].Size())
-		}
-
-		for _, v := range shards {
-			ptr := v.(*ReedSolomonChunk)
-			input[ptr.Idx] = ptr.Data
-		}
-
-		fmt.Println(input)
-		return rscode.Encoder.Verify(input)
+func (rscode *ReedSolomonCode) Verify(shards []ReedSolomonChunk) (bool, error) {
+	fmt.Println(shards)
+	fmt.Println(shards[0].Size())
+	input := make([][]byte, rscode.p)
+	for i := 0; i < rscode.p; i++ {
+		input[i] = make([]byte, shards[0].Size())
 	}
-*/
+
+	for _, v := range shards {
+		ptr := v
+		input[ptr.Idx] = ptr.Data
+	}
+
+	fmt.Println(input)
+	return rscode.Encoder.Verify(input)
+}
 
 func (rscode *ReedSolomonCode) Decode(shards []ReedSolomonChunk) ([]byte, error) {
 	// TODO: we are trusting the first shard

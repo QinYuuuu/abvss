@@ -30,7 +30,7 @@ func TestReedSolomonCode(t *testing.T) {
 	fmt.Println(string(message))
 }
 
-// If some chunk missed, RSCode.Decode may return error or return a wrong message
+// If some chunk missed
 func TestReedSolomonCode_Reconstruct1(t *testing.T) {
 	N := 4 //"number of servers in the cluster"
 	F := 1 //"number of faulty servers to tolerate"
@@ -70,8 +70,35 @@ func TestReedSolomonCode_Reconstruct1(t *testing.T) {
 	}
 }
 
-// If the order of chunks change, RSCode.Decode may return error or return a wrong message
+// If some chunk changed
 func TestReedSolomonCode_Reconstruct2(t *testing.T) {
+	N := 4 //"number of servers in the cluster"
+	F := 1 //"number of faulty servers to tolerate"
+	rscode := NewReedSolomonCode(N-2*F, N)
+	data := []byte("a test message")
+	fmt.Printf("the message %v\n", data)
+
+	rschunk, err := rscode.Encode(data)
+	assert.Nil(t, err, "err in RSEnc")
+
+	fmt.Println("the init chunks")
+	for i := 0; i < N; i++ {
+		fmt.Printf("the %v chunk %v\n", i, rschunk[i].Data)
+	}
+
+	fmt.Println("change a random chunk")
+	flag := rand.Int() % 4
+	rschunk[flag].Data = []byte("wrong")
+	rechunk, err := rscode.Reconstruct(rschunk)
+	assert.Nil(t, err, "err in RSReconstruct")
+	fmt.Println("reconstruct chunks")
+	for i := 0; i < N; i++ {
+		fmt.Printf("the %v chunk %v\n", i, rechunk[i].GetData())
+	}
+}
+
+// If the order of chunks change, RSCode.Decode may return error or return a wrong message
+func TestReedSolomonCode_Reconstruct3(t *testing.T) {
 	N := 4 //"number of servers in the cluster"
 	F := 1 //"number of faulty servers to tolerate"
 	rscode := NewReedSolomonCode(N-2*F, N)
