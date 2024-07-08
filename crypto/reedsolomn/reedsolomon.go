@@ -7,6 +7,10 @@ import (
 	"log"
 )
 
+type RSCode interface {
+	NewRSCode(d, p int) *RSCode
+}
+
 type ReedSolomonCode struct {
 	d int // number of data shards
 	p int // number of data + check shards
@@ -24,25 +28,6 @@ func NewReedSolomonCode(d, p int) *ReedSolomonCode {
 		Encoder: enc,
 	}
 	return c
-}
-
-type ReedSolomonChunk struct {
-	DataSize int
-	Idx      int
-	Data     []byte
-	//Merkle   []byte
-}
-
-func (c *ReedSolomonChunk) Index() int {
-	return c.Idx
-}
-
-func (c *ReedSolomonChunk) GetData() []byte {
-	return c.Data
-}
-
-func (c *ReedSolomonChunk) Size() int {
-	return len(c.Data)
 }
 
 func (rscode *ReedSolomonCode) Encode(input []byte) ([]ReedSolomonChunk, error) {
