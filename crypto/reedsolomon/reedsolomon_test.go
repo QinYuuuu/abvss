@@ -1,4 +1,4 @@
-package reedsolomn
+package reedsolomon
 
 import (
 	"fmt"

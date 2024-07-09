@@ -1,4 +1,4 @@
-package reedsolomn
+package reedsolomon
 
 type ReedSolomonChunk struct {
 	DataSize int

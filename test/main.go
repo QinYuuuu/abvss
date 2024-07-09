@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"crypto/elliptic"
 	"fmt"
-	"github.com/QinYuuuu/abvss/crypto/reedsolomn"
+	"github.com/QinYuuuu/abvss/crypto/reedsolomon"
 	"github.com/QinYuuuu/abvss/crypto/utils"
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
+	"github.com/vivint/infectious"
 	"math/big"
 	"math/rand"
 )
@@ -20,13 +21,11 @@ func main() {
 	s := utils.RandomNum(p)
 	poly, _ := polynomial.NewRand(F, p)
 	_ = poly.SetCoefficientBig(0, s)
-	shares := make([]reedsolomn.ReedSolomonChunk, N)
-	length := (F + 1) * len(p.Bytes())
+	shares := make([]infectious.Share, N)
 	for i := 0; i < N; i++ {
 		fi := poly.EvalMod(new(big.Int).SetInt64(int64(i+1)), p)
 		shares[i].Data = fi.Bytes()
-		shares[i].Idx = i
-		shares[i].DataSize = length
+		shares[i].Number = i
 		fmt.Printf("shares %v, %v, %v\n", i, shares[i], len(fi.Bytes()))
 	}
 	indexlist := make([]bool, N)
@@ -56,20 +55,17 @@ func main() {
 		fmt.Printf("shares %v, %v, %v\n", i, shares[i], len(shares[i].Data))
 	}
 	for r := 0; r < F+1; r++ {
-		rscode1 := reedsolomn.NewReedSolomonCode(F+1, 2*F+r+1)
+		rscode1 := reedsolomon.NewRScode(F+1, 2*F+r+1)
 		message, err := rscode1.Decode(shares[:2*F+r+1])
 		if err != nil {
 			fmt.Printf("error in rs.decode %v\n", err)
 		}
 		fmt.Println(message)
-		T, err := rscode1.Encode(message)
-		if err != nil {
-			fmt.Printf("error in rs.encode %v\n", err)
-		}
+		T := rscode1.Encode(message)
 		fmt.Println(T)
 		flag := 0
 		for i := 0; i < 2*F+r+1; i++ {
-			if bytes.Equal(T[i].GetData(), shares[i].GetData()) {
+			if bytes.Equal(T[i].Data, shares[i].Data) {
 				flag++
 			}
 		}

@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"github.com/QinYuuuu/abvss/crypto/reedsolomn"
+	"github.com/QinYuuuu/abvss/crypto/reedsolomon"
 	"math/rand"
 )
 
 func main() {
 	N := 4 //"number of servers in the cluster"
 	F := 1 //"number of faulty servers to tolerate"
-	rscode := reedsolomn.NewReedSolomonCode(N-2*F, N)
+	rscode := reedsolomon.NewReedSolomonCode(N-2*F, N)
 	data := []byte("a test message")
 	fmt.Printf("the message %v\n", data)
 

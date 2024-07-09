@@ -1,25 +1,25 @@
-package reedsolomn
+package reedsolomon
 
 import (
 	"github.com/vivint/infectious"
 )
 
 // RScoder is a reedsolomon coder
-type RScoder struct {
+type RScode_vivint struct {
 	fec *infectious.FEC
 }
 
 // NewRScode returns a RScoder object
-func NewRScode(requried, total int) *RScoder {
+func NewRScode(requried, total int) *RScode_vivint {
 	temp, _ := infectious.NewFEC(requried, total)
-	coder := &RScoder{
+	coder := &RScode_vivint{
 		fec: temp,
 	}
 	return coder
 }
 
 // Encode returns shares of the encoded message
-func (coder *RScoder) Encode(msg []byte) []infectious.Share {
+func (coder *RScode_vivint) Encode(msg []byte) []infectious.Share {
 	shares := make([]infectious.Share, coder.fec.Total())
 	output := func(s infectious.Share) {
 		shares[s.Number] = s.DeepCopy() // the memory in s gets reused, so we need to make a deep copy
@@ -38,7 +38,7 @@ func (coder *RScoder) Encode(msg []byte) []infectious.Share {
 }
 
 // Decode returns the original message of the shares
-func (coder *RScoder) Decode(shares []infectious.Share) ([]byte, error) {
+func (coder *RScode_vivint) Decode(shares []infectious.Share) ([]byte, error) {
 	result, err := coder.fec.Decode(nil, shares)
 	if err != nil {
 		return nil, err
