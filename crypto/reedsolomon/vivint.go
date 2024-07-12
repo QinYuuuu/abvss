@@ -24,17 +24,20 @@ func (coder *RScode_vivint) Encode(msg []byte) []infectious.Share {
 	output := func(s infectious.Share) {
 		shares[s.Number] = s.DeepCopy() // the memory in s gets reused, so we need to make a deep copy
 	}
-
-	paddingLength := coder.fec.Required() - (len(msg) % coder.fec.Required())
-	paddingMessage := make([]byte, len(msg)+paddingLength)
-	copy(paddingMessage, msg)
-	paddingMessage[len(paddingMessage)-1] = byte(paddingLength) //p.F+1 == coder.Required() == paddingLength < 256, so byte is enough
+	paddingMessage := coder.Padding(msg)
 	err := coder.fec.Encode(paddingMessage, output)
 	if err != nil {
 		panic(err)
 	}
-
 	return shares
+}
+
+func (coder *RScode_vivint) Padding(msg []byte) []byte {
+	paddingLength := coder.fec.Required() - (len(msg) % coder.fec.Required())
+	paddingMessage := make([]byte, len(msg)+paddingLength)
+	copy(paddingMessage, msg)
+	paddingMessage[len(paddingMessage)-1] = byte(paddingLength) //p.F+1 == coder.Required() == paddingLength < 256, so byte is enough
+	return paddingMessage
 }
 
 // Decode returns the original message of the shares

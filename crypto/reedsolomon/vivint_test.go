@@ -13,6 +13,21 @@ func TestEncode(t *testing.T) {
 	coder := NewRScode(F+1, N)
 
 	msg := []byte("a test message!")
+	fmt.Println(msg)
+	shares := coder.Encode(msg)
+	fmt.Println(shares)
+	rmsg, _ := coder.Decode(shares)
+	if !bytes.Equal(msg, rmsg) {
+		t.Error()
+	}
+}
+
+func TestEncode2(t *testing.T) {
+	N := 3
+	F := 1
+	coder := NewRScode(F+1, N)
+
+	msg := []byte("a test message!")
 	shares := coder.Encode(msg)
 	fmt.Println(shares)
 	rmsg, _ := coder.Decode(shares)

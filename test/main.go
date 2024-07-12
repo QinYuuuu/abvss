@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bytes"
 	"crypto/elliptic"
 	"fmt"
 	"github.com/QinYuuuu/abvss/crypto/reedsolomon"
@@ -9,7 +8,6 @@ import (
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
 	"github.com/vivint/infectious"
 	"math/big"
-	"math/rand"
 )
 
 func main() {
@@ -28,53 +26,61 @@ func main() {
 		shares[i].Number = i
 		fmt.Printf("shares %v, %v, %v\n", i, shares[i], len(fi.Bytes()))
 	}
-	indexlist := make([]bool, N)
+	message := append(shares[0].Data, shares[1].Data...)
+	rscode1 := reedsolomon.NewRScode(F+1, N)
+	T := rscode1.Encode(message)
 	for i := 0; i < N; i++ {
-		indexlist[i] = true
+		fmt.Printf("shares %v, %v\n", i, T[i])
 	}
+	/*
+		indexlist := make([]bool, N)
+		for i := 0; i < N; i++ {
+			indexlist[i] = true
+		}
 
-	for i := 0; i < F; i++ {
-		for {
-			byzantineindex := rand.Int() % N
-			if indexlist[byzantineindex] {
-				indexlist[byzantineindex] = false
+		for i := 0; i < F; i++ {
+			for {
+				byzantineindex := rand.Int() % N
+				if indexlist[byzantineindex] {
+					indexlist[byzantineindex] = false
+					break
+				} else {
+					continue
+				}
+			}
+		}
+		fmt.Println("the corrupted shares", indexlist)
+		for i := 0; i < N; i++ {
+			if !indexlist[i] {
+				shares[i].Data = utils.RandomNum(p).Bytes()
+			}
+		}
+
+		for i := 0; i < N; i++ {
+			fmt.Printf("shares %v, %v, %v\n", i, shares[i], len(shares[i].Data))
+		}
+		for r := 0; r < F+1; r++ {
+			rscode1 := reedsolomon.NewRScode(F+1, N)
+			message, err := rscode1.Decode(shares)
+			if err != nil {
+				fmt.Printf("error in rs.decode %v\n", err)
+				return
+			}
+			fmt.Println(message)
+			T := rscode1.Encode(message)
+			fmt.Println(T)
+			flag := 0
+			for i := 0; i < 2*F+r+1; i++ {
+				if bytes.Equal(T[i].Data, shares[i].Data) {
+					flag++
+				}
+			}
+			fmt.Println("flag ", flag)
+			if flag >= 2*F+1 {
 				break
 			} else {
 				continue
 			}
-		}
-	}
-	fmt.Println("the corrupted shares", indexlist)
-	for i := 0; i < N; i++ {
-		if !indexlist[i] {
-			shares[i].Data = utils.RandomNum(p).Bytes()
-		}
-	}
-
-	for i := 0; i < N; i++ {
-		fmt.Printf("shares %v, %v, %v\n", i, shares[i], len(shares[i].Data))
-	}
-	for r := 0; r < F+1; r++ {
-		rscode1 := reedsolomon.NewRScode(F+1, 2*F+r+1)
-		message, err := rscode1.Decode(shares[:2*F+r+1])
-		if err != nil {
-			fmt.Printf("error in rs.decode %v\n", err)
-		}
-		fmt.Println(message)
-		T := rscode1.Encode(message)
-		fmt.Println(T)
-		flag := 0
-		for i := 0; i < 2*F+r+1; i++ {
-			if bytes.Equal(T[i].Data, shares[i].Data) {
-				flag++
-			}
-		}
-		fmt.Println("flag ", flag)
-		if flag >= 2*F+1 {
-			break
-		} else {
-			continue
-		}
-	}
+		}*/
 
 }
