@@ -6,7 +6,6 @@ import (
 	"math/rand"
 
 	"github.com/QinYuuuu/abvss/crypto/curve"
-	"github.com/QinYuuuu/abvss/crypto/zkp"
 )
 
 type ABDKG struct {
@@ -22,7 +21,6 @@ type ABDKG struct {
 	fshares   [][]*big.Int
 	gshares   [][]*big.Int
 	Dlist     []int
-	zk        zkp.BatchNIZK
 }
 
 func NewDKG(index, nodenum, degree, batchsize, vnum int, p *big.Int) (*ABDKG, error) {
