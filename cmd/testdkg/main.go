@@ -146,7 +146,7 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	for i := 0; i < batchsize; i++ {
 		s[i] = utils.RandomNum(pint)
 	}
-	log.Printf("node %v DKG running", id)
+	//log.Printf("node %v DKG running", id)
 	go abdkgservice.Receive()
 	start1 := time.Now()
 	go node.SecretSharing(pk1, s)

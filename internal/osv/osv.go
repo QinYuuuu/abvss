@@ -58,7 +58,7 @@ func (osv *OSV) Init() []Message {
 	if osv.acquired {
 		log.Printf("node has acquired")
 	}
-	log.Printf("node %v osv init", osv.id)
+	//log.Printf("node %v osv init", osv.id)
 	var msgs []Message
 	for i := 0; i < osv.n; i++ {
 		msg := Message{}

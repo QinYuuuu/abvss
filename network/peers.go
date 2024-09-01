@@ -52,7 +52,7 @@ func (p *Peer) Serve() {
 	if err != nil {
 		log.Fatalf("node %v failed to listen %v", p.id, err)
 	}
-	log.Printf("node %d listen on %s", p.id, addr)
+	//log.Printf("node %d listen on %s", p.id, addr)
 
 	//Make the receive channel and the handle func
 	var conn *net.TCPConn
@@ -138,7 +138,7 @@ func (p *Peer) Connect() {
 		}(i)
 	}
 	wg.Wait()
-	log.Printf("node %v connect to other nodes", p.id)
+	//log.Printf("node %v connect to other nodes", p.id)
 	for i := 0; i < len(p.ipList); i++ {
 		if i == p.id {
 			continue
