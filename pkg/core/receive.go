@@ -28,7 +28,7 @@ func MakeReceiveChannel(port string) (*net.TCPListener, chan *protobuf.Message) 
 			retry = false
 		}
 	}
-	log.Printf("listen on port: %v", port)
+	//log.Printf("listen on port: %v", port)
 	//Make the receive channel and the handle func
 	var conn *net.TCPConn
 	var err3 error

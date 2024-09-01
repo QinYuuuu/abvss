@@ -19,7 +19,7 @@ func MakeSendChannel(hostIP string, hostPort string) (*net.TCPConn, chan *protob
 	var err1, err2 error
 	//Retry to connet to node
 	retry := true
-	log.Println("try to connect ", hostIP, ":", hostPort)
+	//log.Println("try to connect ", hostIP, ":", hostPort)
 	for retry {
 		addr, err1 = net.ResolveTCPAddr("tcp4", hostIP+":"+hostPort)
 		conn, err2 = net.DialTCP("tcp4", nil, addr)
