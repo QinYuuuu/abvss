@@ -58,7 +58,7 @@ func (osv *OSV) Init() []Message {
 	if osv.acquired {
 		log.Printf("node has acquired")
 	}
-	//log.Printf("node %v osv init", osv.id)
+	log.Printf("node %v osv init", osv.id)
 	var msgs []Message
 	for i := 0; i < osv.n; i++ {
 		msg := Message{}
@@ -117,7 +117,7 @@ func (osv *OSV) Recv(m Message) ([]Message, error) {
 	}
 	if m.Mtype == Echo {
 		//osv.handleEcho(m)
-		//log.Printf("[node %v] received ECHO from node %v", osv.id, m.fromID)
+		log.Printf("[node %v] received ECHO from node %v", osv.id, m.FromID)
 		osv.echosNum += 1
 	}
 	if m.Mtype == Vote {
@@ -126,7 +126,7 @@ func (osv *OSV) Recv(m Message) ([]Message, error) {
 			//log.Printf("node %v has already voted", m.fromID)
 			return nil, nil
 		}
-		//log.Printf("[node %v] received VOTE from node %v", osv.id, m.fromID)
+		log.Printf("[node %v] received VOTE from node %v", osv.id, m.FromID)
 		osv.votesNum += 1
 		osv.nVotes[m.FromID] = true
 	}

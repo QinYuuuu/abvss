@@ -5,7 +5,6 @@ import (
 	"github.com/QinYuuuu/abvss/internal/smvba"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"github.com/QinYuuuu/abvss/pkg/utils"
-	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 	"google.golang.org/protobuf/proto"
 	"log"
@@ -14,7 +13,7 @@ import (
 )
 
 func TestMVBA(id, n, f int, pk *share.PubPoly, sk *share.PriShare, epk kyber.Point, evk []*share.PubShare, esk *share.PriShare, testNum int, signature [][]byte) {
-	_, ipList, portList := GenerateIplist(n)
+	_, ipList, portList := main.GenerateIplist(n)
 	/*
 		N := uint32(4)
 		F := uint32(1)
@@ -53,7 +52,7 @@ func TestMVBA(id, n, f int, pk *share.PubPoly, sk *share.PriShare, epk kyber.Poi
 		wg.Add(1)
 
 		go func(k int) {
-			ans := smvba.MainProcess(p, ID, value, validation, Q)
+			ans := smvba.MainProcess(p, ID, value, validation, main.Q)
 			mu.Lock()
 			result[k] = append(result[k], ans)
 			mu.Unlock()

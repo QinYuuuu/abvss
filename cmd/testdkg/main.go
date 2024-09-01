@@ -111,6 +111,7 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 		log.Printf("node %v running local", id)
 		portList1, ipList, portList2 = config.LoadIPList_Local(n, addr)
 	}
+
 	p := party.NewHonestParty(uint32(n), uint32(f), uint32(id), ipList, portList2, pk, sk, epk, evk, esk)
 	p.InitReceiveChannel()
 	p.InitSendChannel()
@@ -145,6 +146,7 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	for i := 0; i < batchsize; i++ {
 		s[i] = utils.RandomNum(pint)
 	}
+	log.Printf("node %v DKG running", id)
 	go abdkgservice.Receive()
 	start1 := time.Now()
 	go node.SecretSharing(pk1, s)
@@ -231,19 +233,19 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	bandwidth := band1 + int(p.Bandwidth)
 	fmt.Printf("node %v Time cost: %v %v %v\n", id, timeusage, end1.Sub(start1), end2.Sub(start2))
 	fmt.Printf("node %v bandwidth cost: %v\n", id, bandwidth)
-	path := "/home/ubuntu/test"
+	path := "/home/ubuntu/testDKG"
 	exist, err := config.PathExists(path)
 	if err != nil {
 		fmt.Printf("get dir error: %v \n", err)
 	}
 	if !exist {
-		err = os.Mkdir("/home/ubuntu/test", 0777)
+		err = os.Mkdir("/home/ubuntu/testDKG", 0777)
 		if err != nil {
 			fmt.Printf("make dir error: %v \n", err)
 			return
 		}
 	}
-	file3, _ := os.OpenFile(fmt.Sprintf("/home/ubuntu/test/node%v_%v_%v", id, n, batchsize), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
+	file3, _ := os.OpenFile(fmt.Sprintf("/home/ubuntu/testDKG/node%v_%v_%v", id, n, batchsize), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0666)
 	file3.WriteString(fmt.Sprintf("time\n%v\nband\n%v\n", timeusage, bandwidth))
 	time.Sleep(30 * time.Second)
 }

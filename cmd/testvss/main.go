@@ -102,10 +102,10 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 	for i := 0; i < batchsize; i++ {
 		s[i] = utils.RandomNum(p)
 	}
-	wg.Wait()
 	//fmt.Println(nodes[0].Conns)
 	//fmt.Println(nodes[0].Clients)
 	go abvssservice.Receive()
+	//log.Printf("node %v VSS running", id)
 	start := time.Now()
 	if id == 1 {
 		node.SecretSharing(pk, s)
@@ -118,42 +118,38 @@ func TestVSS(id, n, f, batchsize, vnum int, p *big.Int, pk []kyber.Point, sk kyb
 			return
 		}
 	}()
-
+	//log.Printf("node %v verify", id)
 	go func() {
-		for {
-			if node.Count >= n-f {
-				node.OSVInit()
-				return
-			}
+		ready := <-node.ABVSS.Ready
+		if ready {
+			node.OSVInit()
+			return
 		}
 	}()
 	//log.Printf("node %v osv INIT", id)
-	flag1 := false
 
+	wg.Add(1)
 	go func() {
-		for {
-			if node.OSV.Done() {
-				flag1 = true
-				break
-			}
+		if <-node.OutPut {
+			wg.Done()
+			return
 		}
+
 	}()
 
-	for flag1 == false {
-
-	}
+	wg.Wait()
 	end := time.Now()
 	timeusage := end.Sub(start)
 	bandwidth := 0
 
-	//fmt.Println("SUCCESS")
-	path := "/home/ubuntu/new_testvss"
+	fmt.Println("SUCCESS")
+	path := "/home/ubuntu/testVSS"
 	exist, err := config.PathExists(path)
 	if err != nil {
 		fmt.Printf("get dir error: %v \n", err)
 	}
 	if !exist {
-		err = os.Mkdir("/home/ubuntu/new_testvss", 0777)
+		err = os.Mkdir("/home/ubuntu/testVSS", 0777)
 		if err != nil {
 			fmt.Printf("make dir error: %v \n", err)
 			return
