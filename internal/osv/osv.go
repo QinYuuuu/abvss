@@ -117,7 +117,7 @@ func (osv *OSV) Recv(m Message) ([]Message, error) {
 	}
 	if m.Mtype == Echo {
 		//osv.handleEcho(m)
-		log.Printf("[node %v] received ECHO from node %v", osv.id, m.FromID)
+		//log.Printf("[node %v] received ECHO from node %v", osv.id, m.FromID)
 		osv.echosNum += 1
 	}
 	if m.Mtype == Vote {
@@ -126,7 +126,7 @@ func (osv *OSV) Recv(m Message) ([]Message, error) {
 			//log.Printf("node %v has already voted", m.fromID)
 			return nil, nil
 		}
-		log.Printf("[node %v] received VOTE from node %v", osv.id, m.FromID)
+		//log.Printf("[node %v] received VOTE from node %v", osv.id, m.FromID)
 		osv.votesNum += 1
 		osv.nVotes[m.FromID] = true
 	}
