@@ -2,8 +2,13 @@ package rbc
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"errors"
 	"github.com/QinYuuuu/abvss/crypto/hasher"
+=======
+	"abvss/crypto/hasher"
+	"errors"
+>>>>>>> 19b0d27 (Initial commit)
 =======
 	"abvss/crypto/hasher"
 	"errors"

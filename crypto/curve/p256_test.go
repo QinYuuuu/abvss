@@ -6,7 +6,11 @@ import (
 	"testing"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/crypto/utils"
+=======
+	"abvss/crypto/utils"
+>>>>>>> 19b0d27 (Initial commit)
 =======
 	"abvss/crypto/utils"
 >>>>>>> 19b0d27 (Initial commit)
@@ -33,7 +37,10 @@ func TestP256CurveAdd(t *testing.T) {
 	fmt.Println(c.IsOnCurve(dotx, doty))
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 19b0d27 (Initial commit)
 =======
 >>>>>>> 19b0d27 (Initial commit)

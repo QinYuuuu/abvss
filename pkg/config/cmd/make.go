@@ -1,7 +1,11 @@
 package main
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 import "github.com/QinYuuuu/abvss/pkg/config"
+=======
+import "abvss/pkg/config"
+>>>>>>> 19b0d27 (Initial commit)
 =======
 import "abvss/pkg/config"
 >>>>>>> 19b0d27 (Initial commit)

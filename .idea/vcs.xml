@@ -1,14 +1,20 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
   </component>
 =======
+=======
+>>>>>>> 19b0d27 (Initial commit)
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="" vcs="Git" />
   </component>
+<<<<<<< HEAD
+>>>>>>> 19b0d27 (Initial commit)
+=======
 >>>>>>> 19b0d27 (Initial commit)
 </project>

@@ -2,7 +2,11 @@ package core
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
+=======
+	"abvss/pkg/protobuf"
+>>>>>>> 19b0d27 (Initial commit)
 =======
 	"abvss/pkg/protobuf"
 >>>>>>> 19b0d27 (Initial commit)

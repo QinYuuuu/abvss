@@ -2,6 +2,7 @@ package pb //provable broadcast
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"bytes"
 	"context"
 	"github.com/QinYuuuu/abvss/internal/party"
@@ -11,6 +12,8 @@ import (
 	"github.com/QinYuuuu/abvss/pkg/core"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 =======
+=======
+>>>>>>> 19b0d27 (Initial commit)
 	"abvss/internal/party"
 	"bytes"
 	"context"
@@ -19,6 +22,9 @@ import (
 
 	"abvss/pkg/core"
 	"abvss/pkg/protobuf"
+<<<<<<< HEAD
+>>>>>>> 19b0d27 (Initial commit)
+=======
 >>>>>>> 19b0d27 (Initial commit)
 
 	"go.dedis.ch/kyber/v3/pairing"

@@ -1,6 +1,9 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 protoc --go_out=. --go-grpc_out=. *.proto
 =======
+=======
+>>>>>>> 19b0d27 (Initial commit)
 ### init
 $ go mod init abvss
 
@@ -18,4 +21,7 @@ $ go run main.go -id=1 -path=""
 $ go run main.go -id=2 -path=""
 
 $ go run main.go -id=3 -path=""
+<<<<<<< HEAD
+>>>>>>> 19b0d27 (Initial commit)
+=======
 >>>>>>> 19b0d27 (Initial commit)

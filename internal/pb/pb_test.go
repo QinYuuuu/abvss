@@ -2,15 +2,21 @@ package pb
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"bytes"
 	"context"
 	"fmt"
 	"github.com/QinYuuuu/abvss/internal/party"
 =======
+=======
+>>>>>>> 19b0d27 (Initial commit)
 	"abvss/internal/party"
 	"bytes"
 	"context"
 	"fmt"
+<<<<<<< HEAD
+>>>>>>> 19b0d27 (Initial commit)
+=======
 >>>>>>> 19b0d27 (Initial commit)
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/sign/bls"

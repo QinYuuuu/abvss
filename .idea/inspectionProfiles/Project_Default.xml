@@ -6,6 +6,10 @@
         <function importPath="github.com/QinYuuuu/abvss/network" name="NewPeer" />
         <function importPath="github.com/QinYuuuu/abvss/services" name="NewVSS" />
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        <function importPath="abvss/network" name="NewPeer" />
+>>>>>>> 19b0d27 (Initial commit)
 =======
         <function importPath="abvss/network" name="NewPeer" />
 >>>>>>> 19b0d27 (Initial commit)

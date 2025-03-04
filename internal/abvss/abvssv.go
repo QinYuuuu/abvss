@@ -2,8 +2,13 @@ package abvss
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"errors"
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
+=======
+	"abvss/crypto/utils/polynomial"
+	"errors"
+>>>>>>> 19b0d27 (Initial commit)
 =======
 	"abvss/crypto/utils/polynomial"
 	"errors"

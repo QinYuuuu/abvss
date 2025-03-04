@@ -2,8 +2,13 @@ package abvss
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"errors"
 	"github.com/QinYuuuu/abvss/crypto/elgamal"
+=======
+	"abvss/crypto/elgamal"
+	"errors"
+>>>>>>> 19b0d27 (Initial commit)
 =======
 	"abvss/crypto/elgamal"
 	"errors"
@@ -13,7 +18,11 @@ import (
 	"math/big"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
+=======
+	"abvss/crypto/utils/polynomial"
+>>>>>>> 19b0d27 (Initial commit)
 =======
 	"abvss/crypto/utils/polynomial"
 >>>>>>> 19b0d27 (Initial commit)

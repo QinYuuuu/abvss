@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 package utils
 
 import (
@@ -54,6 +55,8 @@ func BytesToUint32s(byt []byte) []uint32 {
 	return data
 }
 =======
+=======
+>>>>>>> 19b0d27 (Initial commit)
 package utils
 
 import (
@@ -108,4 +111,7 @@ func BytesToUint32s(byt []byte) []uint32 {
 	binary.Read(bytebuff, binary.BigEndian, &data)
 	return data
 }
+<<<<<<< HEAD
+>>>>>>> 19b0d27 (Initial commit)
+=======
 >>>>>>> 19b0d27 (Initial commit)

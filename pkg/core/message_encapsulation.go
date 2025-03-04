@@ -2,7 +2,11 @@ package core
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
+=======
+	"abvss/pkg/protobuf"
+>>>>>>> 19b0d27 (Initial commit)
 =======
 	"abvss/pkg/protobuf"
 >>>>>>> 19b0d27 (Initial commit)
@@ -129,6 +133,10 @@ func Decapsulation(messageType string, m *protobuf.Message) any {
 		proto.Unmarshal(m.Data, &payloadMessage)
 		return &payloadMessage
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+		
+>>>>>>> 19b0d27 (Initial commit)
 =======
 		
 >>>>>>> 19b0d27 (Initial commit)

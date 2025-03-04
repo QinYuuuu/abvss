@@ -7,9 +7,15 @@ import (
 	"testing"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/crypto/paillier"
 	"github.com/QinYuuuu/abvss/crypto/utils"
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
+=======
+	"abvss/crypto/paillier"
+	"abvss/crypto/utils"
+	"abvss/crypto/utils/polynomial"
+>>>>>>> 19b0d27 (Initial commit)
 =======
 	"abvss/crypto/paillier"
 	"abvss/crypto/utils"

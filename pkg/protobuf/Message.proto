@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 syntax = "proto3";
 
 option go_package = ".;protobuf";
@@ -157,6 +158,8 @@ message OSVMsg{
 }
 
 =======
+=======
+>>>>>>> 19b0d27 (Initial commit)
 syntax = "proto3";
 
 option go_package = ".;protobuf";
@@ -299,5 +302,8 @@ message OPTRBCMsg{
   bytes payload = 5;
 }
 
+<<<<<<< HEAD
+>>>>>>> 19b0d27 (Initial commit)
+=======
 >>>>>>> 19b0d27 (Initial commit)
 message AckMsg{}
