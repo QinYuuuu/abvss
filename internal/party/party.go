@@ -6,8 +6,13 @@ import (
 	"net"
 	"sync"
 
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/pkg/core"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
+=======
+	"abvss/pkg/core"
+	"abvss/pkg/protobuf"
+>>>>>>> 19b0d27 (Initial commit)
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 )

@@ -1,10 +1,17 @@
 package abdkg
 
 import (
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/internal/abvss"
 	"github.com/QinYuuuu/abvss/internal/osv"
 	"github.com/QinYuuuu/abvss/pkg/core"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
+=======
+	"abvss/internal/abvss"
+	"abvss/internal/osv"
+	"abvss/pkg/core"
+	"abvss/pkg/protobuf"
+>>>>>>> 19b0d27 (Initial commit)
 	"go.dedis.ch/kyber/v3"
 	"log"
 	"math/big"

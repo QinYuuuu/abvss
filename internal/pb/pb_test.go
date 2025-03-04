@@ -1,10 +1,17 @@
 package pb
 
 import (
+<<<<<<< HEAD
 	"bytes"
 	"context"
 	"fmt"
 	"github.com/QinYuuuu/abvss/internal/party"
+=======
+	"abvss/internal/party"
+	"bytes"
+	"context"
+	"fmt"
+>>>>>>> 19b0d27 (Initial commit)
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/sign/bls"
 	"golang.org/x/crypto/sha3"

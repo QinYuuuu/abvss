@@ -1,8 +1,13 @@
 package main
 
 import (
+<<<<<<< HEAD
 	"fmt"
 	"github.com/QinYuuuu/abvss/network"
+=======
+	"abvss/network"
+	"fmt"
+>>>>>>> 19b0d27 (Initial commit)
 )
 
 func main() {

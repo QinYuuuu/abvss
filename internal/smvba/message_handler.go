@@ -1,6 +1,7 @@
 package smvba
 
 import (
+<<<<<<< HEAD
 	"bytes"
 	"context"
 	"github.com/QinYuuuu/abvss/internal/party"
@@ -9,6 +10,16 @@ import (
 	"github.com/QinYuuuu/abvss/pkg/core"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"github.com/QinYuuuu/abvss/pkg/utils"
+=======
+	"abvss/internal/party"
+	"bytes"
+	"context"
+	"sync"
+
+	"abvss/pkg/core"
+	"abvss/pkg/protobuf"
+	"abvss/pkg/utils"
+>>>>>>> 19b0d27 (Initial commit)
 
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/sign/bls"

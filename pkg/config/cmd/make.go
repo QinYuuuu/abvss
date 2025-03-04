@@ -1,6 +1,10 @@
 package main
 
+<<<<<<< HEAD
 import "github.com/QinYuuuu/abvss/pkg/config"
+=======
+import "abvss/pkg/config"
+>>>>>>> 19b0d27 (Initial commit)
 
 func main() {
 	//config.ElgamalCurve25519KeyGen(128, "D:/mycode/gocode/src/abvss")

@@ -1,8 +1,13 @@
 package config
 
 import (
+<<<<<<< HEAD
 	"encoding/base64"
 	"github.com/QinYuuuu/abvss/internal/party"
+=======
+	"abvss/internal/party"
+	"encoding/base64"
+>>>>>>> 19b0d27 (Initial commit)
 	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"strconv"

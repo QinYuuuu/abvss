@@ -1,10 +1,17 @@
 package config
 
 import (
+<<<<<<< HEAD
 	"encoding/json"
 	"fmt"
 	"github.com/QinYuuuu/abvss/crypto/elgamal"
 	"github.com/QinYuuuu/abvss/internal/party"
+=======
+	"abvss/crypto/elgamal"
+	"abvss/internal/party"
+	"encoding/json"
+	"fmt"
+>>>>>>> 19b0d27 (Initial commit)
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/curve25519"
 	"os"

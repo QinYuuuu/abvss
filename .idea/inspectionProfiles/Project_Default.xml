@@ -5,6 +5,10 @@
       <functions>
         <function importPath="github.com/QinYuuuu/abvss/network" name="NewPeer" />
         <function importPath="github.com/QinYuuuu/abvss/services" name="NewVSS" />
+<<<<<<< HEAD
+=======
+        <function importPath="abvss/network" name="NewPeer" />
+>>>>>>> 19b0d27 (Initial commit)
       </functions>
     </inspection_tool>
   </profile>

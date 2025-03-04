@@ -2,11 +2,12 @@ package abvss
 
 import (
 	"errors"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/group/curve25519"
 	"math/big"
 	"math/rand"
 	"sync"
+
+	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v3/group/curve25519"
 
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
 )

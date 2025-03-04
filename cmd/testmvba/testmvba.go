@@ -1,10 +1,19 @@
 package main
 
 import (
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/internal/party"
 	"github.com/QinYuuuu/abvss/internal/smvba"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"github.com/QinYuuuu/abvss/pkg/utils"
+=======
+	"abvss/internal/party"
+	"abvss/internal/smvba"
+	"abvss/pkg/config"
+	"abvss/pkg/protobuf"
+	"abvss/pkg/utils"
+	"go.dedis.ch/kyber/v3"
+>>>>>>> 19b0d27 (Initial commit)
 	"go.dedis.ch/kyber/v3/share"
 	"google.golang.org/protobuf/proto"
 	"log"
@@ -13,7 +22,11 @@ import (
 )
 
 func TestMVBA(id, n, f int, pk *share.PubPoly, sk *share.PriShare, epk kyber.Point, evk []*share.PubShare, esk *share.PriShare, testNum int, signature [][]byte) {
+<<<<<<< HEAD
 	_, ipList, portList := main.GenerateIplist(n)
+=======
+	_, ipList, portList := config.GenerateIPList_Local(n)
+>>>>>>> 19b0d27 (Initial commit)
 	/*
 		N := uint32(4)
 		F := uint32(1)

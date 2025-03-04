@@ -5,7 +5,11 @@ import (
 	"fmt"
 	"testing"
 
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/crypto/utils"
+=======
+	"abvss/crypto/utils"
+>>>>>>> 19b0d27 (Initial commit)
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,5 +32,8 @@ func TestP256CurveAdd(t *testing.T) {
 	doty := zero
 	fmt.Println(c.IsOnCurve(dotx, doty))
 }
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> 19b0d27 (Initial commit)
