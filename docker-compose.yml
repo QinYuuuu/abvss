@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  node0:
+    image: registry.cn-hangzhou.aliyuncs.com/golangmirror/golang:1.22.1
+    volumes:
+      - .:/app
+      - go-modules:/go/pkg/mod
+    working_dir: /app
+    command: go run main.go -id=0 -listen=0.0.0.0:8000
+    networks:
+      node-subnet:
+        ipv4_address: 192.168.32.10
+
+  node1:
+    image: registry.cn-hangzhou.aliyuncs.com/golangmirror/golang:1.22.1
+    volumes:
+      - .:/app
+      - go-modules:/go/pkg/mod
+    working_dir: /app
+    command: go run main.go -id=1 -path=
+    networks:
+      node-subnet:
+        ipv4_address: 192.168.32.11
+
+  node2:
+    image: registry.cn-hangzhou.aliyuncs.com/golangmirror/golang:1.22.1
+    volumes:
+      - .:/app
+      - go-modules:/go/pkg/mod
+    working_dir: /app
+    command: go run main.go -id=2 -listen=0.0.0.0:8000
+    networks:
+      node-subnet:
+        ipv4_address: 192.168.32.12
+
+  node3:
+    image: registry.cn-hangzhou.aliyuncs.com/golangmirror/golang:1.22.1
+    volumes:
+      - .:/app
+      - go-modules:/go/pkg/mod
+    working_dir: /app
+    command: go run main.go -id=3 -listen=0.0.0.0:8000
+    networks:
+      node-subnet:
+        ipv4_address: 192.168.32.13
+
+volumes:
+  go-modules:
+    driver: local
+
+networks:
+  node-subnet:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: "192.168.32.0/24"
+          gateway: "192.168.32.1"
