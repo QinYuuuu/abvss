@@ -12,7 +12,11 @@ import (
 =======
 	"abvss/pkg/protobuf"
 	"abvss/pkg/utils"
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	"log"
 	"net"
 
@@ -37,7 +41,11 @@ func MakeSendChannel(hostIP string, hostPort string) (*net.TCPConn, chan *protob
 >>>>>>> 19b0d27 (Initial commit)
 =======
 	log.Println("try to connect ", hostIP, ":", hostPort)
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	for retry {
 		addr, err1 = net.ResolveTCPAddr("tcp4", hostIP+":"+hostPort)
 		conn, err2 = net.DialTCP("tcp4", nil, addr)
@@ -50,7 +58,11 @@ func MakeSendChannel(hostIP string, hostPort string) (*net.TCPConn, chan *protob
 >>>>>>> 19b0d27 (Initial commit)
 =======
 			log.Println("try to connect failed and retry", err1, err2)
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 			retry = true
 			continue
 		} else {

@@ -27,7 +27,11 @@ func (p ECPoint) Y() *big.Int {
 }
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 package curve
 
 import (
@@ -54,6 +58,11 @@ func (p ECPoint) Y() *big.Int {
 	return p.y
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792

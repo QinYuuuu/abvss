@@ -12,7 +12,11 @@ import (
 =======
 	"abvss/crypto/elgamal"
 	"errors"
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	"go.dedis.ch/kyber/v3"
 	"math/big"
 	"math/rand"
@@ -28,7 +32,11 @@ import (
 =======
 	"abvss/crypto/utils"
 	"abvss/crypto/utils/polynomial"
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 )
 
 const ReceiverRandSeed = 10
@@ -169,7 +177,11 @@ func (vss *ABVSS) HandleComplain(sk kyber.Scalar, index int) error {
 >>>>>>> 19b0d27 (Initial commit)
 =======
 
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	return errors.New("do not need to complain")
 }
 

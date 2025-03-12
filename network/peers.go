@@ -16,7 +16,11 @@ import (
 	"abvss/pkg/protobuf"
 	"abvss/pkg/utils"
 	"errors"
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	"google.golang.org/protobuf/proto"
 	"io"
 	"log"
@@ -37,7 +41,11 @@ type Peer struct {
 	SendChannels   []chan *protobuf.Message
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	lis            *net.TCPListener
 	conns          []*net.TCPConn
 	iplist         []string
@@ -45,9 +53,14 @@ type Peer struct {
 	receiveChannel chan *protobuf.Message
 	sendChannels   []chan *protobuf.Message
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	Closed         bool
 	Ready          bool
 	Bandwidth      []uint64
@@ -58,7 +71,11 @@ type Peer struct {
 func NewPeer(n, id int, iplist []string, portList []string) (*Peer, error) {
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 func (p *Peer) GetSendChannel() []chan *protobuf.Message {
 	return p.sendChannels
 }
@@ -69,9 +86,14 @@ func (p *Peer) GetReceiveChannel() chan *protobuf.Message {
 
 func NewPeer(n, id int, iplist []string, portlist []string) (*Peer, error) {
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	if n != len(iplist) {
 		return nil, errors.New("n does not match iplist ")
 	}
@@ -87,16 +109,25 @@ func NewPeer(n, id int, iplist []string, portlist []string) (*Peer, error) {
 		portList:       portList,
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 		conns:          make([]*net.TCPConn, n),
 		receiveChannel: make(chan *protobuf.Message),
 		sendChannels:   make([]chan *protobuf.Message, n),
 		iplist:         iplist,
 		portlist:       portlist,
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 		Ready:          false,
 		Bandwidth:      make([]uint64, n),
 	}, nil
@@ -108,7 +139,11 @@ func (p *Peer) Serve() {
 	addr, err1 := net.ResolveTCPAddr("tcp4", ":"+p.portList[p.id])
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 func (p *Peer) Send(destID int, m *protobuf.Message) {
 	p.sendChannels[destID] <- m
 }
@@ -122,9 +157,14 @@ func (p *Peer) Broadcast(m *protobuf.Message) {
 func (p *Peer) Serve() {
 	addr, err1 := net.ResolveTCPAddr("tcp4", ":"+p.portlist[p.id])
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	if err1 != nil {
 		log.Fatalf("node %v create addr err: %v\n", p.id, err1)
 	}
@@ -140,7 +180,11 @@ func (p *Peer) Serve() {
 >>>>>>> 19b0d27 (Initial commit)
 =======
 	log.Printf("node %d listen on %s", p.id, addr)
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 
 	//Make the receive channel and the handle func
 	var conn *net.TCPConn
@@ -153,7 +197,11 @@ func (p *Peer) Serve() {
 >>>>>>> 19b0d27 (Initial commit)
 =======
 	p.receiveChannel = make(chan *protobuf.Message, 2048)
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	go func() {
 		for {
 			//The handle func run forever
@@ -193,16 +241,25 @@ func (p *Peer) Serve() {
 			}(conn, p.ReceiveChannel)
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 					//Push protobuf.Message to receiveChannel
 					channel <- &m
 				}
 
 			}(conn, p.receiveChannel)
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 		}
 	}()
 }
@@ -226,7 +283,11 @@ func (p *Peer) Connect() {
 >>>>>>> 19b0d27 (Initial commit)
 =======
 	for i := 0; i < len(p.iplist); i++ {
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 		p.Bandwidth[i] = 0
 		if i == p.id {
 			continue
@@ -242,16 +303,25 @@ func (p *Peer) Connect() {
 			//log.Printf("node %v try connect to node %v on %v", p.id, i, p.ipList[i])
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 			addr, err1 := net.ResolveTCPAddr("tcp4", p.iplist[i]+":"+p.portlist[i])
 			if err1 != nil {
 				log.Fatalf("node %v create addr err: %v\n", p.id, err1)
 			}
 			log.Printf("node %v try connect to node %v on %v", p.id, i, p.iplist[i])
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 			for {
 				nConn, err := net.DialTCP("tcp", nil, addr)
 				if err != nil {
@@ -268,7 +338,11 @@ func (p *Peer) Connect() {
 >>>>>>> 19b0d27 (Initial commit)
 =======
 					p.conns[i] = nConn
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 					//log.Printf("node %v connect to node %v", p.id, i)
 					break
 				}
@@ -289,7 +363,11 @@ func (p *Peer) Connect() {
 		p.SendChannels[i] = make(chan *protobuf.Message, 2048)
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	log.Printf("node %v connect to other nodes", p.id)
 	for i := 0; i < len(p.iplist); i++ {
 		if i == p.id {
@@ -298,9 +376,14 @@ func (p *Peer) Connect() {
 		conn := p.conns[i]
 		p.sendChannels[i] = make(chan *protobuf.Message, 2048)
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 		go func(conn *net.TCPConn, channel chan *protobuf.Message, i int) {
 			for {
 				//Pop protobuf.Message form sendchannel
@@ -335,7 +418,11 @@ func (p *Peer) Close() {
 		close(p.SendChannels[i])
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 		}(conn, p.sendChannels[i], i)
 	}
 	//fmt.Println(p.conns)
@@ -348,9 +435,14 @@ func (p *Peer) Close() {
 		}
 		close(p.sendChannels[i])
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 		err := Conn.Close()
 		if err != nil {
 			log.Printf("node %v close %v", p.id, err)
@@ -372,7 +464,11 @@ func (n Service) Receive(req *protobuf.TestHelloMessage) (*protobuf.TestResMessa
 >>>>>>> 19b0d27 (Initial commit)
 =======
 func (n Service) Receive(req *protobuf.TestHelloMessage) (*protobuf.TestResMessage, error) {
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	//log.Printf("node %v receive request from node %v: %v", n.Id, req.GetFromID(), req.GetContent())
 	return &protobuf.TestResMessage{Content: "have received Hello", FromID: int64(n.Id), DestID: req.GetFromID()}, nil
 }

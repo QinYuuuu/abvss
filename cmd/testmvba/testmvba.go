@@ -9,7 +9,11 @@ import (
 	"github.com/QinYuuuu/abvss/pkg/utils"
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	"abvss/internal/party"
 	"abvss/internal/smvba"
 	"abvss/pkg/config"
@@ -17,9 +21,14 @@ import (
 	"abvss/pkg/utils"
 	"go.dedis.ch/kyber/v3"
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"go.dedis.ch/kyber/v3/share"
 	"google.golang.org/protobuf/proto"
 	"log"
@@ -36,7 +45,11 @@ func TestMVBA(id, n, f int, pk *share.PubPoly, sk *share.PriShare, epk kyber.Poi
 >>>>>>> 19b0d27 (Initial commit)
 =======
 	_, ipList, portList := config.GenerateIPList_Local(n)
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	/*
 		N := uint32(4)
 		F := uint32(1)

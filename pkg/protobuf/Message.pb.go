@@ -11,7 +11,11 @@
 =======
 // 	protoc-gen-go v1.34.1
 // 	protoc        v5.26.1
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 // source: Message.proto
 
 package protobuf
@@ -169,16 +173,25 @@ type Message struct {
 	Data   []byte `protobuf:"bytes,4,opt,name=data,proto3" json:"data,omitempty"`
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	Type      string `protobuf:"bytes,1,opt,name=type,proto3" json:"type,omitempty"` // instance id
 	Id        []byte `protobuf:"bytes,2,opt,name=id,proto3" json:"id,omitempty"`
 	SessionID []byte `protobuf:"bytes,3,opt,name=sessionID,proto3" json:"sessionID,omitempty"`
 	Sender    uint32 `protobuf:"varint,4,opt,name=sender,proto3" json:"sender,omitempty"`
 	Data      []byte `protobuf:"bytes,5,opt,name=data,proto3" json:"data,omitempty"`
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 }
 
 func (x *Message) Reset() {
@@ -231,7 +244,11 @@ func (x *Message) GetId() []byte {
 <<<<<<< HEAD
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 func (x *Message) GetSessionID() []byte {
 	if x != nil {
 		return x.SessionID
@@ -240,9 +257,14 @@ func (x *Message) GetSessionID() []byte {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 func (x *Message) GetSender() uint32 {
 	if x != nil {
 		return x.Sender
@@ -1392,7 +1414,11 @@ func (x *OSVMsg) GetMtype() string {
 <<<<<<< HEAD
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 type OPTRBCMsg struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1473,9 +1499,14 @@ func (x *OPTRBCMsg) GetPayload() []byte {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 type AckMsg struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1493,7 +1524,11 @@ func (x *AckMsg) Reset() {
 >>>>>>> 19b0d27 (Initial commit)
 =======
 		mi := &file_Message_proto_msgTypes[23]
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1514,7 +1549,11 @@ func (x *AckMsg) ProtoReflect() protoreflect.Message {
 >>>>>>> 19b0d27 (Initial commit)
 =======
 	mi := &file_Message_proto_msgTypes[23]
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1535,7 +1574,11 @@ func (*AckMsg) Descriptor() ([]byte, []int) {
 >>>>>>> 19b0d27 (Initial commit)
 =======
 	return file_Message_proto_rawDescGZIP(), []int{23}
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 }
 
 type Help_ShardAndProof struct {
@@ -1560,7 +1603,11 @@ func (x *Help_ShardAndProof) Reset() {
 >>>>>>> 19b0d27 (Initial commit)
 =======
 		mi := &file_Message_proto_msgTypes[24]
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1581,7 +1628,11 @@ func (x *Help_ShardAndProof) ProtoReflect() protoreflect.Message {
 >>>>>>> 19b0d27 (Initial commit)
 =======
 	mi := &file_Message_proto_msgTypes[24]
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1769,7 +1820,11 @@ var file_Message_proto_rawDesc = []byte{
 	0x75, 0x66, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	0x52, 0x07, 0x63, 0x6f, 0x6e, 0x74, 0x65, 0x6e, 0x74, 0x22, 0x77, 0x0a, 0x07, 0x4d, 0x65, 0x73,
 	0x73, 0x61, 0x67, 0x65, 0x12, 0x12, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01,
 	0x28, 0x09, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x02,
@@ -1879,9 +1934,14 @@ var file_Message_proto_rawDesc = []byte{
 	0x0c, 0x5a, 0x0a, 0x2e, 0x3b, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x62, 0x06, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x33,
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 }
 
 var (
@@ -1904,7 +1964,11 @@ var file_Message_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
 >>>>>>> 19b0d27 (Initial commit)
 =======
 var file_Message_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 var file_Message_proto_goTypes = []interface{}{
 	(*TestHelloMessage)(nil),   // 0: TestHelloMessage
 	(*TestResMessage)(nil),     // 1: TestResMessage
@@ -1961,7 +2025,11 @@ var file_Message_proto_depIdxs = []int32{
 	1,  // [1:12] is the sub-list for method input_type
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	(*OPTRBCMsg)(nil),          // 22: OPTRBCMsg
 	(*AckMsg)(nil),             // 23: AckMsg
 	(*Help_ShardAndProof)(nil), // 24: Help.ShardAndProof
@@ -1971,9 +2039,14 @@ var file_Message_proto_depIdxs = []int32{
 	1,  // [1:1] is the sub-list for method output_type
 	1,  // [1:1] is the sub-list for method input_type
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	1,  // [1:1] is the sub-list for extension type_name
 	1,  // [1:1] is the sub-list for extension extendee
 	0,  // [0:1] is the sub-list for field type_name
@@ -2258,7 +2331,11 @@ func file_Message_proto_init() {
 >>>>>>> 19b0d27 (Initial commit)
 =======
 			switch v := v.(*OPTRBCMsg); i {
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 			case 0:
 				return &v.state
 			case 1:
@@ -2274,7 +2351,11 @@ func file_Message_proto_init() {
 <<<<<<< HEAD
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 			switch v := v.(*AckMsg); i {
 			case 0:
 				return &v.state
@@ -2288,9 +2369,14 @@ func file_Message_proto_init() {
 		}
 		file_Message_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 			switch v := v.(*Help_ShardAndProof); i {
 			case 0:
 				return &v.state
@@ -2323,7 +2409,11 @@ func file_Message_proto_init() {
 			NumMessages:   25,
 			NumExtensions: 0,
 			NumServices:   0,
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 		},
 		GoTypes:           file_Message_proto_goTypes,
 		DependencyIndexes: file_Message_proto_depIdxs,

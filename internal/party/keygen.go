@@ -43,7 +43,11 @@ func EncKeyGen(n uint32, t uint32) (kyber.Point, []*share.PubShare, []*share.Pri
 }
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 package party
 
 import (
@@ -86,6 +90,11 @@ func EncKeyGen(n uint32, t uint32) (kyber.Point, []*share.PubShare, []*share.Pri
 	return pk, vk, sks
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792

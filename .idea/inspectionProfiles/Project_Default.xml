@@ -7,12 +7,18 @@
         <function importPath="github.com/QinYuuuu/abvss/services" name="NewVSS" />
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+        <function importPath="abvss/network" name="NewPeer" />
+>>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 =======
         <function importPath="abvss/network" name="NewPeer" />
 >>>>>>> 19b0d27 (Initial commit)
 =======
         <function importPath="abvss/network" name="NewPeer" />
->>>>>>> 19b0d27 (Initial commit)
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
       </functions>
     </inspection_tool>
   </profile>

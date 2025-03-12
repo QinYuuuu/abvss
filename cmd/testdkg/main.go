@@ -5,7 +5,11 @@ import (
 <<<<<<< HEAD
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	"abvss/crypto/utils"
 	"abvss/internal/abdkg"
 	"abvss/internal/abvss"
@@ -17,9 +21,14 @@ import (
 	"abvss/pkg/protobuf"
 	utils2 "abvss/pkg/utils"
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"bytes"
 	"crypto/elliptic"
 	"errors"
@@ -40,7 +49,11 @@ import (
 =======
 >>>>>>> 19b0d27 (Initial commit)
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/share"
@@ -144,16 +157,25 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	p.InitSendChannel()
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	log.Printf("1")
 	p.InitReceiveChannel()
 	log.Printf("2")
 	p.InitSendChannel()
 	log.Printf("3")
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	node := new(ABDKGNode)
 	var err error
 	abvss_instance := make([]*abvss.ABVSS, n)
@@ -179,7 +201,11 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	abdkgservice := abdkg.NewABDKGService(id, n, peer.SendChannels, peer.ReceiveChannel)
 =======
 =======
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	if err != nil {
 		log.Println("NewPeer err:", err)
 	}
@@ -188,9 +214,14 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	peer.Connect()
 	abdkgservice := abdkg.NewABDKGService(id, n, peer.GetSendChannel(), peer.GetReceiveChannel())
 <<<<<<< HEAD
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
 =======
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	abdkgservice.Vss = abvss_instance
 	abdkgservice.Osv = osv_instance
 

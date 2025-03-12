@@ -9,7 +9,11 @@ import (
 >>>>>>> 19b0d27 (Initial commit)
 =======
 	"abvss/pkg/protobuf"
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 	"log"
 
 	"google.golang.org/protobuf/proto"
@@ -134,12 +138,18 @@ func Decapsulation(messageType string, m *protobuf.Message) any {
 		return &payloadMessage
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+		
+>>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 777a377d3fc136707c33ac2497d96c7e6cabe03b
 =======
 		
 >>>>>>> 19b0d27 (Initial commit)
 =======
 		
->>>>>>> 19b0d27 (Initial commit)
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	default:
 		var payloadMessage protobuf.Message
 		proto.Unmarshal(m.Data, &payloadMessage)
