@@ -2,6 +2,7 @@ package main
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"crypto/elliptic"
 	"flag"
 	"fmt"
@@ -11,6 +12,8 @@ import (
 	"github.com/QinYuuuu/abvss/network"
 	"github.com/QinYuuuu/abvss/pkg/config"
 =======
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"abvss/crypto/utils"
 	"abvss/internal/abvss"
 	"abvss/internal/osv"
@@ -19,7 +22,10 @@ import (
 	"crypto/elliptic"
 	"flag"
 	"fmt"
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"go.dedis.ch/kyber/v3"
 	"log"
 	"math/big"

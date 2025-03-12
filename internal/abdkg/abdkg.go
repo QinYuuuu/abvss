@@ -2,18 +2,24 @@ package abdkg
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/internal/abvss"
 	"math/big"
 	"math/rand"
 
 	"github.com/QinYuuuu/abvss/crypto/curve"
 =======
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"abvss/internal/abvss"
 	"math/big"
 	"math/rand"
 
 	"abvss/crypto/curve"
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 )
 
 type ABDKG struct {

@@ -2,16 +2,22 @@ package abvss
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"context"
 	"github.com/QinYuuuu/abvss/internal/osv"
 	"github.com/QinYuuuu/abvss/pkg/core"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 =======
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"abvss/internal/osv"
 	"abvss/pkg/core"
 	"abvss/pkg/protobuf"
 	"context"
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"go.dedis.ch/kyber/v3"
 	"log"
 	"math/big"

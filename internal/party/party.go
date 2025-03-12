@@ -7,12 +7,17 @@ import (
 	"sync"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/pkg/core"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 =======
 	"abvss/pkg/core"
 	"abvss/pkg/protobuf"
 >>>>>>> 19b0d27 (Initial commit)
+=======
+	"abvss/pkg/core"
+	"abvss/pkg/protobuf"
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/share"
 )

@@ -2,12 +2,17 @@ package core
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"github.com/QinYuuuu/abvss/pkg/utils"
 =======
 	"abvss/pkg/protobuf"
 	"abvss/pkg/utils"
 >>>>>>> 19b0d27 (Initial commit)
+=======
+	"abvss/pkg/protobuf"
+	"abvss/pkg/utils"
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"log"
 	"net"
 
@@ -25,19 +30,27 @@ func MakeSendChannel(hostIP string, hostPort string) (*net.TCPConn, chan *protob
 	//Retry to connet to node
 	retry := true
 <<<<<<< HEAD
+<<<<<<< HEAD
 	//log.Println("try to connect ", hostIP, ":", hostPort)
 =======
 	log.Println("try to connect ", hostIP, ":", hostPort)
 >>>>>>> 19b0d27 (Initial commit)
+=======
+	log.Println("try to connect ", hostIP, ":", hostPort)
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	for retry {
 		addr, err1 = net.ResolveTCPAddr("tcp4", hostIP+":"+hostPort)
 		conn, err2 = net.DialTCP("tcp4", nil, addr)
 		if err1 != nil || err2 != nil {
 <<<<<<< HEAD
+<<<<<<< HEAD
 			//log.Println("try to connect failed and retry", err1, err2)
 =======
 			log.Println("try to connect failed and retry", err1, err2)
 >>>>>>> 19b0d27 (Initial commit)
+=======
+			log.Println("try to connect failed and retry", err1, err2)
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 			retry = true
 			continue
 		} else {

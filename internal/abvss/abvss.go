@@ -9,7 +9,11 @@ import (
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/group/curve25519"
 
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
+=======
+	"abvss/crypto/utils/polynomial"
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 )
 
 type ABVSS struct {

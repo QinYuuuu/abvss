@@ -2,12 +2,17 @@ package core
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"github.com/QinYuuuu/abvss/pkg/utils"
 =======
 	"abvss/pkg/protobuf"
 	"abvss/pkg/utils"
 >>>>>>> 19b0d27 (Initial commit)
+=======
+	"abvss/pkg/protobuf"
+	"abvss/pkg/utils"
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"google.golang.org/protobuf/proto"
 	"io"
 	"log"

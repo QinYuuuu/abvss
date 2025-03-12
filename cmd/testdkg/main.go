@@ -2,7 +2,10 @@ package main
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"abvss/crypto/utils"
 	"abvss/internal/abdkg"
 	"abvss/internal/abvss"
@@ -13,12 +16,16 @@ import (
 	"abvss/pkg/config"
 	"abvss/pkg/protobuf"
 	utils2 "abvss/pkg/utils"
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"bytes"
 	"crypto/elliptic"
 	"errors"
 	"flag"
 	"fmt"
+<<<<<<< HEAD
 <<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/crypto/utils"
 	"github.com/QinYuuuu/abvss/internal/abdkg"
@@ -32,6 +39,8 @@ import (
 	utils2 "github.com/QinYuuuu/abvss/pkg/utils"
 =======
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"go.dedis.ch/kyber/v3"
 	"go.dedis.ch/kyber/v3/pairing"
 	"go.dedis.ch/kyber/v3/share"
@@ -130,15 +139,21 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 
 	p := party.NewHonestParty(uint32(n), uint32(f), uint32(id), ipList, portList2, pk, sk, epk, evk, esk)
 <<<<<<< HEAD
+<<<<<<< HEAD
 	p.InitReceiveChannel()
 	p.InitSendChannel()
 =======
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	log.Printf("1")
 	p.InitReceiveChannel()
 	log.Printf("2")
 	p.InitSendChannel()
 	log.Printf("3")
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	node := new(ABDKGNode)
 	var err error
 	abvss_instance := make([]*abvss.ABVSS, n)
@@ -157,11 +172,14 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	}
 	peer, err := network.NewPeer(n, id, ipList, portList1)
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 	go peer.Serve()
 	peer.Connect()
 	abdkgservice := abdkg.NewABDKGService(id, n, peer.SendChannels, peer.ReceiveChannel)
 =======
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	if err != nil {
 		log.Println("NewPeer err:", err)
 	}
@@ -169,7 +187,10 @@ func TestDKG(id, n, f, batchsize, vnum int, pint *big.Int, pk1 []kyber.Point, sk
 	go peer.Serve()
 	peer.Connect()
 	abdkgservice := abdkg.NewABDKGService(id, n, peer.GetSendChannel(), peer.GetReceiveChannel())
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	abdkgservice.Vss = abvss_instance
 	abdkgservice.Osv = osv_instance
 

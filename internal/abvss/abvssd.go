@@ -2,21 +2,30 @@ package abvss
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"errors"
 	"github.com/QinYuuuu/abvss/crypto/elgamal"
 =======
 	"abvss/crypto/elgamal"
 	"errors"
 >>>>>>> 19b0d27 (Initial commit)
+=======
+	"abvss/crypto/elgamal"
+	"errors"
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"go.dedis.ch/kyber/v3"
 	"log"
 	"math/big"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
 =======
 	"abvss/crypto/utils/polynomial"
 >>>>>>> 19b0d27 (Initial commit)
+=======
+	"abvss/crypto/utils/polynomial"
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 )
 
 func (vss *ABVSS) DistributorInit(pk []kyber.Point, s []*big.Int) error {

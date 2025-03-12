@@ -2,16 +2,22 @@ package smvba
 
 import (
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"bytes"
 	"context"
 	"github.com/QinYuuuu/abvss/internal/party"
 	"github.com/QinYuuuu/abvss/internal/pb"
 =======
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"abvss/internal/party"
 	"abvss/internal/pb"
 	"bytes"
 	"context"
+<<<<<<< HEAD
 >>>>>>> 19b0d27 (Initial commit)
+=======
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"sync"
 
 	"go.dedis.ch/kyber/v3/pairing"

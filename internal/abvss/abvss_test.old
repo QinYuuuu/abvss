@@ -7,6 +7,7 @@ import (
 	"testing"
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	"github.com/QinYuuuu/abvss/crypto/paillier"
 	"github.com/QinYuuuu/abvss/crypto/utils"
 	"github.com/QinYuuuu/abvss/crypto/utils/polynomial"
@@ -15,6 +16,11 @@ import (
 	"abvss/crypto/utils"
 	"abvss/crypto/utils/polynomial"
 >>>>>>> 19b0d27 (Initial commit)
+=======
+	"abvss/crypto/paillier"
+	"abvss/crypto/utils"
+	"abvss/crypto/utils/polynomial"
+>>>>>>> 19b0d27dd7814a36bd7c868d1a65de42cc91f792
 	"github.com/stretchr/testify/assert"
 )
 
