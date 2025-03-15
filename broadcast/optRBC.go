@@ -192,6 +192,9 @@ func (n *Node) messageLoop() {
 			case Ready:
 				// handle ready
 				s.handleReady(msg.FromID, msg.Payload)
+			case ADDTrigger:
+				// handle addTrigger
+				s.handleADDTrigger(msg.FromID, msg.Payload)
 			default:
 				panic("unhandled default case")
 			}
