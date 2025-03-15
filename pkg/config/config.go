@@ -2,10 +2,11 @@ package config
 
 import (
 	"encoding/base64"
-	"github.com/QinYuuuu/abvss/internal/party"
-	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"strconv"
+
+	"github.com/QinYuuuu/abvss/internal/party"
+	"gopkg.in/yaml.v3"
 
 	"github.com/pkg/errors"
 	"go.dedis.ch/kyber/v3"
