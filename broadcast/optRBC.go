@@ -289,3 +289,24 @@ func (s *Session) handleReady(sender int64, payload []byte) {
 		}
 	}
 }
+
+func (s *Session) handleADDTrigger(sender int64, payload []byte) {
+	if s.addTriggerSenders[sender] {
+		slog.Info(fmt.Sprintf("[node %v] session[%v] has received ADDTrigger message from node %v", s.pid, s.sessionID, sender))
+		return
+	}
+	slog.Info(fmt.Sprintf("[node %v] session[%v] handle ADDTrigger message from %v", s.pid, s.sessionID, sender))
+	s.addTriggerSenders[sender] = true
+	if len(s.addTriggerSenders) >= s.f {
+		for i := range s.n {
+			addDisperseMsg := Message{
+				FromID:    s.pid,
+				DestID:    i,
+				SessionID: s.sessionID,
+				MsgType:   ADDDisperse,
+				Payload:   nil,
+			}
+			s.send(i, addDisperseMsg)
+		}
+	}
+}
