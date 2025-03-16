@@ -94,8 +94,8 @@ type Session struct {
 
 	echoSenders           map[int64]bool
 	readySenders          map[int64]bool
-	terminateSenders      map[int]struct{}
-	addTriggerSenders     map[int]struct{}
+	terminateSenders      map[int64]bool
+	addTriggerSenders     map[int64]bool
 	addDisperseSenders    map[int]struct{}
 	addReconstructSenders map[int]struct{}
 	addDisperseCounter    map[string]int
@@ -111,6 +111,8 @@ type Session struct {
 	readySent    bool
 	addReadySent bool
 	committed    bool
+
+	encode func([]byte) [][]byte
 
 	// 外部接口
 	output chan []byte
@@ -132,15 +134,15 @@ func NewSession(pid, sessionID, leader, nNodes, f int64, output chan []byte, sen
 		readyCounter:          make(map[string]*int64),
 		echoSenders:           make(map[int64]bool),
 		readySenders:          make(map[int64]bool),
-		terminateSenders:      make(map[int]struct{}),
-		addTriggerSenders:     make(map[int]struct{}),
+		terminateSenders:      make(map[int64]bool),
+		addTriggerSenders:     make(map[int64]bool),
 		addDisperseSenders:    make(map[int]struct{}),
 		addReconstructSenders: make(map[int]struct{}),
 		addDisperseCounter:    make(map[string]int),
 		committed:             false,
 		readySent:             false,
 		addReadySent:          false,
-		stripes:               make([][]byte, 0),
+		stripes:               nil,
 		reconstructedMsg:      nil,
 		committedHash:         nil,
 		reconstructedHash:     nil,
@@ -300,16 +302,18 @@ func (s *Session) handleADDTrigger(sender int64, payload []byte) {
 	}
 	slog.Info(fmt.Sprintf("[node %v] session[%v] handle ADDTrigger message from %v", s.pid, s.sessionID, sender))
 	s.addTriggerSenders[sender] = true
-	if len(s.addTriggerSenders) >= s.f {
-		for i := range s.n {
-			addDisperseMsg := Message{
-				FromID:    s.pid,
-				DestID:    i,
-				SessionID: s.sessionID,
-				MsgType:   ADDDisperse,
-				Payload:   nil,
-			}
-			s.send(i, addDisperseMsg)
+	if s.committed {
+		if s.stripes == nil {
+			s.stripes = s.encode(s.leaderMsg)
 		}
+		addDisperseMsg := Message{
+			FromID:    s.pid,
+			DestID:    sender,
+			SessionID: s.sessionID,
+			MsgType:   ADDDisperse,
+			Payload:   s.stripes[s.pid],
+		}
+		s.send(sender, addDisperseMsg)
+
 	}
 }
