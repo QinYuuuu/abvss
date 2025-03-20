@@ -32,7 +32,7 @@ func GenerateBivariatePoly(s *big.Int, tr, tc int) (*BivariatePoly, error) {
 }
 
 func (poly *BivariatePoly) EvalAtXMod(x, p *big.Int) *Poly {
-	result, _ := New(poly.degreeY + 1)
+	result, _ := New(poly.degreeY)
 	for i := 0; i <= poly.degreeY; i++ { // y degree loop
 		coeffSum := new(big.Int).SetInt64(0)
 		xExp := new(big.Int).SetInt64(1)
@@ -41,6 +41,7 @@ func (poly *BivariatePoly) EvalAtXMod(x, p *big.Int) *Poly {
 			term := new(big.Int).Set(poly.coeff[k][i])
 			// 执行相乘并累加：a_kj * x^k
 			term.Mul(term, xExp)
+			xExp.Mul(xExp, x)
 			coeffSum.Add(coeffSum, term)
 		}
 		result.coeff[i].Mod(coeffSum, p)

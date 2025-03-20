@@ -3,6 +3,8 @@ package pkg
 import (
 	"math/big"
 	"testing"
+
+	"gotest.tools/v3/assert"
 )
 
 func TestBiPolyEvalAtXMod(t *testing.T) {
@@ -17,5 +19,9 @@ func TestBiPolyEvalAtXMod(t *testing.T) {
 	}
 
 	// 计算在x=2处的y多项式
-	yPoly := poly.evaluatePolynomialAtX(2)
+	yPoly := poly.EvalAtXMod(big.NewInt(2), p)
+	want := &Poly{
+		coeff: []*big.Int{big.NewInt(7), big.NewInt(9)},
+	}
+	assert.Equal(t, want.Equal(yPoly), true)
 }

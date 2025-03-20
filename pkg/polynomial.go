@@ -30,7 +30,7 @@ func New(degree int) (*Poly, error) {
 }
 
 // GetDegree returns the degree, ignoring removing leading zeroes
-func (poly Poly) GetDegree() int {
+func (poly *Poly) GetDegree() int {
 	deg := len(poly.coeff) - 1
 
 	// note: i == 0 is not tested, because even the constant term is zero, we consider it's degree 0
@@ -45,7 +45,7 @@ func (poly Poly) GetDegree() int {
 }
 
 // GetLeadingCoefficient returns the coefficient of the highest degree of the variable
-func (poly Poly) GetLeadingCoefficient() *big.Int {
+func (poly *Poly) GetLeadingCoefficient() *big.Int {
 	lc := big.NewInt(0)
 	lc.Set(poly.coeff[poly.GetDegree()])
 
@@ -53,7 +53,7 @@ func (poly Poly) GetLeadingCoefficient() *big.Int {
 }
 
 // GetCoefficient returns coeff[i]
-func (poly Poly) GetCoefficient(i int) (*big.Int, error) {
+func (poly *Poly) GetCoefficient(i int) (*big.Int, error) {
 	if i < 0 || i >= len(poly.coeff) {
 		return big.NewInt(0), errors.New("out of boundary")
 	}
@@ -117,7 +117,7 @@ func (poly *Poly) resetToDegree(degree int) {
 	poly.Reset()
 }
 
-func (poly Poly) Equal(op Poly) bool {
+func (poly *Poly) Equal(op *Poly) bool {
 	if op.GetDegree() != poly.GetDegree() {
 		return false
 	}
