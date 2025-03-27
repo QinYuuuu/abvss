@@ -96,7 +96,7 @@ type Session struct {
 	readySenders          map[int64]bool
 	terminateSenders      map[int64]bool
 	addTriggerSenders     map[int64]bool
-	addDisperseSenders    map[int]struct{}
+	addDisperseSenders    map[int64]bool
 	addReconstructSenders map[int]struct{}
 	addDisperseCounter    map[string]int
 
@@ -136,7 +136,7 @@ func NewSession(pid, sessionID, leader, nNodes, f int64, output chan []byte, sen
 		readySenders:          make(map[int64]bool),
 		terminateSenders:      make(map[int64]bool),
 		addTriggerSenders:     make(map[int64]bool),
-		addDisperseSenders:    make(map[int]struct{}),
+		addDisperseSenders:    make(map[int64]bool),
 		addReconstructSenders: make(map[int]struct{}),
 		addDisperseCounter:    make(map[string]int),
 		committed:             false,
@@ -314,6 +314,16 @@ func (s *Session) handleADDTrigger(sender int64, payload []byte) {
 			Payload:   s.stripes[s.pid],
 		}
 		s.send(sender, addDisperseMsg)
-
 	}
+}
+
+func (s *Session) handleADDDisperse(sender int64, payload []byte) {
+	if s.addTriggerSenders[sender] {
+		slog.Info(fmt.Sprintf("[node %v] session[%v] has received ADDDisperse message from node %v", s.pid, s.sessionID, sender))
+		return
+	}
+	slog.Info(fmt.Sprintf("[node %v] session[%v] handle ADDDisperse message from %v", s.pid, s.sessionID, sender))
+	s.addDisperseSenders[sender] = true
+	//,.atomic.AddInt64(&s.addDisperseCounter, 1)
+
 }

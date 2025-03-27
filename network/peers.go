@@ -4,26 +4,29 @@ import (
 	"errors"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"github.com/QinYuuuu/abvss/pkg/utils"
-	"golang.org/x/net/context"
 	"google.golang.org/protobuf/proto"
 	"io"
 	"log"
 	"net"
+	"strconv"
 	"sync"
 	"time"
 )
 
 type Peer struct {
-	n, id          int
-	Lis            *net.TCPListener
-	Conns          []*net.TCPConn
-	ipList         []string
-	portList       []string // Node IP Address List
-	ReceiveChannel chan *protobuf.Message
-	SendChannels   []chan *protobuf.Message
-	Closed         bool
-	Ready          bool
-	Bandwidth      []uint64
+	n, id            int
+	lis              *net.TCPListener
+	conns            []*net.TCPConn
+	ipList           []string
+	portList         []string // Node IP Address List
+	receiveChannel   chan *protobuf.Message
+	SendChannels     []chan *protobuf.Message
+	buffLen          int64
+	dispatchChannels *sync.Map
+	Closed           bool
+	Ready            bool
+	Bandwidth        []uint64
+	Traffic          int64
 }
 
 func NewPeer(n, id int, iplist []string, portList []string) (*Peer, error) {
@@ -33,8 +36,8 @@ func NewPeer(n, id int, iplist []string, portList []string) (*Peer, error) {
 	return &Peer{
 		n:              n,
 		id:             id,
-		Conns:          make([]*net.TCPConn, n),
-		ReceiveChannel: make(chan *protobuf.Message),
+		conns:          make([]*net.TCPConn, n),
+		receiveChannel: make(chan *protobuf.Message, 2048),
 		SendChannels:   make([]chan *protobuf.Message, n),
 		ipList:         iplist,
 		portList:       portList,
@@ -53,11 +56,11 @@ func (p *Peer) Serve() {
 		log.Fatalf("node %v failed to listen %v", p.id, err)
 	}
 	//log.Printf("node %d listen on %s", p.id, addr)
-
+	p.lis = lis
 	//Make the receive channel and the handle func
 	var conn *net.TCPConn
 	var err3 error
-	p.ReceiveChannel = make(chan *protobuf.Message, 2048)
+	p.receiveChannel = make(chan *protobuf.Message, 2048)
 	go func() {
 		for {
 			//The handle func run forever
@@ -92,7 +95,7 @@ func (p *Peer) Serve() {
 					channel <- &m
 				}
 
-			}(conn, p.ReceiveChannel)
+			}(conn, p.receiveChannel)
 		}
 	}()
 }
@@ -112,7 +115,6 @@ func (p *Peer) Connect() {
 		p.Bandwidth[i] = 0
 		if i == p.id {
 			continue
-
 		}
 		go func(i int) {
 			addr, err1 := net.ResolveTCPAddr("tcp4", p.ipList[i]+":"+p.portList[i])
@@ -128,11 +130,10 @@ func (p *Peer) Connect() {
 					continue
 				} else {
 					nConn.SetKeepAlive(true)
-					p.Conns[i] = nConn
+					p.conns[i] = nConn
 					//log.Printf("node %v connect to node %v", p.id, i)
 					break
 				}
-
 			}
 			wg.Done()
 		}(i)
@@ -143,7 +144,7 @@ func (p *Peer) Connect() {
 		if i == p.id {
 			continue
 		}
-		conn := p.Conns[i]
+		conn := p.conns[i]
 		p.SendChannels[i] = make(chan *protobuf.Message, 2048)
 		go func(conn *net.TCPConn, channel chan *protobuf.Message, i int) {
 			for {
@@ -170,7 +171,7 @@ func (p *Peer) Connect() {
 }
 
 func (p *Peer) Close() {
-	for i, Conn := range p.Conns {
+	for i, Conn := range p.conns {
 		if i == p.id {
 			continue
 		}
@@ -184,11 +185,18 @@ func (p *Peer) Close() {
 	}
 }
 
-type Service struct {
-	Id int
+func (p *Peer) Send(msg *protobuf.Message) {
+	p.SendChannels[msg.Id] <- msg
 }
 
-func (n Service) Receive(ctx context.Context, req *protobuf.TestHelloMessage) (*protobuf.TestResMessage, error) {
-	//log.Printf("node %v receive request from node %v: %v", n.Id, req.GetFromID(), req.GetContent())
-	return &protobuf.TestResMessage{Content: "have received Hello", FromID: int64(n.Id), DestID: req.GetFromID()}, nil
+func (p *Peer) SendToAll(msg *protobuf.Message) {
+	for _, ch := range p.SendChannels {
+		ch <- msg
+	}
+}
+
+func (p *Peer) GetMessageChan(messageType string, ID int64) chan *protobuf.Message {
+	protocolMap, _ := p.dispatchChannels.LoadOrStore(messageType, new(sync.Map))
+	idChan, _ := protocolMap.(*sync.Map).LoadOrStore(strconv.FormatInt(ID, 10), make(chan *protobuf.Message, p.buffLen))
+	return idChan.(chan *protobuf.Message)
 }

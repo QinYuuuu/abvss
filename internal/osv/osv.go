@@ -5,13 +5,14 @@ import (
 	"log"
 )
 
-const Echo string = "E"
-const Vote string = "V"
+const Echo string = "osv.Echo"
+const Vote string = "osv.V"
 
 type Message struct {
-	FromID int
-	DestID int
-	Mtype  string
+	FromID     int
+	DestID     int
+	InstanceID int
+	Mtype      string
 }
 
 func (m Message) Dest() int {
@@ -27,11 +28,10 @@ func (m Message) Type() string {
 }
 
 type OSV struct {
-	n        int
-	t        int
-	id       int
+	n, t, id int
 	echosNum int
 	votesNum int
+	nEchos   []bool
 	nVotes   []bool
 	acquired bool
 	voted    bool
@@ -46,6 +46,7 @@ func NewOSV(n, t, id int) *OSV {
 		id:       id,
 		echosNum: 0,
 		votesNum: 0,
+		nEchos:   make([]bool, n),
 		nVotes:   make([]bool, n),
 		acquired: false,
 		voted:    false,
@@ -66,8 +67,8 @@ func (osv *OSV) Init() []Message {
 		msg.DestID = i
 		msg.Mtype = Echo
 		if i == osv.id {
-			newmsgs := osv.Loop(msg)
-			msgs = append(msgs, newmsgs...)
+			newMsgs := osv.Loop(msg)
+			msgs = append(msgs, newMsgs...)
 		} else {
 			msgs = append(msgs, msg)
 		}
@@ -79,29 +80,14 @@ func (osv *OSV) Done() bool {
 	return osv.done
 }
 
-/*
-	func (osv *OSV) handleEcho(m Message) {
-		if osv.voted {
-			log.Printf("node has voted")
-		}
-		log.Printf("received ECHO from node %v", m.fromID)
-		osv.echosNum += 1
-	}
-
-	func (osv *OSV) handleVote(m Message) {
-		log.Printf("received VOTE from node %v", m.fromID)
-		osv.votesNum += 1
-	}
-*/
-
 func (osv *OSV) Loop(m Message) []Message {
 	msgs, _ := osv.Recv(m)
 	i := 0
 	flag := len(msgs)
 	for i < flag {
 		if msgs[i].Dest() == osv.id {
-			newmsgs, _ := osv.Recv(msgs[i])
-			msgs = append(msgs[:i], newmsgs...)
+			newMsgs, _ := osv.Recv(msgs[i])
+			msgs = append(msgs[:i], newMsgs...)
 			i = 0
 			flag = len(msgs)
 		}
@@ -137,8 +123,8 @@ func (osv *OSV) Recv(m Message) ([]Message, error) {
 			msg.DestID = i
 			msg.Mtype = Vote
 			if i == osv.id {
-				newmsgs := osv.Loop(msg)
-				msgs = append(msgs, newmsgs...)
+				newMsgs := osv.Loop(msg)
+				msgs = append(msgs, newMsgs...)
 			} else {
 				msgs = append(msgs, msg)
 			}
@@ -153,8 +139,8 @@ func (osv *OSV) Recv(m Message) ([]Message, error) {
 			msg.DestID = i
 			msg.Mtype = Vote
 			if i == osv.id {
-				newmsgs := osv.Loop(msg)
-				msgs = append(msgs, newmsgs...)
+				newMsgs := osv.Loop(msg)
+				msgs = append(msgs, newMsgs...)
 			} else {
 				msgs = append(msgs, msg)
 			}

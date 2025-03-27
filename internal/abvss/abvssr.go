@@ -51,8 +51,11 @@ func (vss *ABVSS) ObtainShares(zix, ziy, xix, xiy []kyber.Point, index int) erro
 
 			if err != nil {
 				/*
-					log.Printf("wrong zi %v", zi[i])
-					return errors.Join(errors.New("decrypt zi failed"), err)*/
+										log.Printf("wrong zi %v", zi[i])
+										return errors.Join(er0
+
+					.0+
+									+ors.New("decrypt zi failed"), err)*/
 				vss.fshares[i] = utils.RandomNum(vss.p)
 			} else {
 				vss.fshares[i] = new(big.Int).SetBytes(tmp)
@@ -141,7 +144,7 @@ func (vss *ABVSS) Complain() error {
 }
 
 func (vss *ABVSS) HandleComplain(sk kyber.Scalar, index int) error {
-	
+
 	return errors.New("do not need to complain")
 }
 

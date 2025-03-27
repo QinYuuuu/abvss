@@ -1,4 +1,4 @@
-package rbc
+package broadcast
 
 import (
 	"errors"
@@ -26,7 +26,7 @@ type State struct {
 	SentReady       bool
 	Output          bool
 }
-type Message struct {
+type RBCMessage struct {
 	instanceID            int
 	fromID, destID, index int
 	mtype                 string
@@ -41,18 +41,18 @@ func (r *RBC) SetLeader() {
 	r.leader = true
 }
 
-func (r *RBC) Send(data []byte) ([]Message, error) {
+func (r *RBC) Send(data []byte) ([]RBCMessage, error) {
 	if !r.leader {
 		return nil, errors.New("not leader cannot send")
 	}
-	msgs := make([]Message, r.n)
+	msgs := make([]RBCMessage, r.n)
 	for i := 0; i < r.n; i++ {
-		msgs[i] = Message{fromID: r.id, destID: i, mtype: SEND, data: data}
+		msgs[i] = RBCMessage{fromID: r.id, destID: i, mtype: SEND, data: data}
 	}
 	return msgs, nil
 }
 
-func (r *RBC) Recv(m Message) ([]Message, error) {
+func (r *RBC) Recv(m RBCMessage) ([]RBCMessage, error) {
 	if r.instanceID != m.instanceID {
 		return nil, errors.New("wrong instanceID")
 	}
@@ -60,7 +60,7 @@ func (r *RBC) Recv(m Message) ([]Message, error) {
 		return nil, errors.New("wrong receiver id")
 	}
 	log.Printf("node %v receieve %v from node %v", r.id, m.mtype, m.fromID)
-	var msgs []Message
+	var msgs []RBCMessage
 	switch m.mtype {
 	case SEND:
 		if r.Data != nil {
@@ -68,7 +68,7 @@ func (r *RBC) Recv(m Message) ([]Message, error) {
 		}
 		r.Data = m.data
 		for i := 0; i < r.n; i++ {
-			msg := Message{fromID: r.id, destID: i, data: hasher.SHA256Hasher(r.Data), mtype: ECHO, index: m.index}
+			msg := RBCMessage{fromID: r.id, destID: i, data: hasher.SHA256Hasher(r.Data), mtype: ECHO, index: m.index}
 			msgs = append(msgs, msg)
 		}
 	case ECHO:
@@ -98,13 +98,13 @@ func (r *RBC) Recv(m Message) ([]Message, error) {
 	}
 	if r.Echos >= (r.n+r.f+1)/2 {
 		for i := 0; i < r.n; i++ {
-			msg := Message{fromID: r.id, destID: i, data: hasher.SHA256Hasher(r.Data), mtype: READY, index: m.index}
+			msg := RBCMessage{fromID: r.id, destID: i, data: hasher.SHA256Hasher(r.Data), mtype: READY, index: m.index}
 			msgs = append(msgs, msg)
 		}
 	}
 	if r.Readys >= r.f+1 {
 		for i := 0; i < r.n; i++ {
-			msg := Message{fromID: r.id, destID: i, data: hasher.SHA256Hasher(r.Data), mtype: READY, index: m.index}
+			msg := RBCMessage{fromID: r.id, destID: i, data: hasher.SHA256Hasher(r.Data), mtype: READY, index: m.index}
 			msgs = append(msgs, msg)
 		}
 	}

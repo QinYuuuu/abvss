@@ -1,4 +1,4 @@
-package rbc
+package broadcast
 
 import (
 	"fmt"
@@ -11,10 +11,10 @@ func TestNewRBC(t *testing.T) {
 	n := 4
 	f := 1
 	rbc := make([]*RBC, n)
-	msgchannel := make([]chan Message, n)
+	msgchannel := make([]chan RBCMessage, n)
 	for i := 0; i < n; i++ {
 		rbc[i] = NewRBC(i, n, f, 0)
-		msgchannel[i] = make(chan Message, 2048)
+		msgchannel[i] = make(chan RBCMessage, 2048)
 	}
 	rbc[0].SetLeader()
 	m := []byte("test")

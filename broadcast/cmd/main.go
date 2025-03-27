@@ -10,11 +10,11 @@ import (
 func main() {
 	var Nnodes int64 = 4
 	var f int64 = 1
-	messageMap := map[int64]chan broadcast.Message{
-		0: make(chan broadcast.Message, 100),
-		1: make(chan broadcast.Message, 100),
-		2: make(chan broadcast.Message, 100),
-		3: make(chan broadcast.Message, 100),
+	messageMap := map[int64]chan broadcast.RBCMessage{
+		0: make(chan broadcast.RBCMessage, 100),
+		1: make(chan broadcast.RBCMessage, 100),
+		2: make(chan broadcast.RBCMessage, 100),
+		3: make(chan broadcast.RBCMessage, 100),
 	}
 	outputMap := map[int64][]chan []byte{
 		0: {make(chan []byte)},
@@ -22,23 +22,23 @@ func main() {
 		2: {make(chan []byte)},
 		3: {make(chan []byte)},
 	}
-	send := func(i int64, m broadcast.Message) {
+	send := func(i int64, m broadcast.RBCMessage) {
 		messageMap[i] <- m
 	}
 	nodes := []*broadcast.Node{
-		broadcast.NewNode(0, int64(Nnodes), int64(f), send, outputMap[0], func() (broadcast.Message, bool) {
+		broadcast.NewNode(0, int64(Nnodes), int64(f), send, outputMap[0], func() (broadcast.RBCMessage, bool) {
 			msg, ok := <-messageMap[0]
 			return msg, ok
 		}),
-		broadcast.NewNode(1, int64(Nnodes), int64(f), send, outputMap[1], func() (broadcast.Message, bool) {
+		broadcast.NewNode(1, int64(Nnodes), int64(f), send, outputMap[1], func() (broadcast.RBCMessage, bool) {
 			msg, ok := <-messageMap[1]
 			return msg, ok
 		}),
-		broadcast.NewNode(2, int64(Nnodes), int64(f), send, outputMap[2], func() (broadcast.Message, bool) {
+		broadcast.NewNode(2, int64(Nnodes), int64(f), send, outputMap[2], func() (broadcast.RBCMessage, bool) {
 			msg, ok := <-messageMap[2]
 			return msg, ok
 		}),
-		broadcast.NewNode(3, int64(Nnodes), int64(f), send, outputMap[2], func() (broadcast.Message, bool) {
+		broadcast.NewNode(3, int64(Nnodes), int64(f), send, outputMap[2], func() (broadcast.RBCMessage, bool) {
 			msg, ok := <-messageMap[3]
 			return msg, ok
 		}),
