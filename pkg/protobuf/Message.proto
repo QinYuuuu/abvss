@@ -24,9 +24,10 @@ message Message {
 
 message NewMessage {
   string type = 1;// instance id
-  int64 fromID = 2;
-  int64 destID = 3;
-  bytes data = 4;
+  int64 instanceID = 2;
+  int64 fromID = 3;
+  int64 destID = 4;
+  bytes data = 5;
 }
 
 // provable broadcast

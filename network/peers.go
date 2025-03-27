@@ -19,8 +19,8 @@ type Peer struct {
 	conns            []*net.TCPConn
 	ipList           []string
 	portList         []string // Node IP Address List
-	receiveChannel   chan *protobuf.Message
-	SendChannels     []chan *protobuf.Message
+	receiveChannel   chan *protobuf.NewMessage
+	SendChannels     []chan *protobuf.NewMessage
 	buffLen          int64
 	dispatchChannels *sync.Map
 	Closed           bool
@@ -37,8 +37,8 @@ func NewPeer(n, id int, iplist []string, portList []string) (*Peer, error) {
 		n:              n,
 		id:             id,
 		conns:          make([]*net.TCPConn, n),
-		receiveChannel: make(chan *protobuf.Message, 2048),
-		SendChannels:   make([]chan *protobuf.Message, n),
+		receiveChannel: make(chan *protobuf.NewMessage, 2048),
+		SendChannels:   make([]chan *protobuf.NewMessage, n),
 		ipList:         iplist,
 		portList:       portList,
 		Ready:          false,
@@ -60,7 +60,7 @@ func (p *Peer) Serve() {
 	//Make the receive channel and the handle func
 	var conn *net.TCPConn
 	var err3 error
-	p.receiveChannel = make(chan *protobuf.Message, 2048)
+	p.receiveChannel = make(chan *protobuf.NewMessage, 2048)
 	go func() {
 		for {
 			//The handle func run forever
@@ -71,7 +71,7 @@ func (p *Peer) Serve() {
 			conn.SetKeepAlive(true)
 
 			//Once connect to a node, make a sub-handle func to handle this connection
-			go func(conn *net.TCPConn, channel chan *protobuf.Message) {
+			go func(conn *net.TCPConn, channel chan *protobuf.NewMessage) {
 				for {
 					//Receive bytes
 					lengthBuf := make([]byte, 4)
@@ -84,7 +84,7 @@ func (p *Peer) Serve() {
 						break
 					}
 					//Do Unmarshal
-					var m protobuf.Message
+					var m protobuf.NewMessage
 					err3 := proto.Unmarshal(buf, &m)
 					if err3 != nil {
 						//log.Fatalln(err3)
@@ -145,8 +145,8 @@ func (p *Peer) Connect() {
 			continue
 		}
 		conn := p.conns[i]
-		p.SendChannels[i] = make(chan *protobuf.Message, 2048)
-		go func(conn *net.TCPConn, channel chan *protobuf.Message, i int) {
+		p.SendChannels[i] = make(chan *protobuf.NewMessage, 2048)
+		go func(conn *net.TCPConn, channel chan *protobuf.NewMessage, i int) {
 			for {
 				//Pop protobuf.Message form sendchannel
 				m := <-(channel)
@@ -185,11 +185,11 @@ func (p *Peer) Close() {
 	}
 }
 
-func (p *Peer) Send(msg *protobuf.Message) {
-	p.SendChannels[msg.Id] <- msg
+func (p *Peer) Send(msg *protobuf.NewMessage) {
+	p.SendChannels[msg.DestID] <- msg
 }
 
-func (p *Peer) SendToAll(msg *protobuf.Message) {
+func (p *Peer) SendToAll(msg *protobuf.NewMessage) {
 	for _, ch := range p.SendChannels {
 		ch <- msg
 	}
