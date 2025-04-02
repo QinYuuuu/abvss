@@ -23,7 +23,7 @@ type DKGImpl struct {
 	hasVote2                       bool
 	mvba1                          *MVBA
 	mvba2                          *MVBA
-	rbc                            *broadcast.Node
+	rbc                            *broadcast.OptRBC
 	output                         chan *Share
 	send                           func(int64, *protobuf.Message)
 	getChan                        func(string) chan *protobuf.Message

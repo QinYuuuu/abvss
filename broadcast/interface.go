@@ -5,11 +5,9 @@ type RBCNode interface {
 	Output(sessionID int) ([]byte, error)
 }
 
-type RBCMessaege interface {
-	GetSessionID() int
-	GetLeaderID() int
-	GetMessage() []byte
-	GetType() string
-	GetSenderID() int
-	GetReceiverID() int
+type RBCMessage struct {
+	InstanceID     int64
+	FromID, DestID int64
+	MsgType        string
+	Data           []byte
 }

@@ -1,8 +1,9 @@
 package core
 
 import (
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"log"
+
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
 
 	"google.golang.org/protobuf/proto"
 )
@@ -121,6 +122,20 @@ func Decapsulation(messageType string, m *protobuf.Message) any {
 		proto.Unmarshal(m.Data, &payloadMessage)
 		return &payloadMessage
 	case "OSV":
+		var payloadMessage protobuf.OSVMsg
+		proto.Unmarshal(m.Data, &payloadMessage)
+		return &payloadMessage
+	default:
+		var payloadMessage protobuf.Message
+		proto.Unmarshal(m.Data, &payloadMessage)
+		return &payloadMessage
+	}
+}
+
+// Decapsulation decapsulates a message to it's original type
+func DecapsulationNew(messageType string, m *protobuf.NewMessage) any {
+	switch messageType {
+	case string(protobuf.OSVMessage):
 		var payloadMessage protobuf.OSVMsg
 		proto.Unmarshal(m.Data, &payloadMessage)
 		return &payloadMessage

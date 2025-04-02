@@ -3,6 +3,9 @@ package broadcast
 import (
 	"bytes"
 	"fmt"
+	"github.com/QinYuuuu/abvss/crypto/erasurecode"
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
+	"google.golang.org/protobuf/proto"
 	"log/slog"
 	"sync/atomic"
 
@@ -14,7 +17,7 @@ import (
    Briefly, the protocol proceeds as follows:
    1. Broadcaster sends the proposal to all
    2. Nodes run Bracha's RBC on hash
-   3. Node i output once the RBC on hash terminates and if it has received a matching proposal from leader
+   3. OptRBC i output once the RBC on hash terminates and if it has received a matching proposal from leader
    4. Otherwise, node i triggers a fallback protocol that uses ADD to help node i recover the proposal.
 */
 
@@ -36,7 +39,7 @@ type Message struct {
 	Payload   []byte
 }
 
-type Node struct {
+type OptRBC struct {
 	pid  int64
 	n, f int64
 	// session state
@@ -47,11 +50,11 @@ type Node struct {
 	receive func() (Message, bool)
 }
 
-func NewNode(pid, n, f int64, send func(int64, Message), output []chan []byte, receive func() (Message, bool)) *Node {
+func NewOptRBC(pid, n, f int64, send func(int64, Message), output []chan []byte, receive func() (Message, bool)) *OptRBC {
 	if output == nil {
 		slog.Error("output is nil")
 	}
-	return &Node{
+	return &OptRBC{
 		pid:      pid,
 		n:        n,
 		f:        f,
@@ -62,23 +65,18 @@ func NewNode(pid, n, f int64, send func(int64, Message), output []chan []byte, r
 	}
 }
 
-func (n *Node) CreateNewSession(sessionID, leader int64) {
+func (n *OptRBC) CreateNewSession(sessionID, leader int64) {
 	n.sessions[sessionID] = NewSession(n.pid, sessionID, leader, n.n, n.f, n.output[sessionID], n.send)
 }
 
-func (n *Node) StartNewBroadcast(msg []byte, leader, nNodes, f, sessionID int64) {
+func (n *OptRBC) StartNewBroadcast(msg []byte, leader, sessionID int64) {
 	if n.pid == leader {
 		n.sessions[sessionID].initiateBroadcast(msg)
 	}
 }
 
-func (n *Node) Output(sessionID int64) []byte {
-	if data, ok := <-n.output[sessionID]; ok {
-		return data
-	} else {
-		slog.Error("output channel closed")
-		return nil
-	}
+func (n *OptRBC) Output(sessionID int64) chan []byte {
+	return n.output[sessionID]
 }
 
 type Session struct {
@@ -88,17 +86,16 @@ type Session struct {
 	n, f      int64
 
 	// protocol state
-	stripes      [][]byte
-	echoCounter  map[string]*int64
-	readyCounter map[string]*int64
-
+	stripes               [][]byte
+	echoCounter           map[string]*int64
+	readyCounter          map[string]*int64
+	addDisperseCounter    map[string]*int64
 	echoSenders           map[int64]bool
 	readySenders          map[int64]bool
 	terminateSenders      map[int64]bool
 	addTriggerSenders     map[int64]bool
 	addDisperseSenders    map[int64]bool
-	addReconstructSenders map[int]struct{}
-	addDisperseCounter    map[string]int
+	addReconstructSenders map[int64]bool
 
 	// message store
 	leaderHash        []byte
@@ -107,21 +104,30 @@ type Session struct {
 	reconstructedMsg  []byte
 	committedHash     []byte
 
-	// 标志位
+	// signal
 	readySent    bool
 	addReadySent bool
 	committed    bool
 
-	encode func([]byte) [][]byte
-
-	// 外部接口
 	output chan []byte
-
+	encode func([]byte) [][]byte
 	// network interface
 	send func(int64, Message)
 }
 
 func NewSession(pid, sessionID, leader, nNodes, f int64, output chan []byte, send func(int64, Message)) *Session {
+	encoder := erasurecode.NewReedSolomonCode(int(nNodes-2*f), int(nNodes))
+	encode := func(input []byte) [][]byte {
+		chunks, err := encoder.Encode(input)
+		if err != nil {
+			return nil
+		}
+		result := make([][]byte, len(chunks))
+		for i, chunk := range chunks {
+			result[i] = chunk.GetData()
+		}
+		return result
+	}
 	return &Session{
 		pid:                   pid,
 		sessionID:             sessionID,
@@ -130,15 +136,16 @@ func NewSession(pid, sessionID, leader, nNodes, f int64, output chan []byte, sen
 		f:                     f,
 		output:                output,
 		send:                  send,
+		encode:                encode,
 		echoCounter:           make(map[string]*int64),
 		readyCounter:          make(map[string]*int64),
+		addDisperseCounter:    make(map[string]*int64),
 		echoSenders:           make(map[int64]bool),
 		readySenders:          make(map[int64]bool),
 		terminateSenders:      make(map[int64]bool),
 		addTriggerSenders:     make(map[int64]bool),
 		addDisperseSenders:    make(map[int64]bool),
-		addReconstructSenders: make(map[int]struct{}),
-		addDisperseCounter:    make(map[string]int),
+		addReconstructSenders: make(map[int64]bool),
 		committed:             false,
 		readySent:             false,
 		addReadySent:          false,
@@ -149,6 +156,31 @@ func NewSession(pid, sessionID, leader, nNodes, f int64, output chan []byte, sen
 		leaderHash:            nil,
 		leaderMsg:             nil,
 	}
+}
+
+func (s *Session) InitiateBroadcast(msg []byte) {
+	slog.Info(fmt.Sprintf("[node %v] session[%v] start broadcast", s.pid, s.sessionID))
+	if s.leader != s.pid {
+		slog.Info("only leader send propose")
+		return
+	}
+	s.leaderMsg = msg
+
+	for i := range s.n {
+		proposeMsg := Message{
+			FromID:    s.pid,
+			DestID:    i,
+			SessionID: s.sessionID,
+			MsgType:   Propose,
+			Payload:   msg,
+		}
+		//slog.Info(fmt.Sprintf("[node %v] session[%v] send message %v", s.pid, s.sessionID, msg))
+		s.send(i, proposeMsg)
+	}
+}
+
+func (s *Session) Output() chan []byte {
+	return s.output
 }
 
 func (s *Session) initiateBroadcast(msg []byte) {
@@ -172,11 +204,11 @@ func (s *Session) initiateBroadcast(msg []byte) {
 	}
 }
 
-func (n *Node) Run() {
+func (n *OptRBC) Run() {
 	go n.messageLoop()
 }
 
-func (n *Node) messageLoop() {
+func (n *OptRBC) messageLoop() {
 	for {
 		if msg, ok := n.receive(); ok {
 			//slog.Info(fmt.Sprintf("[node %v] session[%v] receive %v message from %v", n.pid, msg.SessionID, msg.MsgType, msg.FromID))
@@ -197,7 +229,16 @@ func (n *Node) messageLoop() {
 			case ADDTrigger:
 				// handle addTrigger
 				s.handleADDTrigger(msg.FromID, msg.Payload)
+			case ADDDisperse:
+				// handle addDisperse
+				slog.Info(fmt.Sprintf("[node %v] session[%v] addDisperse: %v", n.pid, n.sessions, msg.Payload))
+				s.handleADDDisperse(msg.FromID, msg.Payload)
+			case ADDReconstruct:
+				// handle addReconstruct
+				slog.Info(fmt.Sprintf("[node %v] session[%v] addRecomstruct: %v", n.pid, n.sessions, msg.Payload))
+				s.handleADDReconstruct(msg.FromID, msg.Payload)
 			default:
+				slog.Error("unhandled", slog.Any("type", msg.MsgType))
 				panic("unhandled default case")
 			}
 		}
@@ -216,6 +257,7 @@ func (s *Session) handlePropose(sender int64, msg []byte) {
 	slog.Info(fmt.Sprintf("[node %v] session[%v] handle Propose message from %v", s.pid, s.sessionID, sender))
 	digest := hasher.MD5Hasher(msg)
 	s.leaderMsg = msg
+	s.leaderHash = digest
 	for i := range s.n {
 		echoMsg := Message{
 			FromID:    s.pid,
@@ -234,7 +276,7 @@ func (s *Session) handleEcho(sender int64, payload []byte) {
 		slog.Info(fmt.Sprintf("[node %v] session[%v] has received ECHO message from node %v", s.pid, s.sessionID, sender))
 		return
 	}
-	slog.Info(fmt.Sprintf("[node %v] session[%v] handle Echo message from %v", s.pid, s.sessionID, sender))
+	//slog.Info(fmt.Sprintf("[node %v] session[%v] handle Echo message from %v", s.pid, s.sessionID, sender)
 	digest := payload
 
 	s.echoSenders[sender] = true
@@ -244,7 +286,7 @@ func (s *Session) handleEcho(sender int64, payload []byte) {
 	}
 	atomic.AddInt64(s.echoCounter[string(digest)], 1)
 
-	if atomic.LoadInt64(s.echoCounter[string(digest)]) >= s.f && !s.readySent {
+	if atomic.LoadInt64(s.echoCounter[string(digest)]) >= 2*s.f+1 && !s.readySent {
 		s.readySent = true
 		for i := range s.n {
 			readyMsg := Message{
@@ -252,7 +294,7 @@ func (s *Session) handleEcho(sender int64, payload []byte) {
 				DestID:    i,
 				SessionID: s.sessionID,
 				MsgType:   Ready,
-				Payload:   nil,
+				Payload:   digest,
 			}
 			s.send(i, readyMsg)
 		}
@@ -265,7 +307,7 @@ func (s *Session) handleReady(sender int64, payload []byte) {
 		slog.Info(fmt.Sprintf("[node %v] session[%v] has received Ready message from node %v", s.pid, s.sessionID, sender))
 		return
 	}
-	slog.Info(fmt.Sprintf("[node %v] session[%v] handle Ready message from %v", s.pid, s.sessionID, sender))
+	//slog.Info(fmt.Sprintf("[node %v] session[%v] handle Ready message from %v", s.pid, s.sessionID, sender))
 	digest := payload
 	s.readySenders[sender] = true
 
@@ -274,19 +316,21 @@ func (s *Session) handleReady(sender int64, payload []byte) {
 		atomic.StoreInt64(s.readyCounter[string(digest)], 0)
 	}
 	atomic.AddInt64(s.readyCounter[string(digest)], 1)
-
-	if atomic.LoadInt64(s.readyCounter[string(digest)]) >= s.f {
+	if atomic.LoadInt64(s.readyCounter[string(digest)]) >= s.f+1 {
 		s.committedHash = digest
 		if bytes.Equal(digest, s.leaderHash) {
 			s.committed = true
 			s.output <- s.leaderMsg
 		} else {
 			for i := range s.n {
+				if i == s.pid {
+					continue
+				}
 				addTriggerMsg := Message{
 					FromID:    s.pid,
 					DestID:    i,
 					SessionID: s.sessionID,
-					MsgType:   ADDDisperse,
+					MsgType:   ADDTrigger,
 					Payload:   nil,
 				}
 				s.send(i, addTriggerMsg)
@@ -306,12 +350,21 @@ func (s *Session) handleADDTrigger(sender int64, payload []byte) {
 		if s.stripes == nil {
 			s.stripes = s.encode(s.leaderMsg)
 		}
+		disperseData := &protobuf.DisperseData{
+			MyStripe:     s.stripes[s.pid],
+			SenderStripe: s.stripes[sender],
+		}
+		disperseDataBytes, err := proto.Marshal(disperseData)
+		if err != nil {
+			slog.Error("proto marshal", slog.Any("error", err))
+			return
+		}
 		addDisperseMsg := Message{
 			FromID:    s.pid,
 			DestID:    sender,
 			SessionID: s.sessionID,
 			MsgType:   ADDDisperse,
-			Payload:   s.stripes[s.pid],
+			Payload:   disperseDataBytes,
 		}
 		s.send(sender, addDisperseMsg)
 	}
@@ -324,6 +377,37 @@ func (s *Session) handleADDDisperse(sender int64, payload []byte) {
 	}
 	slog.Info(fmt.Sprintf("[node %v] session[%v] handle ADDDisperse message from %v", s.pid, s.sessionID, sender))
 	s.addDisperseSenders[sender] = true
-	//,.atomic.AddInt64(&s.addDisperseCounter, 1)
 
+	var disperseData *protobuf.DisperseData
+	err := proto.Unmarshal(payload, disperseData)
+	if err != nil {
+		slog.Error("proto marshal", slog.Any("error", err))
+		return
+	}
+	if s.addDisperseCounter[string(disperseData.SenderStripe)] == nil {
+		s.echoCounter[string(disperseData.SenderStripe)] = new(int64)
+		atomic.StoreInt64(s.echoCounter[string(disperseData.SenderStripe)], 0)
+	}
+	atomic.AddInt64(s.echoCounter[string(disperseData.SenderStripe)], 1)
+	s.stripes[s.pid] = disperseData.MyStripe
+	if atomic.LoadInt64(s.readyCounter[string(disperseData.SenderStripe)]) >= s.f+1 && !s.addReadySent {
+		s.addReadySent = true
+		for i := range s.n {
+			addReadyMsg := Message{
+				FromID:    s.pid,
+				DestID:    i,
+				SessionID: s.sessionID,
+				MsgType:   ADDReconstruct,
+				Payload:   disperseData.SenderStripe,
+			}
+			s.send(i, addReadyMsg)
+		}
+	}
+}
+
+func (s *Session) handleADDReconstruct(sender int64, payload []byte) {
+	if s.addReconstructSenders[sender] {
+		slog.Info(fmt.Sprintf("[node %v] session[%v] has received ADDReconstruct message from node %v", s.pid, s.sessionID, sender))
+		return
+	}
 }

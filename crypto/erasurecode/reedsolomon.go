@@ -3,7 +3,6 @@ package erasurecode
 import (
 	"bytes"
 	"encoding/gob"
-	"fmt"
 	"log"
 	//"math"
 	//"crypto/sha256"
@@ -62,7 +61,6 @@ func (rscode *ReedSolomonCode) Encode(input Payload) ([]ErasureCodeChunk, error)
 	}
 
 	b := buf.Bytes()
-	fmt.Println(string(b))
 	datasize := len(b)
 	shards, err := rscode.Split(b)
 	if err != nil {

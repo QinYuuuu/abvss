@@ -2,19 +2,6 @@ syntax = "proto3";
 
 option go_package = ".;protobuf";
 
-
-message TestHelloMessage {
-  int64 fromID = 1;
-  int64 destID = 2;
-  string content = 3;
-}
-
-message TestResMessage {
-  int64 fromID = 1;
-  int64 destID = 2;
-  string content = 3;
-}
-
 message Message {
   string type = 1;// instance id
   bytes id = 2;
@@ -23,11 +10,44 @@ message Message {
 }
 
 message NewMessage {
+  string protocol = 1;
+  string type = 2;
+  int64 instanceID = 3;
+  int64 fromID = 4;
+  int64 destID = 5;
+  bytes data = 6;
+}
+
+message SS24Share{
+  int64 index =1;
+  repeated bytes fShare = 2;
+  repeated bytes gShare = 3;
+}
+
+message ElgamalEncShare {
+  int64 index =1;
+  bytes c1 = 2;
+  bytes c2 = 3;
+}
+
+message ElgamalEncMultiShare {
+  repeated ElgamalEncShare encShares = 1;
+}
+
+message DisperseData{
+  bytes myStripe =1;
+  bytes senderStripe =2;
+}
+
+message BroadcastMessage {
   string type = 1;// instance id
   int64 instanceID = 2;
   int64 fromID = 3;
-  int64 destID = 4;
-  bytes data = 5;
+  bytes data = 4;
+}
+
+message ChallengePolynomial {
+  repeated bytes coefficient = 1;
 }
 
 // provable broadcast

@@ -403,6 +403,24 @@ func FromVec(coeff ...int64) *Poly {
 	return poly
 }
 
+func FromVecBig(coeff []*big.Int) *Poly {
+	if len(coeff) == 0 {
+		return NewConstant(0)
+	}
+
+	deg := len(coeff) - 1
+	poly, err := New(deg)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	for i := range poly.coeff {
+		poly.coeff[i].Set(coeff[i])
+	}
+
+	return poly
+}
+
 func (poly Poly) ToString() string {
 	var s = ""
 
