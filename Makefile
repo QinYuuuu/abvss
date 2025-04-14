@@ -9,5 +9,4 @@ init:
 	@echo "Go module initialization finished"
 
 proto_gen:
-	@cd pkg/protobuf
-	@protoc --go_out=. --go-grpc_out=. *.proto
+	cd pkg/protobuf && protoc --go_out=. --go_opt=paths=source_relative Message.proto

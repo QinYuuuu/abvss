@@ -1,16 +1,41 @@
 package iipa
 
-import "go.dedis.ch/kyber/v3"
+import (
+	"github.com/QinYuuuu/abvss/pkg"
+	"go.dedis.ch/kyber/v3"
+	"log/slog"
+	"math/big"
+)
 
-type Prover struct {
-	crs *CRS
-	kyber.Group
+func (crs *CRS) InnerProductProveInput(a []*big.Int) (*big.Int, kyber.Point) {
+	v, err := pkg.DotProduct(crs.y, a)
+	if err != nil {
+		slog.Error("Prover Input DotProduct", slog.Any("error", err))
+	}
+	// h^v
+	exp := crs.group.Scalar().SetInt64(v.Int64())
+	result := crs.group.Point().Mul(exp, crs.h)
+	// A = g[]^a[] * h^v
+	for i, g := range crs.g {
+		exp = crs.group.Scalar().SetInt64(a[i].Int64())
+		tmp := crs.group.Point().Mul(exp, g)
+		result = result.Add(result, tmp)
+	}
+	return v, result
 }
 
-func (p Prover) RecursiveProve(gVec []kyber.Point, h, P kyber.Point, aVec, bVec []kyber.Scalar, n int) {
+func (crs *CRS) InnerProductProve(A kyber.Point, v, z *big.Int) kyber.Point {
+	// A' = A * h^zv
+	exp := crs.group.Scalar().SetInt64(new(big.Int).Mul(z, v).Int64())
+	tmp := crs.group.Point().Mul(exp, crs.h)
+	result := crs.group.Point().Add(A, tmp)
+	return result
+}
+
+func (crs *CRS) RecursiveProve(gVec []kyber.Point, h, P kyber.Point, aVec, yVec, zVec []*big.Int, n int) {
 	aLen := len(aVec)
 	gLen := len(gVec)
-	if aLen != len(bVec) {
+	if aLen != len(yVec) {
 		return
 	}
 	// step 1 Prover send aVec to Verifier
@@ -18,62 +43,144 @@ func (p Prover) RecursiveProve(gVec []kyber.Point, h, P kyber.Point, aVec, bVec 
 		return
 	}
 
-	var proofStep []kyber.Scalar
 	// step 2
 	// Prover send aVec[n] to Verifier
 	if n%2 == 1 {
-		aNeg := p.Scalar().Neg(aVec[aLen-1])
-		bNeg := p.Scalar().Neg(bVec[aLen-1])
-		tmp1 := p.Point().Mul(aNeg, gVec[gLen-1])
-		tmp2 := p.Point().Mul(p.Scalar().Mul(aVec[aLen-1], bNeg), h)
+		aVecScalar := crs.group.Scalar().SetInt64(aVec[aLen-1].Int64())
+		yVecScalar := crs.group.Scalar().SetInt64(yVec[aLen-1].Int64())
+		aNeg := crs.group.Scalar().Neg(aVecScalar)
+		tmp1 := crs.group.Point().Mul(aNeg, gVec[gLen-1])
+		tmp2 := crs.group.Point().Mul(crs.group.Scalar().Mul(aNeg, yVecScalar), h)
+		P = crs.group.Point().Add(crs.group.Point().Add(tmp1, tmp2), P)
 
-		P = p.Point().Add(p.Point().Add(tmp1, tmp2), P)
-		proofStep = append(proofStep, aNeg, bNeg)
+		aVec = aVec[:aLen-1]
+		yVec = yVec[:aLen-1]
+		gVec = gVec[:gLen-1]
 		n = n - 1
 	}
 	n1 := n / 2
 
 	// step 3
-	cl := p.Scalar().Zero()
-	cr := p.Scalar().Zero()
-	var L, R kyber.Point
+	cl, _ := pkg.DotProduct(aVec[:n1], yVec[n1:])
+	cr, _ := pkg.DotProduct(aVec[:n1], yVec[n1:])
+	L := crs.group.Point().Mul(crs.group.Scalar().SetInt64(cl.Int64()), h)
+	R := crs.group.Point().Mul(crs.group.Scalar().SetInt64(cr.Int64()), h)
 	for i := 0; i < n1; i++ {
-		tmp1 := p.Scalar().Mul(aVec[:n1][i], bVec[n1:][i])
-		cl = p.Scalar().Add(cl, tmp1)
-		tmp2 := p.Scalar().Mul(aVec[n1:][i], bVec[:n1][i])
-		cr = p.Scalar().Add(cr, tmp2)
-		L = p.Point().Mul(aVec[:n1][i], gVec[n1:][i])
-		R = p.Point().Mul(aVec[n1:][i], gVec[:n1][i])
+		tmp := crs.group.Point().Mul(crs.group.Scalar().SetInt64(aVec[:n1][i].Int64()), gVec[n1:][i])
+		L = crs.group.Point().Add(tmp, L)
+		tmp = crs.group.Point().Mul(crs.group.Scalar().SetInt64(aVec[n1:][i].Int64()), gVec[:n1][i])
+		R = crs.group.Point().Add(tmp, R)
 	}
-	L = p.Point().Add(p.Point().Mul(cl, h), L)
-	R = p.Point().Add(p.Point().Mul(cr, h), R)
-	//p.RecursiveProve(n1)
 
 	// z is the challenge value
-	var z kyber.Scalar
-	zInv := p.Scalar().Inv(z)
+	z := zVec[0]
+	zVec1 := zVec[1:]
+	zScalar := crs.group.Scalar().SetInt64(z.Int64())
+	zInv := new(big.Int).Neg(z)
+	zScalarInv := crs.group.Scalar().SetInt64(zInv.Int64())
 	// step 5, step 6
 	gVec1 := make([]kyber.Point, n1)
-	aVec1 := make([]kyber.Scalar, n1)
-	bVec1 := make([]kyber.Scalar, n1)
+	aVec1 := make([]*big.Int, n1)
+	yVec1 := make([]*big.Int, n1)
 	for i := 0; i < n1; i++ {
-		left := p.Scalar().Mul(z, bVec[:n1][i])
-		right := p.Scalar().Mul(zInv, bVec[n1:][i])
-		bVec1[i] = p.Scalar().Add(left, right)
+		left := new(big.Int).Mul(z, yVec[:n1][i])
+		right := new(big.Int).Mul(zInv, yVec[:n1][i])
+		yVec1[i] = new(big.Int).Add(left, right)
 
-		left1 := p.Point().Mul(zInv, gVec[:n1][i])
-		right1 := p.Point().Mul(z, gVec[n1:][i])
-		gVec1[i] = p.Point().Add(left1, right1)
+		left1 := crs.group.Point().Mul(zScalarInv, gVec[:n1][i])
+		right1 := crs.group.Point().Mul(zScalar, gVec[n1:][i])
+		gVec1[i] = crs.group.Point().Add(left1, right1)
 
-		left = p.Scalar().Mul(z, aVec[:n1][i])
-		right = p.Scalar().Mul(zInv, aVec[n1:][i])
-		aVec1[i] = p.Scalar().Add(left, right)
+		// only prover compute
+		left = new(big.Int).Mul(z, aVec[:n1][i])
+		right = new(big.Int).Mul(zInv, aVec[n1:][i])
+		aVec1[i] = new(big.Int).Add(left, right)
 	}
 
-	z2 := p.Scalar().Mul(z, z)
-	z2Inv := p.Scalar().Inv(z2)
+	z2 := crs.group.Scalar().Mul(zScalar, zScalar)
+	z2Inv := crs.group.Scalar().Inv(z2)
 
-	P1 := p.Point().Add(p.Point().Add(P, p.Point().Mul(z2, L)), p.Point().Mul(z2Inv, R))
-	p.RecursiveProve(gVec1, h, P1, aVec1, bVec1, n1)
+	Lz2 := crs.group.Point().Mul(z2, L)
+	Rz2Inv := crs.group.Point().Mul(z2Inv, R)
+	P1 := crs.group.Point().Add(crs.group.Point().Add(P, Lz2), Rz2Inv)
+	crs.RecursiveProve(gVec1, h, P1, aVec1, yVec1, zVec1, n1)
 	return
+}
+
+func (crs *CRS) NonInteractProve(gVec []kyber.Point, h, P kyber.Point, aVec, yVec []*big.Int, n int) ([]*big.Int, []kyber.Point, []kyber.Point) {
+	LVec := make([]kyber.Point, 0)
+	RVec := make([]kyber.Point, 0)
+	// step 1 Prover send aVec to Verifier
+	for n > 1 {
+		if n%2 == 1 {
+			aVecScalar := crs.group.Scalar().SetInt64(aVec[n-1].Int64())
+			yVecScalar := crs.group.Scalar().SetInt64(yVec[n-1].Int64())
+			aNeg := crs.group.Scalar().Neg(aVecScalar)
+			tmp1 := crs.group.Point().Mul(aNeg, gVec[n-1])
+			tmp2 := crs.group.Point().Mul(crs.group.Scalar().Mul(aNeg, yVecScalar), h)
+			P = crs.group.Point().Add(crs.group.Point().Add(tmp1, tmp2), P)
+			slog.Info("Prover nonInteractVerify z marshal", slog.Any("n", n), slog.Any("p", P.String()))
+			aVec = aVec[:n-1]
+			yVec = yVec[:n-1]
+			gVec = gVec[:n-1]
+			n = n - 1
+		}
+		n1 := n / 2
+
+		// step 3
+		cl, _ := pkg.DotProduct(aVec[:n1], yVec[n1:])
+		cr, _ := pkg.DotProduct(aVec[:n1], yVec[n1:])
+		L := crs.group.Point().Mul(crs.group.Scalar().SetInt64(cl.Int64()), h)
+		R := crs.group.Point().Mul(crs.group.Scalar().SetInt64(cr.Int64()), h)
+		for i := 0; i < n1; i++ {
+			tmp := crs.group.Point().Mul(crs.group.Scalar().SetInt64(aVec[:n1][i].Int64()), gVec[n1:][i])
+			L = crs.group.Point().Add(tmp, L)
+			tmp = crs.group.Point().Mul(crs.group.Scalar().SetInt64(aVec[n1:][i].Int64()), gVec[:n1][i])
+			R = crs.group.Point().Add(tmp, R)
+		}
+		LVec = append(LVec, L)
+		RVec = append(RVec, R)
+		// z is the challenge value, generated by H(L,R)
+		LBytes := []byte(L.String())
+		RBytes := []byte(R.String())
+		zByte := append(LBytes, RBytes...)
+		slog.Info("Prover nonInteractProve z marshal", slog.Any("n", n), slog.Any("z", zByte))
+		z := new(big.Int).SetBytes(zByte)
+		zScalar := crs.group.Scalar().SetInt64(z.Int64())
+		zInv := new(big.Int).Neg(z)
+		zScalarInv := crs.group.Scalar().SetInt64(zInv.Int64())
+		// step 5, step 6
+		gVec1 := make([]kyber.Point, n1)
+		aVec1 := make([]*big.Int, n1)
+		yVec1 := make([]*big.Int, n1)
+		for i := 0; i < n1; i++ {
+			left := new(big.Int).Mul(z, yVec[:n1][i])
+			right := new(big.Int).Mul(zInv, yVec[:n1][i])
+			yVec1[i] = new(big.Int).Add(left, right)
+
+			left1 := crs.group.Point().Mul(zScalarInv, gVec[:n1][i])
+			right1 := crs.group.Point().Mul(zScalar, gVec[n1:][i])
+			gVec1[i] = crs.group.Point().Add(left1, right1)
+
+			// only prover compute
+			left = new(big.Int).Mul(z, aVec[:n1][i])
+			right = new(big.Int).Mul(zInv, aVec[n1:][i])
+			aVec1[i] = new(big.Int).Add(left, right)
+		}
+
+		z2 := crs.group.Scalar().Mul(zScalar, zScalar)
+		z2Inv := crs.group.Scalar().Inv(z2)
+
+		Lz2 := crs.group.Point().Mul(z2, L)
+		Rz2Inv := crs.group.Point().Mul(z2Inv, R)
+		P1 := crs.group.Point().Add(crs.group.Point().Add(P, Lz2), Rz2Inv)
+		slog.Info("Prover nonInteractVerify z marshal", slog.Any("n", n1), slog.Any("p", P1.String()))
+		n = n1
+		P = P1
+		gVec = gVec1
+		aVec = aVec1
+		yVec = yVec1
+	}
+	slog.Info("Prover nonInteractVerify z marshal", slog.Any("n", n), slog.Any("p", P.String()))
+	return aVec, LVec, RVec
 }

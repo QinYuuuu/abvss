@@ -11,29 +11,81 @@ message Message {
 
 message NewMessage {
   string protocol = 1;
-  string type = 2;
-  int64 instanceID = 3;
-  int64 fromID = 4;
-  int64 destID = 5;
-  bytes data = 6;
+  string instanceID = 2;
+  int64 fromID = 3;
+  int64 destID = 4;
+  bytes data = 5;
 }
 
+message OptRBCMessage {
+  int64 msgType = 1;
+  string sessionID = 2;
+  int64 fromID = 3;
+  int64 destID = 4;
+  bytes payload = 5;
+}
+
+message OSVMessage {
+  int64 fromID=1;
+  int64 destID=2;
+  string instanceID=3;
+  string msgType=4;
+}
+
+// modified SS24 protocol message
+// 1. ss24 share
 message SS24Share{
-  int64 index =1;
-  repeated bytes fShare = 2;
-  repeated bytes gShare = 3;
+  string instanceID = 1;
+  int64 index =2;
+  repeated bytes fShare = 3;
+  repeated bytes gShare = 4;
 }
 
+// 2. internal
 message ElgamalEncShare {
   int64 index =1;
   bytes c1 = 2;
   bytes c2 = 3;
 }
 
-message ElgamalEncMultiShare {
-  repeated ElgamalEncShare encShares = 1;
+// 3. internal
+message AESEncShare {
+  int64 index = 1;
+  bytes cipher =2;
 }
 
+// 4. internal
+message AESEncMultiShare {
+  repeated AESEncShare aesEncShares = 1;
+  repeated ElgamalEncShare elGamalEncShares = 2;
+}
+
+// 5. internal
+message poly{
+  repeated bytes coefficient = 1;
+}
+
+// 6. internal
+message challengePoly {
+  repeated poly polys = 1;
+}
+
+// batch DKG protocol message
+message DKGMessage{
+  int64 fromID=1;
+  int64 destID=2;
+  string instanceID=3;
+  int64 index = 4;
+  bytes value = 5;
+}
+
+// internal
+message DKGShareMessage{
+  int64 index=1;
+  bytes vj =2;
+}
+
+// opt broadcast message
 message DisperseData{
   bytes myStripe =1;
   bytes senderStripe =2;
@@ -46,8 +98,55 @@ message BroadcastMessage {
   bytes data = 4;
 }
 
-message ChallengePolynomial {
-  repeated bytes coefficient = 1;
+// harts protocol message
+message HartsMessage {
+  int64 fromID=1;
+  int64 destID=2;
+  string instanceID=3;
+  string type = 4;
+  bytes value = 5;
+}
+
+message HartsRowSingle{
+  repeated bytes c_i = 1;
+  repeated bytes pi_i = 2;
+}
+
+message HartsRow{
+  int64 index = 1;
+  repeated HartsRowSingle rows = 2;
+}
+
+// validated aba protocol message
+message RAMessage{
+  int64 fromID=1;
+  int64 destID=2;
+  string instanceID=3;
+  string type = 4;
+  bytes value = 5;
+}
+
+// Asynchronous Secret Key Sharing protocol message
+message ASKSMessage{
+  int64 fromID=1;
+  int64 destID=2;
+  string instanceID=3;
+  string type = 4;
+  bytes value = 5;
+}
+
+// internal ASKS hash vector
+message ASKSHashVector{
+  repeated bytes hashByte=1;
+}
+
+// Index Gather protocol message
+message IGMessage {
+  int64 fromID = 1;
+  int64 DestID = 2;
+  string instanceID = 3;
+  string type = 4;
+  repeated int64 set = 5;
 }
 
 // provable broadcast
@@ -126,38 +225,3 @@ message Dec{
   uint32 id = 1;
   bytes decShare = 2;
 }
-
-//ABVSS
-message SharesMsg{
-  int64 instanceID = 1;
-  int64 fromID = 2;
-  int64 index = 3;
-  repeated bytes zix = 4;
-  repeated bytes ziy = 5;
-  repeated bytes xix = 6;
-  repeated bytes xiy = 7;
-}
-
-message LCMMsg{
-  int64 instanceID = 1;
-  int64 fromID = 2;
-  int64 destID = 3;
-  repeated bytes lcmi = 4;
-}
-
-message SKMsg{
-  int64 instanceID = 1;
-  int64 fromID = 2;
-  int64 destID = 3;
-  bytes sk = 4;
-}
-
-//one-sided voting
-message OSVMsg{
-  int64 instanceID = 1;
-  int64 fromID = 2;
-  int64 destID = 3;
-  string mtype = 4;
-}
-
-message AckMsg{}

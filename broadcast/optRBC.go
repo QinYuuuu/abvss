@@ -31,57 +31,48 @@ const (
 	ADDReconstruct
 )
 
-type Message struct {
-	FromID    int64
-	DestID    int64
-	SessionID int64
-	MsgType   int64
-	Payload   []byte
-}
-
 type OptRBC struct {
 	pid  int64
 	n, f int64
 	// session state
-	sessions map[int64]*Session // sessionID -> session state
-	output   []chan []byte      // sessionID -> output channel
+	sessions map[string]*Session    // sessionID -> session state
+	output   map[string]chan []byte // sessionID -> output channel
 	// network interface
-	send    func(int64, Message)
-	receive func() (Message, bool)
+	send    func(int64, *protobuf.OptRBCMessage)
+	receive func() (*protobuf.OptRBCMessage, bool)
 }
 
-func NewOptRBC(pid, n, f int64, send func(int64, Message), output []chan []byte, receive func() (Message, bool)) *OptRBC {
-	if output == nil {
-		slog.Error("output is nil")
-	}
+func NewOptRBC(pid, n, f int64, send func(int64, *protobuf.OptRBCMessage), receive func() (*protobuf.OptRBCMessage, bool)) *OptRBC {
 	return &OptRBC{
 		pid:      pid,
 		n:        n,
 		f:        f,
-		sessions: make(map[int64]*Session),
+		sessions: make(map[string]*Session),
 		send:     send,
-		output:   output,
+		output:   make(map[string]chan []byte),
 		receive:  receive,
 	}
 }
 
-func (n *OptRBC) CreateNewSession(sessionID, leader int64) {
-	n.sessions[sessionID] = NewSession(n.pid, sessionID, leader, n.n, n.f, n.output[sessionID], n.send)
+func (n *OptRBC) CreateNewSession(sessionID string, leader int64) {
+	n.output[sessionID] = make(chan []byte, 1)
+	n.sessions[sessionID] = NewSession(n.pid, leader, n.n, n.f, sessionID, n.send)
+	n.sessions[sessionID].output = n.output[sessionID]
 }
 
-func (n *OptRBC) StartNewBroadcast(msg []byte, leader, sessionID int64) {
+func (n *OptRBC) StartNewBroadcast(msg []byte, leader int64, sessionID string) {
 	if n.pid == leader {
 		n.sessions[sessionID].initiateBroadcast(msg)
 	}
 }
 
-func (n *OptRBC) Output(sessionID int64) chan []byte {
+func (n *OptRBC) Output(sessionID string) chan []byte {
 	return n.output[sessionID]
 }
 
 type Session struct {
 	pid       int64
-	sessionID int64
+	sessionID string
 	leader    int64
 	n, f      int64
 
@@ -108,14 +99,15 @@ type Session struct {
 	readySent    bool
 	addReadySent bool
 	committed    bool
+	outputted    bool
 
 	output chan []byte
 	encode func([]byte) [][]byte
 	// network interface
-	send func(int64, Message)
+	send func(int64, *protobuf.OptRBCMessage)
 }
 
-func NewSession(pid, sessionID, leader, nNodes, f int64, output chan []byte, send func(int64, Message)) *Session {
+func NewSession(pid, leader, nNodes, f int64, sessionID string, send func(int64, *protobuf.OptRBCMessage)) *Session {
 	encoder := erasurecode.NewReedSolomonCode(int(nNodes-2*f), int(nNodes))
 	encode := func(input []byte) [][]byte {
 		chunks, err := encoder.Encode(input)
@@ -134,7 +126,6 @@ func NewSession(pid, sessionID, leader, nNodes, f int64, output chan []byte, sen
 		leader:                leader,
 		n:                     nNodes,
 		f:                     f,
-		output:                output,
 		send:                  send,
 		encode:                encode,
 		echoCounter:           make(map[string]*int64),
@@ -158,33 +149,12 @@ func NewSession(pid, sessionID, leader, nNodes, f int64, output chan []byte, sen
 	}
 }
 
-func (s *Session) InitiateBroadcast(msg []byte) {
-	slog.Info(fmt.Sprintf("[node %v] session[%v] start broadcast", s.pid, s.sessionID))
-	if s.leader != s.pid {
-		slog.Info("only leader send propose")
-		return
-	}
-	s.leaderMsg = msg
-
-	for i := range s.n {
-		proposeMsg := Message{
-			FromID:    s.pid,
-			DestID:    i,
-			SessionID: s.sessionID,
-			MsgType:   Propose,
-			Payload:   msg,
-		}
-		//slog.Info(fmt.Sprintf("[node %v] session[%v] send message %v", s.pid, s.sessionID, msg))
-		s.send(i, proposeMsg)
-	}
-}
-
 func (s *Session) Output() chan []byte {
 	return s.output
 }
 
 func (s *Session) initiateBroadcast(msg []byte) {
-	slog.Info(fmt.Sprintf("[node %v] session[%v] start broadcast", s.pid, s.sessionID))
+	slog.Debug(fmt.Sprintf("[node %v] session[%v] start broadcast on %v", s.pid, s.sessionID, msg))
 	if s.leader != s.pid {
 		slog.Info("only leader send propose")
 		return
@@ -192,7 +162,7 @@ func (s *Session) initiateBroadcast(msg []byte) {
 	s.leaderMsg = msg
 
 	for i := range s.n {
-		proposeMsg := Message{
+		proposeMsg := &protobuf.OptRBCMessage{
 			FromID:    s.pid,
 			DestID:    i,
 			SessionID: s.sessionID,
@@ -211,7 +181,7 @@ func (n *OptRBC) Run() {
 func (n *OptRBC) messageLoop() {
 	for {
 		if msg, ok := n.receive(); ok {
-			//slog.Info(fmt.Sprintf("[node %v] session[%v] receive %v message from %v", n.pid, msg.SessionID, msg.MsgType, msg.FromID))
+			slog.Debug(fmt.Sprintf("[node %v] session[%v] receive %v message from %v", n.pid, msg.SessionID, msg.MsgType, msg.FromID))
 			s := n.sessions[msg.SessionID]
 			if s == nil {
 				slog.Error(fmt.Sprintf("[node %v] session[%v] not exist", n.pid, msg.SessionID))
@@ -259,7 +229,7 @@ func (s *Session) handlePropose(sender int64, msg []byte) {
 	s.leaderMsg = msg
 	s.leaderHash = digest
 	for i := range s.n {
-		echoMsg := Message{
+		echoMsg := &protobuf.OptRBCMessage{
 			FromID:    s.pid,
 			DestID:    i,
 			SessionID: s.sessionID,
@@ -289,7 +259,7 @@ func (s *Session) handleEcho(sender int64, payload []byte) {
 	if atomic.LoadInt64(s.echoCounter[string(digest)]) >= 2*s.f+1 && !s.readySent {
 		s.readySent = true
 		for i := range s.n {
-			readyMsg := Message{
+			readyMsg := &protobuf.OptRBCMessage{
 				FromID:    s.pid,
 				DestID:    i,
 				SessionID: s.sessionID,
@@ -320,13 +290,16 @@ func (s *Session) handleReady(sender int64, payload []byte) {
 		s.committedHash = digest
 		if bytes.Equal(digest, s.leaderHash) {
 			s.committed = true
-			s.output <- s.leaderMsg
+			if !s.outputted {
+				s.output <- s.leaderMsg
+				s.outputted = true
+			}
 		} else {
 			for i := range s.n {
 				if i == s.pid {
 					continue
 				}
-				addTriggerMsg := Message{
+				addTriggerMsg := &protobuf.OptRBCMessage{
 					FromID:    s.pid,
 					DestID:    i,
 					SessionID: s.sessionID,
@@ -359,7 +332,7 @@ func (s *Session) handleADDTrigger(sender int64, payload []byte) {
 			slog.Error("proto marshal", slog.Any("error", err))
 			return
 		}
-		addDisperseMsg := Message{
+		addDisperseMsg := &protobuf.OptRBCMessage{
 			FromID:    s.pid,
 			DestID:    sender,
 			SessionID: s.sessionID,
@@ -393,7 +366,7 @@ func (s *Session) handleADDDisperse(sender int64, payload []byte) {
 	if atomic.LoadInt64(s.readyCounter[string(disperseData.SenderStripe)]) >= s.f+1 && !s.addReadySent {
 		s.addReadySent = true
 		for i := range s.n {
-			addReadyMsg := Message{
+			addReadyMsg := &protobuf.OptRBCMessage{
 				FromID:    s.pid,
 				DestID:    i,
 				SessionID: s.sessionID,

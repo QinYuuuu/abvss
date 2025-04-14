@@ -1,6 +1,7 @@
 package pedersen
 
 import (
+	"math/big"
 	"reflect"
 	"testing"
 
@@ -10,15 +11,12 @@ import (
 func TestVectorPCommit(t *testing.T) {
 	type args struct {
 		param VectorParam
-		value []kyber.Scalar
+		value []*big.Int
 	}
-	tests := []struct {
+	var tests []struct {
 		name string
 		args args
 		want kyber.Point
-	}{
-		// TODO: Add test cases.
-
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -1,34 +1,22 @@
 package iipa
 
-import "go.dedis.ch/kyber/v3"
+import (
+	"go.dedis.ch/kyber/v3"
+	"log/slog"
+	"math/big"
+)
 
-type Verifier struct {
-	crs    *CRS
-	input1 chan []byte
-	input2 chan kyber.Point
-	kyber.Group
-}
-
-func NewVerifier() *Verifier {
-	return &Verifier{
-		input1: make(chan []byte),
-		input2: make(chan kyber.Point),
-	}
-}
-
-func (v *Verifier) RecursiveVerify(gVec []kyber.Point, h, P kyber.Point, n int) bool {
+func (crs *CRS) RecursiveVerify(gVec, LVec, RVec []kyber.Point, h, P kyber.Point, aVec, yVec, zVec []*big.Int, n int) bool {
 	// step 1
 	// 1.1 Verifier receive aVec from Prover (length of aVec == 1)
 	// 1.2 verify P
 	if n == 1 {
-		var a, b kyber.Scalar
 		// get from input channel
-		a = v.Scalar().SetBytes(<-v.input1)
-		b = v.Scalar().SetBytes(<-v.input1)
-
-		left := v.Point().Mul(a, gVec[0])
-		right := v.Point().Mul(v.Scalar().Mul(a, b), h)
-		PWant := v.Point().Add(left, right)
+		aScalar := crs.group.Scalar().SetInt64(aVec[0].Int64())
+		left := crs.group.Point().Mul(aScalar, gVec[0])
+		exp := new(big.Int).Mul(aVec[0], yVec[0])
+		right := crs.group.Point().Mul(crs.group.Scalar().SetInt64(exp.Int64()), h)
+		PWant := crs.group.Point().Add(left, right)
 		return P.Equal(PWant)
 	}
 
@@ -36,43 +24,105 @@ func (v *Verifier) RecursiveVerify(gVec []kyber.Point, h, P kyber.Point, n int) 
 	// 2.1 Verifier receive aVec[n], bVec[n] from Prover
 	// 2.3 update P, aVec, gVec, n
 	if n%2 == 1 {
-		var aVecN, bVecN kyber.Scalar
 		// get from input channel
-		aVecN = v.Scalar().SetBytes(<-v.input1)
-		bVecN = v.Scalar().SetBytes(<-v.input1)
-
-		aNeg := v.Scalar().Neg(aVecN)
-		bNeg := v.Scalar().Neg(bVecN)
-		tmp1 := v.Point().Mul(aNeg, gVec[n-1])
-		tmp2 := v.Point().Mul(v.Scalar().Mul(aVecN, bNeg), h)
-
-		P = v.Point().Add(v.Point().Add(tmp1, tmp2), P)
+		aVecN := crs.group.Scalar().SetInt64(aVec[0].Int64())
+		yVecN := crs.group.Scalar().SetInt64(yVec[0].Int64())
+		aNeg := crs.group.Scalar().Neg(aVecN)
+		yNeg := crs.group.Scalar().Neg(yVecN)
+		tmp1 := crs.group.Point().Mul(aNeg, gVec[n-1])
+		tmp2 := crs.group.Point().Mul(crs.group.Scalar().Mul(aVecN, yNeg), h)
+		P = crs.group.Point().Add(crs.group.Point().Add(tmp1, tmp2), P)
 		n = n - 1
 	}
-
 	n1 := n / 2
 
 	// step 3
 	// Verifier receive L and R from Prover
-	var L, R kyber.Point
-	L, R = <-v.input2, <-v.input2
+	L, R := LVec[0], RVec[0]
 
 	// step 4
 	// generate challenge value
-	z := v.Scalar()
-	zInv := v.Scalar().Inv(z)
+	zScalar := crs.group.Scalar().SetInt64(zVec[0].Int64())
+	zInv := new(big.Int).Neg(zVec[0])
+	zScalarInv := crs.group.Scalar().SetInt64(zInv.Int64())
 
 	// step 5
 	gVec1 := make([]kyber.Point, n1)
 	for i := 0; i < n1; i++ {
-		left1 := v.Point().Mul(zInv, gVec[:n1][i])
-		right1 := v.Point().Mul(z, gVec[n1:][i])
-		gVec1[i] = v.Point().Add(left1, right1)
+		left1 := crs.group.Point().Mul(zScalarInv, gVec[:n1][i])
+		right1 := crs.group.Point().Mul(zScalar, gVec[n1:][i])
+		gVec1[i] = crs.group.Point().Add(left1, right1)
 	}
-	z2 := v.Scalar().Mul(z, z)
-	z2Inv := v.Scalar().Inv(z2)
-	P1 := v.Point().Add(v.Point().Add(P, v.Point().Mul(z2, L)), v.Point().Mul(z2Inv, R))
+	z2 := crs.group.Scalar().Mul(zScalar, zScalar)
+	z2Inv := crs.group.Scalar().Inv(z2)
+	Lz2 := crs.group.Point().Mul(z2, L)
+	Rz2Inv := crs.group.Point().Mul(z2Inv, R)
+	P1 := crs.group.Point().Add(crs.group.Point().Add(P, Lz2), Rz2Inv)
 
-	ret := v.RecursiveVerify(gVec1, h, P1, n1)
+	ret := crs.RecursiveVerify(gVec1, LVec[1:], RVec[1:], h, P1, aVec[1:], yVec[1:], zVec[1:], n1)
 	return ret
+}
+
+func (crs *CRS) NonInteractVerify(gVec, LVec, RVec []kyber.Point, h, P kyber.Point, aVec, yVec []*big.Int, n int) bool {
+	for n > 1 {
+		// step 2
+		// 2.1 Verifier receive aVec[n], bVec[n] from Prover
+		// 2.3 update P, aVec, gVec, n
+		if n%2 == 1 {
+			// get from input channel
+			aVecN := crs.group.Scalar().SetInt64(aVec[0].Int64())
+			yVecN := crs.group.Scalar().SetInt64(yVec[0].Int64())
+			aNeg := crs.group.Scalar().Neg(aVecN)
+			yNeg := crs.group.Scalar().Neg(yVecN)
+			tmp1 := crs.group.Point().Mul(aNeg, gVec[n-1])
+			tmp2 := crs.group.Point().Mul(crs.group.Scalar().Mul(aVecN, yNeg), h)
+			P = crs.group.Point().Add(crs.group.Point().Add(tmp1, tmp2), P)
+			n = n - 1
+			aVec = aVec[1:]
+		}
+		n1 := n / 2
+		// step 3
+		// Verifier receive L and R from Prover
+		L, R := LVec[0], RVec[0]
+		LBytes := []byte(L.String())
+		RBytes := []byte(R.String())
+		zByte := append(LBytes, RBytes...)
+		slog.Info("Verifier nonInteractVerify z marshal", slog.Any("n", n), slog.Any("z", zByte))
+		z := new(big.Int).SetBytes(zByte)
+		// step 4
+		// generate challenge value
+		zScalar := crs.group.Scalar().SetInt64(z.Int64())
+		zInv := new(big.Int).Neg(z)
+		zScalarInv := crs.group.Scalar().SetInt64(zInv.Int64())
+
+		// step 5
+		gVec1 := make([]kyber.Point, n1)
+		for i := 0; i < n1; i++ {
+			left1 := crs.group.Point().Mul(zScalarInv, gVec[:n1][i])
+			right1 := crs.group.Point().Mul(zScalar, gVec[n1:][i])
+			gVec1[i] = crs.group.Point().Add(left1, right1)
+		}
+		z2 := crs.group.Scalar().Mul(zScalar, zScalar)
+		z2Inv := crs.group.Scalar().Inv(z2)
+		Lz2 := crs.group.Point().Mul(z2, L)
+		Rz2Inv := crs.group.Point().Mul(z2Inv, R)
+		P1 := crs.group.Point().Add(crs.group.Point().Add(P, Lz2), Rz2Inv)
+		slog.Info("Verifier nonInteractVerify z marshal", slog.Any("n", n1), slog.Any("p", P1.String()))
+		gVec = gVec1
+		LVec = LVec[1:]
+		RVec = RVec[1:]
+		P = P1
+		yVec = yVec[1:]
+		n = n1
+	}
+	// step 1
+	// 1.1 Verifier receive aVec from Prover (length of aVec == 1)
+	// 1.2 verify P
+	aScalar := crs.group.Scalar().SetInt64(aVec[0].Int64())
+	left := crs.group.Point().Mul(aScalar, gVec[0])
+	exp := new(big.Int).Mul(aVec[0], yVec[0])
+	right := crs.group.Point().Mul(crs.group.Scalar().SetInt64(exp.Int64()), h)
+	PWant := crs.group.Point().Add(left, right)
+	slog.Info("Verifier nonInteractVerify z marshal", slog.Any("n", n), slog.Any("p", P.String()), slog.Any("pWANT", PWant.String()))
+	return P.Equal(PWant)
 }

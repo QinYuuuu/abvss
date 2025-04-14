@@ -1,11 +1,14 @@
 package harts
 
 import (
+	"github.com/QinYuuuu/abvss/broadcast"
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
+	"google.golang.org/protobuf/proto"
 	"log/slog"
 	"math/big"
+	"strconv"
 
 	"github.com/QinYuuuu/abvss/crypto/commit/pedersen"
-	"github.com/QinYuuuu/abvss/pkg"
 	"go.dedis.ch/kyber/v3"
 )
 
@@ -23,12 +26,28 @@ type CommitPayload struct {
 	row0_Pi []kyber.Point
 }
 
-type HAVSSNode struct {
-	n, tc, tr int64
-	p         *big.Int
-	group     kyber.Group
+type HAVSSImpl struct {
+	n, tc, tr  int64
+	id         int64
+	dealerID   int64
+	instanceID string
+
+	p     *big.Int
+	group kyber.Group
+
+	voteSenders []bool
+	doneSenders []bool
+	voteCounter int64
+	doneCounter int64
+
+	sentDone bool
+	sentVote bool
+
 	*dealer
-	*party
+	rbc *broadcast.OptRBC
+
+	send    func(*protobuf.HartsMessage)
+	receive func() chan *protobuf.HartsMessage
 }
 
 type Share struct {
@@ -38,68 +57,102 @@ type Share struct {
 	//Proofs      []NIZKProof    // NIZK证明
 }
 
-type dealer struct {
-	biPoly *pkg.BivariatePoly
+func (vss *HAVSSImpl) Run() {
+	vss.rbc.CreateNewSession(strconv.FormatInt(vss.dealerID, 10), vss.dealerID)
+	vss.rbc.Run()
+	go vss.messageLoop()
 }
 
-type party struct {
-	voteSenders []bool
-	doneSenders []bool
-	voteCounter int64
-	doneCounter int64
+func (vss *HAVSSImpl) messageLoop() {
+	for {
+		select {
+		case msg := <-vss.receive():
+			switch msg.Type {
+			case Row:
+				// handle Row
+				vss.handleRow(msg)
+			case Column:
+				// handle ready
+				vss.handleColumn(msg.FromID)
+			case Vote:
+				// handle addTrigger
+				vss.handleVote(msg.FromID)
+			case Done:
+				vss.handleDone(msg.FromID)
+			default:
+				panic("unhandled default case")
+			}
+		case output := <-vss.rbc.Output(strconv.FormatInt(vss.dealerID, 10)):
+			var msg protobuf.HartsMessage
+			err := proto.Unmarshal(output, &msg)
+			if err != nil {
+				slog.Error("proto unmarshal error", err)
+			}
+			if msg.Type == Commit {
+				vss.handleCommit()
+			}
+		}
+	}
 }
 
-func (ss *HAVSSNode) DealerCommit() {
-	if ss.dealer == nil {
-		slog.Error("not dealer, cannot commit")
+func (vss *HAVSSImpl) handleRow(msg *protobuf.HartsMessage) {
+	var row protobuf.HartsRow
+	err := proto.Unmarshal(msg.Value, &row)
+	if err != nil {
+		slog.Error("proto unmarshal error", err)
 	}
-	CPoly := make([]*pkg.Poly, ss.n)
-	for i := range ss.n {
-		CPoly[i] = ss.biPoly.EvalAtXMod(big.NewInt(int64(i)), ss.p)
-	}
-	var g kyber.Point
-	S := make([]kyber.Point, ss.n)
-	for i := range ss.n {
-		Ci0 := CPoly[i].EvalMod(big.NewInt(0), ss.p).Int64()
-		Ci0Scale := ss.group.Scalar().SetInt64(Ci0)
-		S[i] = ss.group.Point().Mul(Ci0Scale, g)
-	}
+	row.GetRows()
 }
 
-func (ss *HAVSSNode) DealerDistribute() map[int]*Share {
-	if ss.dealer == nil {
-		slog.Error("not dealer, cannot distribute")
-	}
-	shares := make(map[int]*Share)
-	var i int64
-	for i = 0; i <= ss.n; i++ {
-	}
-	return shares
-}
-
-func (ss *HAVSSNode) handleColumn(sender int64) {
+func (vss *HAVSSImpl) handleCommit() {
 
 }
 
-func (ss *HAVSSNode) handleVote(sender int64) {
-	if ss.voteSenders[sender] {
+func (vss *HAVSSImpl) handleColumn(sender int64) {
+
+}
+
+func (vss *HAVSSImpl) handleVote(sender int64) {
+	if vss.voteSenders[sender] {
 		slog.Error("have receive vote", slog.Any("fromID", sender))
 	}
-	ss.voteCounter++
-	if ss.voteCounter >= ss.n-ss.tc {
+	vss.voteCounter++
+	if vss.voteCounter >= vss.n-vss.tc && !vss.sentDone {
 		// send done
+		vss.sentDone = true
+		var i int64
+		for i = 0; i < vss.n; i++ {
+			msg := &protobuf.HartsMessage{
+				FromID:     vss.id,
+				DestID:     i,
+				InstanceID: vss.instanceID,
+				Type:       Done,
+			}
+			vss.send(msg)
+		}
 	}
 }
 
-func (ss *HAVSSNode) handleDone(sender int64) {
-	if ss.doneSenders[sender] {
+func (vss *HAVSSImpl) handleDone(sender int64) {
+	if vss.doneSenders[sender] {
 		slog.Error("have receive vote", slog.Any("fromID", sender))
 	}
-	ss.doneCounter++
-	if ss.doneCounter >= ss.tc+1 {
+	vss.doneCounter++
+	if vss.doneCounter >= vss.tc+1 && !vss.sentDone {
 		// send done
+		vss.sentDone = true
+		var i int64
+		for i = 0; i < vss.n; i++ {
+			msg := &protobuf.HartsMessage{
+				FromID:     vss.id,
+				DestID:     i,
+				InstanceID: vss.instanceID,
+				Type:       Done,
+			}
+			vss.send(msg)
+		}
 	}
-	if ss.doneCounter >= ss.n-ss.tc {
+	if vss.doneCounter >= vss.n-vss.tc {
 		// terminate
 	}
 }

@@ -3,8 +3,8 @@ package protobuf
 type MessageProtocol string
 
 var (
-	OSVMessage    MessageProtocol = "OSV"
-	OptRBCMessage MessageProtocol = "OptRBC"
-	BADKGMessage  MessageProtocol = "BADKG"
-	SS24Message   MessageProtocol = "SS24"
+	OSVProtocol    MessageProtocol = "OSV"
+	OptRBCProtocol MessageProtocol = "OptRBC"
+	HartsProtocol  MessageProtocol = "Harts"
+	BADKGProtocol  MessageProtocol = "BADKG"
 )

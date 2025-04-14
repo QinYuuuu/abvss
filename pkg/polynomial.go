@@ -11,8 +11,8 @@ type Poly struct {
 	coeff []*big.Int // coefficients P(x) = coeff[0] + coeff[1] x + ... + coeff[degree] x^degree ...
 }
 
-// New returns a polynomial P(x) = 0 with capacity degree + 1
-func New(degree int) (*Poly, error) {
+// NewPoly returns a polynomial P(x) = 0 with capacity degree + 1
+func NewPoly(degree int) (*Poly, error) {
 	if degree < 0 {
 		return nil, fmt.Errorf(fmt.Sprintf("degree must be non-negative, got %d", degree))
 	}
@@ -27,6 +27,40 @@ func New(degree int) (*Poly, error) {
 	//coeff[len(coeff) - 1].SetInt64(1)
 
 	return &Poly{coeff}, nil
+}
+
+// NewRandPoly returns a randomized polynomial with specified degree
+// coefficients are pesudo-random numbers in [0, n)
+func NewRandPoly(degree int, n *big.Int) (*Poly, error) {
+	p, e := NewPoly(degree)
+	if e != nil {
+		return nil, e
+	}
+
+	p.Rand(n)
+
+	return p, nil
+}
+
+// NewConstantPoly returns create a constant polynomial P(x) = c
+func NewConstantPoly(c int64) *Poly {
+	zero, err := NewPoly(0)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	zero.coeff[0] = big.NewInt(c)
+	return zero
+}
+
+// NewOne creates a constant polynomial P(x) = 1
+func NewOne() *Poly {
+	return NewConstantPoly(1)
+}
+
+// NewEmpty creates a constant polynomial P(x) = 0
+func NewEmpty() *Poly {
+	return NewConstantPoly(0)
 }
 
 // GetDegree returns the degree, ignoring removing leading zeroes
@@ -132,7 +166,7 @@ func (poly *Poly) Equal(op *Poly) bool {
 }
 
 // IsZero returns if poly == 0
-func (poly Poly) IsZero() bool {
+func (poly *Poly) IsZero() bool {
 	if poly.GetDegree() != 0 {
 		return false
 	}
@@ -159,7 +193,7 @@ func (poly *Poly) Rand(mod *big.Int) {
 
 }
 
-func (poly Poly) GetCap() int {
+func (poly *Poly) GetCap() int {
 	return len(poly.coeff)
 }
 
@@ -177,54 +211,6 @@ func (poly *Poly) GrowCapTo(cap int) {
 	}
 
 	poly.coeff = append(poly.coeff, neededPointers...)
-}
-
-// NewRand returns a randomized polynomial with specified degree
-// coefficients are pesudo-random numbers in [0, n)
-func NewRand(degree int, n *big.Int) (*Poly, error) {
-	p, e := New(degree)
-	if e != nil {
-		return nil, e
-	}
-
-	p.Rand(n)
-
-	return p, nil
-}
-
-// NewConstant returns create a constant polynomial P(x) = c
-func NewConstant(c int64) *Poly {
-	zero, err := New(0)
-	if err != nil {
-		panic(err.Error())
-	}
-
-	zero.coeff[0] = big.NewInt(c)
-	return zero
-}
-
-// NewOne creates a constant polynomial P(x) = 1
-func NewOne() *Poly {
-	return NewConstant(1)
-}
-
-// NewEmpty creates a constant polynomial P(x) = 0
-func NewEmpty() *Poly {
-	return NewConstant(0)
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 // Mod sets poly to poly % p
@@ -324,7 +310,7 @@ func (poly *Poly) Mul(op1 *Poly, op2 *Poly) error {
 }
 
 // EvalMod returns poly(x) using Horner's rule. If p != nil, returns poly(x) mod p
-func (poly Poly) EvalMod(x *big.Int, p *big.Int) *big.Int {
+func (poly *Poly) EvalMod(x *big.Int, p *big.Int) *big.Int {
 	result := new(big.Int).Set(poly.coeff[poly.GetDegree()])
 
 	for i := poly.GetDegree(); i >= 1; i-- {
@@ -344,23 +330,18 @@ func DivMod(a *Poly, b *Poly, p *big.Int) (*Poly, *Poly, error) {
 	if b.IsZero() {
 		return nil, nil, errors.New("divide by zero")
 	}
-
 	q := NewEmpty()
 	r := NewEmpty()
-
 	q.resetToDegree(0)
 	r.DeepCopy(a)
-
 	d := b.GetDegree()
 	c := b.GetLeadingCoefficient()
-
 	// cInv = 1/c
 	cInv := big.NewInt(0)
 	cInv.ModInverse(c, p)
-
 	for r.GetDegree() >= d {
 		lc := r.GetLeadingCoefficient()
-		s, err := New(r.GetDegree() - d)
+		s, err := NewPoly(r.GetDegree() - d)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -370,28 +351,24 @@ func DivMod(a *Poly, b *Poly, p *big.Int) (*Poly, *Poly, error) {
 			return nil, nil, err
 		}
 		q.AddSelf(s)
-
 		sb := NewEmpty()
 		sb.Mul(s, b)
-
 		// deg r reduces by each iteration
 		r.SubSelf(sb)
-
 		// modulo p
 		q.Mod(p)
 		r.Mod(p)
 	}
-
 	return q, r, nil
 }
 
 func FromVec(coeff ...int64) *Poly {
 	if len(coeff) == 0 {
-		return NewConstant(0)
+		return NewConstantPoly(0)
 	}
 	deg := len(coeff) - 1
 
-	poly, err := New(deg)
+	poly, err := NewPoly(deg)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -405,11 +382,11 @@ func FromVec(coeff ...int64) *Poly {
 
 func FromVecBig(coeff []*big.Int) *Poly {
 	if len(coeff) == 0 {
-		return NewConstant(0)
+		return NewConstantPoly(0)
 	}
 
 	deg := len(coeff) - 1
-	poly, err := New(deg)
+	poly, err := NewPoly(deg)
 	if err != nil {
 		panic(err.Error())
 	}
@@ -421,9 +398,8 @@ func FromVecBig(coeff []*big.Int) *Poly {
 	return poly
 }
 
-func (poly Poly) ToString() string {
+func (poly *Poly) ToString() string {
 	var s = ""
-
 	for i := len(poly.coeff) - 1; i >= 0; i-- {
 		// skip zero coefficients but the constant term
 		if i != 0 && poly.coeff[i].Int64() == 0 {
@@ -436,6 +412,13 @@ func (poly Poly) ToString() string {
 			s += poly.coeff[i].String()
 		}
 	}
-
 	return s
+}
+
+func (poly *Poly) ToBytes() [][]byte {
+	var result = make([][]byte, len(poly.coeff))
+	for i := range poly.coeff {
+		result[i] = poly.coeff[i].Bytes()
+	}
+	return result
 }

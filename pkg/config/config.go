@@ -77,7 +77,7 @@ func (c *Config) ReadConfig(ConfigName string, isLocal bool) error {
 		}
 		// id is begin from 0 to ... N-1
 		if c.PID >= c.N || c.PID < 0 {
-			return errors.New("ID is begin from 0 to N-1")
+			return errors.New("id is begin from 0 to N-1")
 		}
 	}
 
