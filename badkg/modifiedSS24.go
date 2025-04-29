@@ -21,12 +21,6 @@ const (
 	Challenge  = "SS24.challenge"
 )
 
-type elgamalEncShare struct {
-	Index       int64
-	FShareBytes [][]byte
-	GShareBytes [][]byte
-}
-
 type ChallengePoly struct {
 	HBytes [][]byte
 }

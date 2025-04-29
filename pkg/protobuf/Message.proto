@@ -149,6 +149,14 @@ message IGMessage {
   repeated int64 set = 5;
 }
 
+// Index Cover Gather protocol message
+message ICGMessage {
+  int64 fromID = 1;
+  int64 DestID = 2;
+  string instanceID = 3;
+  string type = 4;
+}
+
 // provable broadcast
 message Value{
   bytes value = 1;// paload

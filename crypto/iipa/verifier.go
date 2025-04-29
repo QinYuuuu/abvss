@@ -63,19 +63,17 @@ func (crs *CRS) RecursiveVerify(gVec, LVec, RVec []kyber.Point, h, P kyber.Point
 	return ret
 }
 
-func (crs *CRS) NonInteractVerify(gVec, LVec, RVec []kyber.Point, h, P kyber.Point, aVec, yVec []*big.Int, n int) bool {
+func (crs *CRS) NonInteractVerify(gVec, LVec, RVec []kyber.Point, h, P kyber.Point, aVec, yVec []kyber.Scalar, n int) bool {
 	for n > 1 {
 		// step 2
 		// 2.1 Verifier receive aVec[n], bVec[n] from Prover
 		// 2.3 update P, aVec, gVec, n
 		if n%2 == 1 {
 			// get from input channel
-			aVecN := crs.group.Scalar().SetInt64(aVec[0].Int64())
-			yVecN := crs.group.Scalar().SetInt64(yVec[0].Int64())
-			aNeg := crs.group.Scalar().Neg(aVecN)
-			yNeg := crs.group.Scalar().Neg(yVecN)
+			aNeg := crs.group.Scalar().Neg(aVec[n-1])
+			yNeg := crs.group.Scalar().Neg(yVec[n-1])
 			tmp1 := crs.group.Point().Mul(aNeg, gVec[n-1])
-			tmp2 := crs.group.Point().Mul(crs.group.Scalar().Mul(aVecN, yNeg), h)
+			tmp2 := crs.group.Point().Mul(crs.group.Scalar().Mul(aVec[n-1], yNeg), h)
 			P = crs.group.Point().Add(crs.group.Point().Add(tmp1, tmp2), P)
 			n = n - 1
 			aVec = aVec[1:]
@@ -88,40 +86,41 @@ func (crs *CRS) NonInteractVerify(gVec, LVec, RVec []kyber.Point, h, P kyber.Poi
 		RBytes := []byte(R.String())
 		zByte := append(LBytes, RBytes...)
 		slog.Info("Verifier nonInteractVerify z marshal", slog.Any("n", n), slog.Any("z", zByte))
-		z := new(big.Int).SetBytes(zByte)
 		// step 4
 		// generate challenge value
-		zScalar := crs.group.Scalar().SetInt64(z.Int64())
-		zInv := new(big.Int).Neg(z)
-		zScalarInv := crs.group.Scalar().SetInt64(zInv.Int64())
-
+		z := crs.group.Scalar().SetBytes(zByte)
+		zInv := crs.group.Scalar().Inv(z)
 		// step 5
 		gVec1 := make([]kyber.Point, n1)
+		yVec1 := make([]kyber.Scalar, n1)
 		for i := 0; i < n1; i++ {
-			left1 := crs.group.Point().Mul(zScalarInv, gVec[:n1][i])
-			right1 := crs.group.Point().Mul(zScalar, gVec[n1:][i])
+			left := crs.group.Scalar().Mul(zInv, yVec[:n1][i])
+			right := crs.group.Scalar().Mul(z, yVec[n1:][i])
+			yVec1[i] = crs.group.Scalar().Add(left, right)
+
+			left1 := crs.group.Point().Mul(zInv, gVec[:n1][i])
+			right1 := crs.group.Point().Mul(z, gVec[n1:][i])
 			gVec1[i] = crs.group.Point().Add(left1, right1)
 		}
-		z2 := crs.group.Scalar().Mul(zScalar, zScalar)
+		z2 := crs.group.Scalar().Mul(z, z)
 		z2Inv := crs.group.Scalar().Inv(z2)
 		Lz2 := crs.group.Point().Mul(z2, L)
 		Rz2Inv := crs.group.Point().Mul(z2Inv, R)
 		P1 := crs.group.Point().Add(crs.group.Point().Add(P, Lz2), Rz2Inv)
 		slog.Info("Verifier nonInteractVerify z marshal", slog.Any("n", n1), slog.Any("p", P1.String()))
+
 		gVec = gVec1
 		LVec = LVec[1:]
 		RVec = RVec[1:]
 		P = P1
-		yVec = yVec[1:]
 		n = n1
 	}
 	// step 1
 	// 1.1 Verifier receive aVec from Prover (length of aVec == 1)
 	// 1.2 verify P
-	aScalar := crs.group.Scalar().SetInt64(aVec[0].Int64())
-	left := crs.group.Point().Mul(aScalar, gVec[0])
-	exp := new(big.Int).Mul(aVec[0], yVec[0])
-	right := crs.group.Point().Mul(crs.group.Scalar().SetInt64(exp.Int64()), h)
+	left := crs.group.Point().Mul(aVec[0], gVec[0])
+	exp := crs.group.Scalar().Mul(aVec[0], yVec[0])
+	right := crs.group.Point().Mul(exp, h)
 	PWant := crs.group.Point().Add(left, right)
 	slog.Info("Verifier nonInteractVerify z marshal", slog.Any("n", n), slog.Any("p", P.String()), slog.Any("pWANT", PWant.String()))
 	return P.Equal(PWant)

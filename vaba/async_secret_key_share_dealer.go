@@ -17,8 +17,8 @@ type dealer struct {
 }
 
 // NewASKSDealer creates a dealer for the ASKS protocol
-func NewASKSDealer(id, n, t int64, secret *big.Int, prime *big.Int) *ASKSImpl {
-	party := NewASKS(id, n, t, id, prime)
+func NewASKSDealer(id, n, t int64, instanceID string, secret *big.Int, prime *big.Int) *ASKSImpl {
+	party := NewASKS(id, n, t, id, instanceID, prime)
 	// Let p(·) be a random degree-t polynomial
 	polynomial, err := pkg.NewRandPoly(int(t), prime)
 	if err != nil {

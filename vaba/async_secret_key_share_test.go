@@ -38,9 +38,9 @@ func TestShare(t *testing.T) {
 	for i := int64(0); i < n; i++ {
 		id := i
 		if id == 0 {
-			parties[i] = NewASKSDealer(i, n, threshold, secret, prime)
+			parties[i] = NewASKSDealer(i, n, threshold, "test", secret, prime)
 		} else {
-			parties[i] = NewASKS(i, n, threshold, 0, prime)
+			parties[i] = NewASKS(i, n, threshold, 0, "test", prime)
 		}
 
 		// 设置通信函数
@@ -57,7 +57,7 @@ func TestShare(t *testing.T) {
 		}(i)
 
 		// 创建输出通道
-		parties[i].output = make(chan sharePhaseOutput, 1)
+		parties[i].output = make(chan *sharePhaseOutput, 1)
 
 		// 模拟RBC和RA组件
 		rbcSend := func(destID int64, msg *protobuf.OptRBCMessage) {

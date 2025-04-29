@@ -40,27 +40,36 @@ type ASKSImpl struct {
 	validShares        map[int64]*big.Int // Set T of valid shares for reconstruction
 	hasRBCOutput       bool
 	hasShareOutput     bool
+	hashVecReady       chan bool
+	shareReady         chan bool
 	sharePhaseReceived *big.Int
-	sharePhaseOutput   sharePhaseOutput
+	sharePhaseOutput   *sharePhaseOutput
 	ReconPhaseOutput   *big.Int // Final output of the protocol
 	terminated         bool
 	*dealer
-	output    chan sharePhaseOutput
+	output    chan *sharePhaseOutput
 	recOutput chan *big.Int
 	send      func(message *protobuf.ASKSMessage)
 	receive   func() chan *protobuf.ASKSMessage
 }
 
 // NewASKS creates a new party for the ASKS protocol
-func NewASKS(id, n, t, dealerID int64, prime *big.Int) *ASKSImpl {
+func NewASKS(id, n, t, dealerID int64, instanceID string, prime *big.Int) *ASKSImpl {
 	return &ASKSImpl{
-		id:          id,
-		n:           n,
-		t:           t,
-		dealerID:    dealerID,
-		p:           prime,
-		validShares: make(map[int64]*big.Int),
-		output:      make(chan sharePhaseOutput, 1),
+		id:         id,
+		n:          n,
+		t:          t,
+		instanceID: instanceID,
+		dealerID:   dealerID,
+		p:          prime,
+		sharePhaseOutput: &sharePhaseOutput{
+			hashVector: nil,
+			share:      nil,
+		},
+		hashVecReady: make(chan bool, 1),
+		shareReady:   make(chan bool, 1),
+		validShares:  make(map[int64]*big.Int),
+		output:       make(chan *sharePhaseOutput, 1),
 	}
 }
 
@@ -101,6 +110,7 @@ func (p *ASKSImpl) messageLoop() {
 			}
 			p.sharePhaseOutput.hashVector = hashVec.HashByte
 			p.hasRBCOutput = true
+			p.hashVecReady <- true
 			if p.hasRBCOutput && p.hasShareOutput {
 				p.check()
 			}
@@ -109,8 +119,21 @@ func (p *ASKSImpl) messageLoop() {
 			p.handleMessage(msg)
 		case raOutput := <-p.ra.Output():
 			if bytes.Equal(raOutput, []byte("1")) {
-				p.output <- p.sharePhaseOutput
-				p.terminated = true
+				go func() {
+					if p.sharePhaseOutput.hashVector == nil {
+						slog.Error(fmt.Sprintf("[node %v] output when sharePhase.hashVec not output", p.id))
+						<-p.hashVecReady
+						slog.Info(fmt.Sprintf("[node %v] sharePhase.hashVec ready", p.id))
+					}
+					if p.sharePhaseOutput.share == nil {
+						slog.Error(fmt.Sprintf("[node %v] output when sharePhase.share not output", p.id))
+						<-p.shareReady
+						slog.Info(fmt.Sprintf("[node %v] sharePhase.share ready", p.id))
+					}
+					p.output <- p.sharePhaseOutput
+					p.terminated = true
+				}()
+
 			}
 		}
 	}
@@ -131,6 +154,7 @@ func (p *ASKSImpl) handleMessage(msg *protobuf.ASKSMessage) {
 	case SHARE:
 		p.sharePhaseReceived = new(big.Int).SetBytes(msg.Value)
 		p.hasShareOutput = true
+		p.shareReady <- true
 		if p.hasRBCOutput && p.hasShareOutput {
 			p.check()
 		}
@@ -174,6 +198,6 @@ func (p *ASKSImpl) Reconstruct() {
 	}
 }
 
-func (p *ASKSImpl) Output() chan sharePhaseOutput {
+func (p *ASKSImpl) Output() chan *sharePhaseOutput {
 	return p.output
 }

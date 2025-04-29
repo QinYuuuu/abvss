@@ -75,7 +75,7 @@ func (p *RAImpl) Run() {
 		for {
 			select {
 			case msg := <-p.receive():
-				slog.Info(fmt.Sprintf("[node %v] [session %v] recv %v from %v", p.id, msg.InstanceID, msg.Type, msg.FromID))
+				//slog.Info(fmt.Sprintf("[node %v] [session %v] ReliableAgreementImpl recv %v from %v", p.id, msg.InstanceID, msg.Type, msg.FromID))
 				p.handleMessage(msg)
 			}
 		}
@@ -134,6 +134,6 @@ func (p *RAImpl) handleReady(msg *protobuf.RAMessage) {
 		p.output <- content
 		p.hasOutput = true
 		p.terminated = true
-		slog.Info(fmt.Sprintf("IndexCoverGatherImpl %d outputs: %s\n", p.id, content))
+		slog.Info(fmt.Sprintf("[node %v] [session %s] ReliableAgreementImpl outputs: %s\n", p.id, p.instanceID, content))
 	}
 }

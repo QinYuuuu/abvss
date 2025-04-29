@@ -3,6 +3,7 @@ package vaba
 import (
 	"fmt"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
+	"log/slog"
 	"sync"
 	"sync/atomic"
 )
@@ -28,16 +29,17 @@ type IGImpl struct {
 
 func NewIGImpl(id, n, t int64, instanceID string, send func(message *protobuf.IGMessage), receive func() chan *protobuf.IGMessage) *IGImpl {
 	return &IGImpl{
-		id:          id,
-		n:           n,
-		t:           t,
-		instanceID:  instanceID,
-		ci:          make(map[int64]bool),
-		ackReceived: make(map[int64]bool),
-		output:      make(chan []int64),
-		terminated:  false,
-		send:        send,
-		receive:     receive,
+		id:              id,
+		n:               n,
+		t:               t,
+		instanceID:      instanceID,
+		ci:              make(map[int64]bool),
+		ackReceived:     make(map[int64]bool),
+		prepareReceived: make(map[int64][]int64),
+		output:          make(chan []int64, 1),
+		terminated:      false,
+		send:            send,
+		receive:         receive,
 	}
 }
 
@@ -55,6 +57,28 @@ func (p *IGImpl) AddValid(index int64) {
 	_, hasStore := p.valid.LoadOrStore(index, true)
 	if !hasStore {
 		atomic.AddInt64(&p.validSize, 1)
+	}
+	slog.Info(fmt.Sprintf("[node %v] IndexGather [session %v]", p.id, p.instanceID), slog.Any("add valid", index), slog.Any("valid size", atomic.LoadInt64(&p.validSize)), slog.Any("inform send", p.informSent))
+	if !p.informSent && atomic.LoadInt64(&p.validSize) >= p.n-p.t {
+		p.informSent = true
+		Si := p.GetValid()
+		// Send INFORM message to all parties
+		var i int64
+		for i = 0; i < p.n; i++ {
+			msg := &protobuf.IGMessage{
+				FromID:     p.id,
+				DestID:     i,
+				InstanceID: p.instanceID,
+				Type:       "INFORM",
+				Set:        Si,
+			}
+			if i == p.id {
+				p.receive() <- msg
+				continue
+			}
+			p.send(msg)
+		}
+		p.informSent = true
 	}
 }
 
@@ -79,6 +103,10 @@ func (p *IGImpl) Input(valid []int64) {
 				Type:       "INFORM",
 				Set:        Si,
 			}
+			if i == p.id {
+				p.receive() <- msg
+				continue
+			}
 			p.send(msg)
 		}
 		p.informSent = true
@@ -93,7 +121,6 @@ func (p *IGImpl) Run() {
 			case msg := <-p.receive():
 				p.ProcessMessage(msg)
 			}
-
 		}
 	}()
 }
@@ -151,17 +178,20 @@ func (p *IGImpl) ProcessMessage(msg *protobuf.IGMessage) {
 		}
 
 	case "PREPARE":
+		slog.Info(fmt.Sprintf("[node %v] [session %v] handle Prepare from %v", p.id, p.instanceID, msg.FromID), slog.Any("T_i", msg.Set))
 		// Line 10-13: upon T_j ⊆ Valid_i becomes true
 		Tj := msg.Set
 		p.prepareReceived[msg.FromID] = Tj
 		isSubset := true
-		for j := range Tj {
+		for _, j := range Tj {
 			if _, contain := p.valid.Load(j); !contain {
+				slog.Info(fmt.Sprintf("[node %v] [session %v] receive %v, not in valid", p.id, p.instanceID, j))
 				isSubset = false
 				break
 			}
 		}
 		if isSubset {
+			slog.Info(fmt.Sprintf("[node %v] get subset", p.id), slog.Any("ci size", len(p.ci)))
 			// Line 11: C_i := C_i ∪ {j}
 			p.ci[msg.FromID] = true
 			// Line 12-13: if |C_i| = n-t then output X_i := ⋃_{j∈C_i} T_j and terminate
@@ -180,10 +210,14 @@ func (p *IGImpl) ProcessMessage(msg *protobuf.IGMessage) {
 				for item := range unionMap {
 					result = append(result, item)
 				}
-				fmt.Printf("ASKSImpl %d terminated with output: %v\n", p.id, result)
+				fmt.Printf("[node %d] [session %s] IGImpl terminated with output: %v\n", p.id, p.instanceID, result)
 				p.output <- result
 				p.terminated = true
 			}
 		}
 	}
+}
+
+func (p *IGImpl) Output() chan []int64 {
+	return p.output
 }
