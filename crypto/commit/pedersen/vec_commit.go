@@ -1,8 +1,9 @@
 package pedersen
 
 import (
-	"go.dedis.ch/kyber/v3"
 	"math/big"
+
+	"go.dedis.ch/kyber/v4"
 )
 
 var zeroBig = new(big.Int).SetInt64(0)

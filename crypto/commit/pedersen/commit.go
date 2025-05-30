@@ -1,10 +1,10 @@
 package pedersen
 
 import (
-	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v4"
 )
 
-type Committer struct {
+type Param struct {
 	group kyber.Group
 	g     kyber.Point
 	h     kyber.Point
@@ -18,8 +18,8 @@ type Pi struct {
 	r []kyber.Scalar
 }
 
-func Setup(group kyber.Group) *Committer {
-	params := &Committer{
+func Setup(group kyber.Group) *Param {
+	params := &Param{
 		group: group,
 		g:     group.Point().Base(),
 		h:     group.Point(),
@@ -27,7 +27,7 @@ func Setup(group kyber.Group) *Committer {
 	return params
 }
 
-func (param *Committer) Commit(m []kyber.Scalar) (*Comm, *Pi) {
+func (param *Param) Commit(m []kyber.Scalar) (*Comm, *Pi) {
 	comm := make([]kyber.Point, len(m))
 	r := make([]kyber.Scalar, len(m))
 	for i, val := range m {
@@ -39,7 +39,7 @@ func (param *Committer) Commit(m []kyber.Scalar) (*Comm, *Pi) {
 	return &Comm{c: comm}, &Pi{r: r}
 }
 
-func (param *Committer) Verify(m []kyber.Scalar, c *Comm, pi *Pi) bool {
+func (param *Param) Verify(m []kyber.Scalar, c *Comm, pi *Pi) bool {
 	for i, val := range m {
 		left := param.group.Point().Mul(pi.r[i], param.h)
 		right := param.group.Point().Mul(val, param.g)

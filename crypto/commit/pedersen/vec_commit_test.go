@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v4"
 )
 
 func TestVectorPCommit(t *testing.T) {

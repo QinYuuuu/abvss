@@ -1,18 +1,19 @@
-package iipa
+package inner_product
 
 import (
-	"github.com/stretchr/testify/assert"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/group/edwards25519"
-	"go.dedis.ch/kyber/v3/util/random"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"go.dedis.ch/kyber/v4"
+	"go.dedis.ch/kyber/v4/group/edwards25519"
+	"go.dedis.ch/kyber/v4/util/random"
 )
 
 func TestNewCRS(t *testing.T) {
 	// Setup test parameters
 	n := int64(5)
 	group := edwards25519.NewBlakeSHA256Ed25519()
-	r := random.New()
+	r := group.RandomStream()
 	// Assuming GetPrime returns a big.Int of given bit length
 
 	// Create a CRS
@@ -27,21 +28,21 @@ func TestNewCRS(t *testing.T) {
 	assert.Equal(t, r, crs.r)
 
 	// Verify that g array has correct length
-	assert.Equal(t, int(n), len(crs.g))
+	assert.Equal(t, int(n), len(crs.gVec))
 
 	// Verify that y array has correct length
-	assert.Equal(t, int(n), len(crs.y))
+	assert.Equal(t, int(n), len(crs.yVec))
 
 	// Verify that g elements are not nil and different
 	for i := int64(0); i < n; i++ {
-		assert.NotNil(t, crs.g[i])
+		assert.NotNil(t, crs.gVec[i])
 
 		// Each g[i] should be a valid point in the group
-		assert.True(t, crs.g[i].Equal(crs.g[i]))
+		assert.True(t, crs.gVec[i].Equal(crs.gVec[i]))
 
 		// Check that elements are likely different
 		if i > 0 {
-			assert.False(t, crs.g[i].Equal(crs.g[i-1]), "Generated points in g should be different")
+			assert.False(t, crs.gVec[i].Equal(crs.gVec[i-1]), "Generated points in g should be different")
 		}
 	}
 
@@ -51,7 +52,7 @@ func TestNewCRS(t *testing.T) {
 
 	// Verify that y elements are not nil and within range [0, p)
 	for i := int64(0); i < n; i++ {
-		assert.NotNil(t, crs.y[i])
+		assert.NotNil(t, crs.yVec[i])
 	}
 
 	// Create another CRS with the same parameters
@@ -60,18 +61,17 @@ func TestNewCRS(t *testing.T) {
 
 	differentPoints := false
 	for i := int64(0); i < n; i++ {
-		if !crs.g[i].Equal(crs2.g[i]) {
+		if !crs.gVec[i].Equal(crs2.gVec[i]) {
 			differentPoints = true
 			break
 		}
 	}
-
 	assert.True(t, differentPoints, "CRS generation should produce different points with the same parameters")
 }
 
-func TestNonInteractProve(t *testing.T) {
+func Test_NonInteract_Verify(t *testing.T) {
 	// Setup test parameters
-	n := int64(2) // Use power of 2 for simplicity
+	n := int64(13) // Use power of 2 for simplicity
 	group := edwards25519.NewBlakeSHA256Ed25519()
 	r := random.New()
 
@@ -83,39 +83,20 @@ func TestNonInteractProve(t *testing.T) {
 	for i := int64(0); i < n; i++ {
 		aVec[i] = group.Scalar().Pick(r)
 	}
-	//z := utils.RandomNum(p)
+	// public: A, yVec, v
+	// Prover private: aVec
 	// Test the InnerProductProve function first
 	v, A := crs.InnerProductProveInput(aVec)
-	//A1 := crs.InnerProductProve(A, v, z)
-	// Now test NonInteractProve
-	// We use the same parameters as the CRS
-	gVec := crs.g
-	h := crs.h
-	yVec := crs.y
 
 	// Call the function under test
-	resultAVec, LVec, RVec := crs.NonInteractProve(gVec, h, A, v, aVec, yVec, int(n))
+	proof, err := crs.NonInteractReduceProve(A, v, aVec)
 
 	// Verify that the results are not nil
-	assert.NotNil(t, resultAVec)
-	assert.NotNil(t, LVec)
-	assert.NotNil(t, RVec)
-	assert.Equal(t, 1, len(resultAVec))
+	assert.NotNil(t, proof.aVecToSend)
+	assert.NotNil(t, proof.lVec)
+	assert.NotNil(t, proof.rVec)
+	assert.Nil(t, err)
 
-	// The number of L and R values should be log2(n) if n is a power of 2
-	expectedProofSize := 0
-	if isPowerOfTwo(int(n)) {
-		tmp := int(n)
-		for tmp > 1 {
-			tmp /= 2
-			expectedProofSize++
-		}
-	}
-	result := crs.NonInteractVerify(gVec, LVec, RVec, h, A, resultAVec, yVec, int(n))
+	result := crs.NonInteractVerify(proof, A)
 	assert.True(t, result)
-}
-
-// Helper function to check if a number is a power of 2
-func isPowerOfTwo(n int) bool {
-	return n > 0 && (n&(n-1)) == 0
 }

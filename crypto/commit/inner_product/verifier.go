@@ -1,9 +1,10 @@
-package iipa
+package inner_product
 
 import (
-	"go.dedis.ch/kyber/v3"
-	"log/slog"
 	"math/big"
+
+	"github.com/QinYuuuu/abvss/pkg"
+	"go.dedis.ch/kyber/v4"
 )
 
 func (crs *CRS) RecursiveVerify(gVec, LVec, RVec []kyber.Point, h, P kyber.Point, aVec, yVec, zVec []*big.Int, n int) bool {
@@ -63,20 +64,36 @@ func (crs *CRS) RecursiveVerify(gVec, LVec, RVec []kyber.Point, h, P kyber.Point
 	return ret
 }
 
-func (crs *CRS) NonInteractVerify(gVec, LVec, RVec []kyber.Point, h, P kyber.Point, aVec, yVec []kyber.Scalar, n int) bool {
+func (crs *CRS) NonInteractVerify(proof *Proof, P kyber.Point) bool {
+	// copy from common reference string
+	gVec := make([]kyber.Point, len(crs.gVec))
+	copy(gVec, crs.gVec)
+	h := crs.h
+	yVec := make([]kyber.Scalar, len(crs.yVec))
+	copy(yVec, crs.yVec)
+	n := crs.n
+
+	// copy from proof
+	aVec := proof.aVecToSend
+	LVec := proof.lVec
+	RVec := proof.rVec
+
 	for n > 1 {
 		// step 2
 		// 2.1 Verifier receive aVec[n], bVec[n] from Prover
 		// 2.3 update P, aVec, gVec, n
 		if n%2 == 1 {
-			// get from input channel
-			aNeg := crs.group.Scalar().Neg(aVec[n-1])
-			yNeg := crs.group.Scalar().Neg(yVec[n-1])
-			tmp1 := crs.group.Point().Mul(aNeg, gVec[n-1])
-			tmp2 := crs.group.Point().Mul(crs.group.Scalar().Mul(aVec[n-1], yNeg), h)
+			a := aVec[len(aVec)-1]
+			// slog.Info("Verifier	", slog.Any("n", n), slog.Any("a from prover", a.String()))
+			aNeg := crs.group.Scalar().Neg(a)
+			y := yVec[len(yVec)-1]
+			// slog.Info("Verifier	", slog.Any("n", n), slog.String("y[-1]", y.String()))
+			tmp1 := crs.group.Point().Mul(aNeg, gVec[len(gVec)-1])
+			tmp2 := crs.group.Point().Mul(crs.group.Scalar().Mul(aNeg, y), h)
 			P = crs.group.Point().Add(crs.group.Point().Add(tmp1, tmp2), P)
+			// slog.Info("Verifier	", slog.Any("n", n), slog.String("p in n is odd", P.String()))
 			n = n - 1
-			aVec = aVec[1:]
+			aVec = aVec[:len(aVec)-1]
 		}
 		n1 := n / 2
 		// step 3
@@ -85,15 +102,16 @@ func (crs *CRS) NonInteractVerify(gVec, LVec, RVec []kyber.Point, h, P kyber.Poi
 		LBytes := []byte(L.String())
 		RBytes := []byte(R.String())
 		zByte := append(LBytes, RBytes...)
-		slog.Info("Verifier nonInteractVerify z marshal", slog.Any("n", n), slog.Any("z", zByte))
+
 		// step 4
 		// generate challenge value
 		z := crs.group.Scalar().SetBytes(zByte)
+		// slog.Info("Verifier nonInteractVerify z marshal", slog.Any("n", n), slog.Any("z", z.String()))
 		zInv := crs.group.Scalar().Inv(z)
 		// step 5
 		gVec1 := make([]kyber.Point, n1)
 		yVec1 := make([]kyber.Scalar, n1)
-		for i := 0; i < n1; i++ {
+		for i := int64(0); i < n1; i++ {
 			left := crs.group.Scalar().Mul(zInv, yVec[:n1][i])
 			right := crs.group.Scalar().Mul(z, yVec[n1:][i])
 			yVec1[i] = crs.group.Scalar().Add(left, right)
@@ -107,9 +125,9 @@ func (crs *CRS) NonInteractVerify(gVec, LVec, RVec []kyber.Point, h, P kyber.Poi
 		Lz2 := crs.group.Point().Mul(z2, L)
 		Rz2Inv := crs.group.Point().Mul(z2Inv, R)
 		P1 := crs.group.Point().Add(crs.group.Point().Add(P, Lz2), Rz2Inv)
-		slog.Info("Verifier nonInteractVerify z marshal", slog.Any("n", n1), slog.Any("p", P1.String()))
 
 		gVec = gVec1
+		yVec = yVec1
 		LVec = LVec[1:]
 		RVec = RVec[1:]
 		P = P1
@@ -118,10 +136,13 @@ func (crs *CRS) NonInteractVerify(gVec, LVec, RVec []kyber.Point, h, P kyber.Poi
 	// step 1
 	// 1.1 Verifier receive aVec from Prover (length of aVec == 1)
 	// 1.2 verify P
-	left := crs.group.Point().Mul(aVec[0], gVec[0])
-	exp := crs.group.Scalar().Mul(aVec[0], yVec[0])
+	left, _ := pkg.DotProductExpKyber(gVec, aVec)
+	exp, _ := pkg.DotProductKyber(aVec, yVec)
 	right := crs.group.Point().Mul(exp, h)
 	PWant := crs.group.Point().Add(left, right)
-	slog.Info("Verifier nonInteractVerify z marshal", slog.Any("n", n), slog.Any("p", P.String()), slog.Any("pWANT", PWant.String()))
+	/*slog.Info("Verifier nonInteractVerify", slog.Any("verify final p", P.String() == PWant.String()))
+	if P.String() != PWant.String() {
+		slog.Info("Verifier nonInteractVerify", slog.Any("verify final p", P.String()), slog.Any("verify final p want", PWant.String()))
+	}*/
 	return P.Equal(PWant)
 }

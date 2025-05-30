@@ -1,9 +1,9 @@
 package elgamal
 
 import (
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/group/curve25519"
-	"go.dedis.ch/kyber/v3/util/random"
+	"go.dedis.ch/kyber/v4"
+	"go.dedis.ch/kyber/v4/group/curve25519"
+	"go.dedis.ch/kyber/v4/util/random"
 )
 
 func Encrypt(group kyber.Group, pubkey kyber.Point, message []byte) (K, C kyber.Point, remainder []byte) {

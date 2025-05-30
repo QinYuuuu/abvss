@@ -2,9 +2,10 @@ package elgamal
 
 import (
 	"fmt"
-	"go.dedis.ch/kyber/v3/group/curve25519"
-	"go.dedis.ch/kyber/v3/group/edwards25519"
 	"testing"
+
+	"go.dedis.ch/kyber/v4/group/curve25519"
+	"go.dedis.ch/kyber/v4/group/edwards25519"
 )
 
 func TestElGamaledwards25519(t *testing.T) {
