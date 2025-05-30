@@ -13,8 +13,8 @@ type Prover struct {
 	crs *CRS
 }
 
-func (crs *CRS) InnerProductProveInput(a []kyber.Scalar) (kyber.Scalar, kyber.Point) {
-	v, err := pkg.DotProductKyber(crs.yVec, a)
+func (crs *CRS) InnerProductProveInput(aVec, yVec []kyber.Scalar) (kyber.Scalar, kyber.Point) {
+	v, err := pkg.DotProductKyber(yVec, aVec)
 	if err != nil {
 		slog.Error("Prover Input DotProduct", slog.Any("error", err))
 	}
@@ -22,7 +22,7 @@ func (crs *CRS) InnerProductProveInput(a []kyber.Scalar) (kyber.Scalar, kyber.Po
 	result := crs.group.Point().Mul(v, crs.h)
 	// A = (g[]^a[]) * (h^v)
 	for i, g := range crs.gVec {
-		tmp := crs.group.Point().Mul(a[i], g)
+		tmp := crs.group.Point().Mul(aVec[i], g)
 		result = result.Add(result, tmp)
 	}
 	return v, result
@@ -99,13 +99,12 @@ func (crs *CRS) RecursiveProve(gVec []kyber.Point, h, P kyber.Point, aVec, yVec,
 	return
 }
 
-func (crs *CRS) NonInteractReduceProve(P kyber.Point, v kyber.Scalar, aVec []kyber.Scalar) (*Proof, error) {
+func (crs *CRS) NonInteractReduceProve(P kyber.Point, v kyber.Scalar, aVec, yVec []kyber.Scalar) (*Proof, error) {
 	// copy from common reference string
 	gVec := make([]kyber.Point, len(crs.gVec))
 	copy(gVec, crs.gVec)
 	h := crs.h
-	yVec := make([]kyber.Scalar, len(crs.yVec))
-	copy(yVec, crs.yVec)
+
 	n := crs.n
 	// return values
 	LVec := make([]kyber.Point, 0)

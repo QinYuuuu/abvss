@@ -64,13 +64,12 @@ func (crs *CRS) RecursiveVerify(gVec, LVec, RVec []kyber.Point, h, P kyber.Point
 	return ret
 }
 
-func (crs *CRS) NonInteractVerify(proof *Proof, P kyber.Point) bool {
+func (crs *CRS) NonInteractVerify(proof *Proof, P kyber.Point, yVec []kyber.Scalar) bool {
 	// copy from common reference string
 	gVec := make([]kyber.Point, len(crs.gVec))
 	copy(gVec, crs.gVec)
 	h := crs.h
-	yVec := make([]kyber.Scalar, len(crs.yVec))
-	copy(yVec, crs.yVec)
+
 	n := crs.n
 
 	// copy from proof

@@ -33,11 +33,10 @@ func SetupNizkIPA(group kyber.Group, n int64, rand cipher.Stream) *NizkIPAParam 
 }
 
 // g[]^a[] * h^r
-func (param *NizkIPAParam) Prove(aVec []kyber.Scalar) (*NizkIPAProof, kyber.Point, error) {
+func (param *NizkIPAParam) Prove(aVec, yVec []kyber.Scalar) (*NizkIPAProof, kyber.Point, error) {
 	group := param.crs.GetGroup()
-	yVec := param.crs.GetY()
 	rand := param.crs.GetRand()
-	r, A := param.crs.InnerProductProveInput(aVec)
+	r, A := param.crs.InnerProductProveInput(aVec, yVec)
 	gExpU := group.Point().Mul(r, param.g)
 
 	sVec := make([]kyber.Scalar, param.crs.GetN())
@@ -46,7 +45,7 @@ func (param *NizkIPAParam) Prove(aVec []kyber.Scalar) (*NizkIPAProof, kyber.Poin
 	}
 	rho := group.Scalar().Pick(rand)
 
-	power, err := pkg.DotProductKyber(sVec, param.crs.GetY())
+	power, err := pkg.DotProductKyber(sVec, yVec)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -69,7 +68,7 @@ func (param *NizkIPAParam) Prove(aVec []kyber.Scalar) (*NizkIPAProof, kyber.Poin
 		return nil, nil, err
 	}
 
-	proof, err := param.crs.NonInteractReduceProve(A, r, aVec)
+	proof, err := param.crs.NonInteractReduceProve(A, r, aVec, yVec)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -86,7 +85,7 @@ func (param *NizkIPAParam) Prove(aVec []kyber.Scalar) (*NizkIPAProof, kyber.Poin
 	}, A, nil
 }
 
-func (param *NizkIPAParam) Verify(proof *NizkIPAProof, A kyber.Point) (bool, error) {
+func (param *NizkIPAParam) Verify(proof *NizkIPAProof, A kyber.Point, yVec []kyber.Scalar) (bool, error) {
 	S := proof._S
 	T := proof._T
 
@@ -116,7 +115,7 @@ func (param *NizkIPAParam) Verify(proof *NizkIPAProof, A kyber.Point) (bool, err
 	}
 	{
 		// verify tHat = <cVec[], y[]>
-		tHatWant, err := pkg.DotProductKyber(proof.cVec, param.crs.GetY())
+		tHatWant, err := pkg.DotProductKyber(proof.cVec, yVec)
 		if err != nil {
 			return false, err
 		}
@@ -125,7 +124,7 @@ func (param *NizkIPAParam) Verify(proof *NizkIPAProof, A kyber.Point) (bool, err
 		}
 	}
 	{
-		if !param.crs.NonInteractVerify(proof.ipaProof, A) {
+		if !param.crs.NonInteractVerify(proof.ipaProof, A, yVec) {
 			return false, nil
 		}
 	}

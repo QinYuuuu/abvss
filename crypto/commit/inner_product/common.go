@@ -10,17 +10,12 @@ type CRS struct {
 	n     int64
 	gVec  []kyber.Point
 	h     kyber.Point
-	yVec  []kyber.Scalar
 	group kyber.Group
 	r     cipher.Stream
 }
 
 func (crs *CRS) GetN() int64 {
 	return crs.n
-}
-
-func (crs *CRS) GetY() []kyber.Scalar {
-	return crs.yVec
 }
 
 func (crs *CRS) GetG() []kyber.Point {
@@ -52,7 +47,6 @@ func NewCRS(n int64, group kyber.Group, rand cipher.Stream) *CRS {
 		n:     n,
 		gVec:  g,
 		h:     h,
-		yVec:  y,
 		group: group,
 		r:     rand,
 	}

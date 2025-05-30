@@ -16,13 +16,15 @@ func TestNIZKInnerProduct_Prove_and_Verify(t *testing.T) {
 
 	// generate test input
 	aVec := make([]kyber.Scalar, n)
+	yVec := make([]kyber.Scalar, n)
 	for i := int64(0); i < n; i++ {
 		aVec[i] = group.Scalar().Pick(rand)
+		yVec[i] = group.Scalar().Pick(rand)
 	}
-	proof, comm, err := param.Prove(aVec)
+	proof, comm, err := param.Prove(aVec, yVec)
 	assert.NilError(t, err)
 
-	result, err := param.Verify(proof, comm)
+	result, err := param.Verify(proof, comm, yVec)
 	assert.NilError(t, err)
 	assert.Equal(t, result, true)
 }
