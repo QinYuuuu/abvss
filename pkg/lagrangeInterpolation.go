@@ -117,7 +117,7 @@ func polynomialDivByConstant(a []*big.Int, c, R *big.Int) []*big.Int {
 
 // LagrangeInterpolation implements the Lagrange interpolation:
 // https://en.wikipedia.org/wiki/Lagrange_polynomial
-func LagrangeInterpolation(x, y []*big.Int, R *big.Int) (*Poly, error) {
+func LagrangeInterpolation(x, y []*big.Int, R *big.Int) (*PolyBigIntImpl, error) {
 	// p(x) will be the interpoled polynomial
 	// var p []*big.Int
 	if len(x) != len(y) {
@@ -147,6 +147,6 @@ func LagrangeInterpolation(x, y []*big.Int, R *big.Int) (*Poly, error) {
 		}
 		p = polynomialAdd(p, polynomialMulByConstant(jPol, y[j], R), R)
 	}
-	result := &Poly{coeff: p}
+	result := &PolyBigIntImpl{coeff: p}
 	return result, nil
 }

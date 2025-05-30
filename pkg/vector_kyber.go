@@ -4,8 +4,24 @@ import (
 	"errors"
 	"fmt"
 
-	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v4"
 )
+
+func DotProductExpKyber(g []kyber.Point, a []kyber.Scalar) (kyber.Point, error) {
+	if len(g) != len(a) {
+		return nil, errors.New("the input length is different")
+	}
+	if len(g) == 0 {
+		return nil, errors.New("vectors cannot be empty")
+	}
+	// Initialize result with zero value
+	result := g[0].Clone().Mul(a[0], g[0])
+	for i := 1; i < len(g); i++ {
+		tmp := g[i].Clone().Mul(a[i], g[i])
+		result = result.Add(result, tmp)
+	}
+	return result, nil
+}
 
 // DotProductKyber calculates the dot product of two vectors of Scalars
 func DotProductKyber(v1, v2 []kyber.Scalar) (kyber.Scalar, error) {
@@ -129,4 +145,12 @@ func CompareVectorsKyber(a, b []kyber.Scalar) bool {
 	}
 
 	return true
+}
+
+func VecScalarMulKyber(vec []kyber.Scalar, s kyber.Scalar) []kyber.Scalar {
+	result := make([]kyber.Scalar, len(vec))
+	for i := range vec {
+		result[i] = vec[i].Clone().Mul(vec[i], s)
+	}
+	return result
 }

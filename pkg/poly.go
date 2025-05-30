@@ -7,12 +7,12 @@ import (
 	"math/big"
 )
 
-type Poly struct {
+type PolyBigIntImpl struct {
 	coeff []*big.Int // coefficients P(x) = coeff[0] + coeff[1] x + ... + coeff[degree] x^degree ...
 }
 
 // NewPoly returns a polynomial P(x) = 0 with capacity degree + 1
-func NewPoly(degree int) (*Poly, error) {
+func NewPoly(degree int) (*PolyBigIntImpl, error) {
 	if degree < 0 {
 		return nil, fmt.Errorf(fmt.Sprintf("degree must be non-negative, got %d", degree))
 	}
@@ -26,12 +26,12 @@ func NewPoly(degree int) (*Poly, error) {
 	//set the leading coefficient
 	//coeff[len(coeff) - 1].SetInt64(1)
 
-	return &Poly{coeff}, nil
+	return &PolyBigIntImpl{coeff}, nil
 }
 
 // NewRandPoly returns a randomized polynomial with specified degree
 // coefficients are pesudo-random numbers in [0, n)
-func NewRandPoly(degree int, n *big.Int) (*Poly, error) {
+func NewRandPoly(degree int, n *big.Int) (*PolyBigIntImpl, error) {
 	p, e := NewPoly(degree)
 	if e != nil {
 		return nil, e
@@ -43,7 +43,7 @@ func NewRandPoly(degree int, n *big.Int) (*Poly, error) {
 }
 
 // NewConstantPoly returns create a constant polynomial P(x) = c
-func NewConstantPoly(c int64) *Poly {
+func NewConstantPoly(c int64) *PolyBigIntImpl {
 	zero, err := NewPoly(0)
 	if err != nil {
 		panic(err.Error())
@@ -54,17 +54,17 @@ func NewConstantPoly(c int64) *Poly {
 }
 
 // NewOne creates a constant polynomial P(x) = 1
-func NewOne() *Poly {
+func NewOne() *PolyBigIntImpl {
 	return NewConstantPoly(1)
 }
 
 // NewEmpty creates a constant polynomial P(x) = 0
-func NewEmpty() *Poly {
+func NewEmpty() *PolyBigIntImpl {
 	return NewConstantPoly(0)
 }
 
 // GetDegree returns the degree, ignoring removing leading zeroes
-func (poly *Poly) GetDegree() int {
+func (poly *PolyBigIntImpl) GetDegree() int {
 	deg := len(poly.coeff) - 1
 
 	// note: i == 0 is not tested, because even the constant term is zero, we consider it's degree 0
@@ -79,7 +79,7 @@ func (poly *Poly) GetDegree() int {
 }
 
 // GetLeadingCoefficient returns the coefficient of the highest degree of the variable
-func (poly *Poly) GetLeadingCoefficient() *big.Int {
+func (poly *PolyBigIntImpl) GetLeadingCoefficient() *big.Int {
 	lc := big.NewInt(0)
 	lc.Set(poly.coeff[poly.GetDegree()])
 
@@ -87,7 +87,7 @@ func (poly *Poly) GetLeadingCoefficient() *big.Int {
 }
 
 // GetCoefficient returns coeff[i]
-func (poly *Poly) GetCoefficient(i int) (*big.Int, error) {
+func (poly *PolyBigIntImpl) GetCoefficient(i int) (*big.Int, error) {
 	if i < 0 || i >= len(poly.coeff) {
 		return big.NewInt(0), errors.New("out of boundary")
 	}
@@ -96,7 +96,7 @@ func (poly *Poly) GetCoefficient(i int) (*big.Int, error) {
 }
 
 // SetCoefficient sets the poly.coeff[i] to ci
-func (poly *Poly) SetCoefficient(i int, ci int64) error {
+func (poly *PolyBigIntImpl) SetCoefficient(i int, ci int64) error {
 	if i < 0 || i >= len(poly.coeff) {
 		return errors.New("out of boundary")
 	}
@@ -107,7 +107,7 @@ func (poly *Poly) SetCoefficient(i int, ci int64) error {
 }
 
 // SetCoefficientBig sets the poly.coeff[i] to ci (a gmp.Int)
-func (poly *Poly) SetCoefficientBig(i int, ci *big.Int) error {
+func (poly *PolyBigIntImpl) SetCoefficientBig(i int, ci *big.Int) error {
 	if i < 0 || i >= len(poly.coeff) {
 		return errors.New("out of boundary")
 	}
@@ -118,13 +118,13 @@ func (poly *Poly) SetCoefficientBig(i int, ci *big.Int) error {
 }
 
 // Reset sets the coefficients to zeroes
-func (poly *Poly) Reset() {
+func (poly *PolyBigIntImpl) Reset() {
 	for i := 0; i < len(poly.coeff); i++ {
 		poly.coeff[i].SetInt64(0)
 	}
 }
 
-func (poly *Poly) DeepCopy(other *Poly) {
+func (poly *PolyBigIntImpl) DeepCopy(other *PolyBigIntImpl) {
 	poly.resetToDegree(other.GetDegree())
 
 	for i := 0; i < other.GetDegree()+1; i++ {
@@ -133,7 +133,7 @@ func (poly *Poly) DeepCopy(other *Poly) {
 }
 
 // resetToDegree resizes the slice to degree
-func (poly *Poly) resetToDegree(degree int) {
+func (poly *PolyBigIntImpl) resetToDegree(degree int) {
 	// if we just need to shrink the size
 	if degree+1 <= len(poly.coeff) {
 		poly.coeff = poly.coeff[:degree+1]
@@ -151,7 +151,7 @@ func (poly *Poly) resetToDegree(degree int) {
 	poly.Reset()
 }
 
-func (poly *Poly) Equal(op *Poly) bool {
+func (poly *PolyBigIntImpl) Equal(op *PolyBigIntImpl) bool {
 	if op.GetDegree() != poly.GetDegree() {
 		return false
 	}
@@ -166,7 +166,7 @@ func (poly *Poly) Equal(op *Poly) bool {
 }
 
 // IsZero returns if poly == 0
-func (poly *Poly) IsZero() bool {
+func (poly *PolyBigIntImpl) IsZero() bool {
 	if poly.GetDegree() != 0 {
 		return false
 	}
@@ -176,7 +176,7 @@ func (poly *Poly) IsZero() bool {
 
 // Rand sets the polynomial coefficients to a pseudo-random number in [0, n)
 // WARNING: Rand makes sure that the highest coefficient is not zero
-func (poly *Poly) Rand(mod *big.Int) {
+func (poly *PolyBigIntImpl) Rand(mod *big.Int) {
 	for i := range poly.coeff {
 		poly.coeff[i], _ = rand.Int(rand.Reader, mod)
 	}
@@ -193,11 +193,11 @@ func (poly *Poly) Rand(mod *big.Int) {
 
 }
 
-func (poly *Poly) GetCap() int {
+func (poly *PolyBigIntImpl) GetCap() int {
 	return len(poly.coeff)
 }
 
-func (poly *Poly) GrowCapTo(cap int) {
+func (poly *PolyBigIntImpl) GrowCapTo(cap int) {
 	current := poly.GetCap()
 	if cap <= current {
 		return
@@ -214,14 +214,14 @@ func (poly *Poly) GrowCapTo(cap int) {
 }
 
 // Mod sets poly to poly % p
-func (poly *Poly) Mod(p *big.Int) {
+func (poly *PolyBigIntImpl) Mod(p *big.Int) {
 	for i := 0; i < len(poly.coeff); i++ {
 		poly.coeff[i].Mod(poly.coeff[i], p)
 	}
 }
 
 // Add sets poly to op1 + op2
-func (poly *Poly) Add(op1 *Poly, op2 *Poly) error {
+func (poly *PolyBigIntImpl) Add(op1 *PolyBigIntImpl, op2 *PolyBigIntImpl) error {
 	// make sure poly is as long as the longest of op1 and op2
 	deg1 := op1.GetDegree()
 	deg2 := op2.GetDegree()
@@ -239,14 +239,14 @@ func (poly *Poly) Add(op1 *Poly, op2 *Poly) error {
 }
 
 // AddSelf sets poly to poly + op
-func (poly *Poly) AddSelf(op *Poly) error {
+func (poly *PolyBigIntImpl) AddSelf(op *PolyBigIntImpl) error {
 	op1 := NewEmpty()
 	op1.DeepCopy(poly)
 	return poly.Add(op1, op)
 }
 
 // Sub sets poly to op1 - op2
-func (poly *Poly) Sub(op1 *Poly, op2 *Poly) error {
+func (poly *PolyBigIntImpl) Sub(op1 *PolyBigIntImpl, op2 *PolyBigIntImpl) error {
 	// make sure poly is as long as the longest of op1 and op2
 	deg1 := op1.GetDegree()
 	deg2 := op2.GetDegree()
@@ -266,7 +266,7 @@ func (poly *Poly) Sub(op1 *Poly, op2 *Poly) error {
 }
 
 // SubSelf sets poly to poly - op
-func (poly *Poly) SubSelf(op *Poly) error {
+func (poly *PolyBigIntImpl) SubSelf(op *PolyBigIntImpl) error {
 	// make sure poly is as long as the longest of op1 and op2
 	deg1 := op.GetDegree()
 
@@ -283,7 +283,7 @@ func (poly *Poly) SubSelf(op *Poly) error {
 }
 
 // AddMul sets poly to poly + poly2 * k (k being a scalar)
-func (poly *Poly) AddMul(poly2 *Poly, k *big.Int) {
+func (poly *PolyBigIntImpl) AddMul(poly2 *PolyBigIntImpl, k *big.Int) {
 	for i := 0; i <= poly2.GetDegree(); i++ {
 		tmp := new(big.Int).Mul(poly2.coeff[i], k)
 		poly.coeff[i].Add(poly.coeff[i], tmp)
@@ -291,7 +291,7 @@ func (poly *Poly) AddMul(poly2 *Poly, k *big.Int) {
 }
 
 // Mul set poly to op1 * op2
-func (poly *Poly) Mul(op1 *Poly, op2 *Poly) error {
+func (poly *PolyBigIntImpl) Mul(op1 *PolyBigIntImpl, op2 *PolyBigIntImpl) error {
 	deg1 := op1.GetDegree()
 	deg2 := op2.GetDegree()
 
@@ -310,7 +310,7 @@ func (poly *Poly) Mul(op1 *Poly, op2 *Poly) error {
 }
 
 // EvalMod returns poly(x) using Horner's rule. If p != nil, returns poly(x) mod p
-func (poly *Poly) EvalMod(x *big.Int, p *big.Int) *big.Int {
+func (poly *PolyBigIntImpl) EvalMod(x *big.Int, p *big.Int) *big.Int {
 	result := new(big.Int).Set(poly.coeff[poly.GetDegree()])
 
 	for i := poly.GetDegree(); i >= 1; i-- {
@@ -326,7 +326,7 @@ func (poly *Poly) EvalMod(x *big.Int, p *big.Int) *big.Int {
 
 // DivMod sets computes q, r such that a = b*q + r.
 // This is an implementation of Euclidean division. The complexity is O(n^3)!!
-func DivMod(a *Poly, b *Poly, p *big.Int) (*Poly, *Poly, error) {
+func DivMod(a *PolyBigIntImpl, b *PolyBigIntImpl, p *big.Int) (*PolyBigIntImpl, *PolyBigIntImpl, error) {
 	if b.IsZero() {
 		return nil, nil, errors.New("divide by zero")
 	}
@@ -362,7 +362,7 @@ func DivMod(a *Poly, b *Poly, p *big.Int) (*Poly, *Poly, error) {
 	return q, r, nil
 }
 
-func FromVec(coeff ...int64) *Poly {
+func FromVec(coeff ...int64) *PolyBigIntImpl {
 	if len(coeff) == 0 {
 		return NewConstantPoly(0)
 	}
@@ -380,7 +380,7 @@ func FromVec(coeff ...int64) *Poly {
 	return poly
 }
 
-func FromVecBig(coeff []*big.Int) *Poly {
+func FromVecBig(coeff []*big.Int) *PolyBigIntImpl {
 	if len(coeff) == 0 {
 		return NewConstantPoly(0)
 	}
@@ -398,7 +398,7 @@ func FromVecBig(coeff []*big.Int) *Poly {
 	return poly
 }
 
-func (poly *Poly) ToString() string {
+func (poly *PolyBigIntImpl) ToString() string {
 	var s = ""
 	for i := len(poly.coeff) - 1; i >= 0; i-- {
 		// skip zero coefficients but the constant term
@@ -415,7 +415,7 @@ func (poly *Poly) ToString() string {
 	return s
 }
 
-func (poly *Poly) ToBytes() [][]byte {
+func (poly *PolyBigIntImpl) ToBytes() [][]byte {
 	var result = make([][]byte, len(poly.coeff))
 	for i := range poly.coeff {
 		result[i] = poly.coeff[i].Bytes()
