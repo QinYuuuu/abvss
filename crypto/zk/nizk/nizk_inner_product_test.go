@@ -21,10 +21,30 @@ func TestNIZKInnerProduct_Prove_and_Verify(t *testing.T) {
 		aVec[i] = group.Scalar().Pick(rand)
 		yVec[i] = group.Scalar().Pick(rand)
 	}
-	proof, comm, err := param.Prove(aVec, yVec)
+	proof, err := param.Prove(aVec, yVec)
 	assert.NilError(t, err)
 
-	result, err := param.Verify(proof, comm, yVec)
+	result, err := param.Verify(proof, yVec)
+	assert.NilError(t, err)
+	assert.Equal(t, result, true)
+}
+
+func TestNIZKInnerProduct_Prove_and_Verify_Poly(t *testing.T) {
+	n := int64(10)
+	group := edwards25519.NewBlakeSHA256Ed25519()
+	rand := group.RandomStream()
+	param := SetupNizkIPA(group, n, rand)
+
+	// generate test input
+	aVec := make([]kyber.Scalar, n)
+	xIndex := group.Scalar().Pick(rand)
+	for i := int64(0); i < n; i++ {
+		aVec[i] = group.Scalar().Pick(rand)
+	}
+	proof, err := param.ProveForPoly(aVec, xIndex)
+	assert.NilError(t, err)
+
+	result, err := param.VerifyForPoly(proof, xIndex)
 	assert.NilError(t, err)
 	assert.Equal(t, result, true)
 }

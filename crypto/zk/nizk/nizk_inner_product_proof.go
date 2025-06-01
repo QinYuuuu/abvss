@@ -8,6 +8,7 @@ import (
 )
 
 type NizkIPAProof struct {
+	_A       kyber.Point    // _A = g[]^a[] * h^r
 	_S       kyber.Point    // _S = g[]^sVec[] + h^v
 	_T       kyber.Point    // _T = g^(sVec[] * y[])
 	cVec     []kyber.Scalar // cVec = aVec[] + sVec[] * z
@@ -18,7 +19,28 @@ type NizkIPAProof struct {
 	ipaProof *inner_product.Proof
 }
 
-func MarshalNizkIPAProof(proof *NizkIPAProof) ([]byte, error) {
+func MarshalNizkIPAProofToBinary(proof *NizkIPAProof) ([]byte, error) {
+	proofMsg, err := MarshalNizkIPAProofToProto(proof)
+	if err != nil {
+		return nil, err
+	}
+	return proto.Marshal(proofMsg)
+}
+
+func UnmarshalNizkIPAProofFromBinary(group kyber.Group, data []byte) (*NizkIPAProof, error) {
+	proofMsg := &protobuf.NizkIPAProof{}
+	err := proto.Unmarshal(data, proofMsg)
+	if err != nil {
+		return nil, err
+	}
+	return UnmarshalNizkIPAProofFromProto(group, proofMsg)
+}
+
+func MarshalNizkIPAProofToProto(proof *NizkIPAProof) (*protobuf.NizkIPAProof, error) {
+	ABytes, err := proof._A.MarshalBinary()
+	if err != nil {
+		return nil, err
+	}
 	SBytes, err := proof._S.MarshalBinary()
 	if err != nil {
 		return nil, err
@@ -54,7 +76,8 @@ func MarshalNizkIPAProof(proof *NizkIPAProof) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	return proto.Marshal(&protobuf.NizkIPAProof{
+	return &protobuf.NizkIPAProof{
+		A:        ABytes,
 		S:        SBytes,
 		T:        TBytes,
 		CVec:     cVecBytes,
@@ -63,12 +86,12 @@ func MarshalNizkIPAProof(proof *NizkIPAProof) ([]byte, error) {
 		GExpC:    gExpCBytes,
 		GExpU:    gExpUBytes,
 		IpaProof: ipaProof,
-	})
+	}, nil
 }
 
-func UnmarshalNizkIPAProof(group kyber.Group, data []byte) (*NizkIPAProof, error) {
-	proofMsg := &protobuf.NizkIPAProof{}
-	err := proto.Unmarshal(data, proofMsg)
+func UnmarshalNizkIPAProofFromProto(group kyber.Group, proofMsg *protobuf.NizkIPAProof) (*NizkIPAProof, error) {
+	A := group.Point()
+	err := A.UnmarshalBinary(proofMsg.A)
 	if err != nil {
 		return nil, err
 	}
@@ -115,6 +138,7 @@ func UnmarshalNizkIPAProof(group kyber.Group, data []byte) (*NizkIPAProof, error
 		return nil, err
 	}
 	return &NizkIPAProof{
+		_A:       A,
 		_S:       S,
 		_T:       T,
 		cVec:     cVec,

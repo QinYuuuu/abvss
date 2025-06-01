@@ -19,19 +19,19 @@ func Test_NizkIPAProof_Marshal(t *testing.T) {
 		aVec[i] = group.Scalar().Pick(rand)
 		yVec[i] = group.Scalar().Pick(rand)
 	}
-	proof, A, err := params.Prove(aVec, yVec)
+	proof, err := params.Prove(aVec, yVec)
 	if err != nil {
 		t.Error(err)
 	}
-	proofBytes, err := MarshalNizkIPAProof(proof)
+	proofBytes, err := MarshalNizkIPAProofToBinary(proof)
 	if err != nil {
 		t.Error(err)
 	}
-	proof2, err := UnmarshalNizkIPAProof(group, proofBytes)
+	proof2, err := UnmarshalNizkIPAProofFromBinary(group, proofBytes)
 	if err != nil {
 		t.Error(err)
 	}
-	result, err := params.Verify(proof2, A, yVec)
+	result, err := params.Verify(proof2, yVec)
 	if err != nil {
 		t.Error(err)
 	}
