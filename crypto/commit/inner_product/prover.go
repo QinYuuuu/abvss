@@ -8,11 +8,9 @@ import (
 	"go.dedis.ch/kyber/v4"
 )
 
-type Prover struct {
-	v   kyber.Scalar
-	crs *CRS
-}
-
+// For Polynomial P(x) = a_0 + a_1 x +...+ a_n x^n
+// Polynomial Commitment C = g_0^a_0 * g_1^a_1
+// result = C * h^v
 func (crs *CRS) InnerProductProveInput(aVec, yVec []kyber.Scalar) (kyber.Scalar, kyber.Point) {
 	v, err := pkg.DotProductKyber(yVec, aVec)
 	if err != nil {

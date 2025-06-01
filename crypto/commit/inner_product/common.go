@@ -52,12 +52,12 @@ func NewCRS(n int64, group kyber.Group, rand cipher.Stream) *CRS {
 	}
 }
 
-type Proof struct {
-	lVec       []kyber.Point
-	rVec       []kyber.Point
-	aVecToSend []kyber.Scalar
-}
-
-type Commitment struct {
-	A kyber.Point
+func NewCRSWithParam(n int64, group kyber.Group, rand cipher.Stream, gVec []kyber.Point, h kyber.Point) *CRS {
+	return &CRS{
+		n:     n,
+		gVec:  gVec,
+		h:     h,
+		group: group,
+		r:     rand,
+	}
 }

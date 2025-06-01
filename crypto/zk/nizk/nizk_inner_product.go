@@ -13,17 +13,6 @@ type NizkIPAParam struct {
 	crs *inner_product.CRS
 }
 
-type NizkIPAProof struct {
-	_S       kyber.Point    // _S = g[]^sVec[] + h^v
-	_T       kyber.Point    // _T = g^(sVec[] * y[])
-	cVec     []kyber.Scalar // cVec = aVec[] + sVec[] * z
-	v        kyber.Scalar   // v = r + z
-	tHat     kyber.Scalar   // tHat = <cVec[], y[]>
-	gExpC    kyber.Point    // g[]^cVec[]
-	gExpU    kyber.Point
-	ipaProof *inner_product.Proof
-}
-
 func SetupNizkIPA(group kyber.Group, n int64, rand cipher.Stream) *NizkIPAParam {
 	params := &NizkIPAParam{
 		g:   group.Point().Base(),
@@ -83,6 +72,19 @@ func (param *NizkIPAParam) Prove(aVec, yVec []kyber.Scalar) (*NizkIPAProof, kybe
 		gExpU:    gExpU,
 		ipaProof: proof,
 	}, A, nil
+}
+
+func (param *NizkIPAParam) ProveForPoly(aVec []kyber.Scalar, xIndex kyber.Scalar) (*NizkIPAProof, kyber.Point, error) {
+	group := param.crs.GetGroup()
+	yVec := make([]kyber.Scalar, len(aVec))
+	for j := 0; j < len(aVec); j++ {
+		if j == 0 {
+			yVec[j] = group.Scalar().One()
+			continue
+		}
+		yVec[j] = group.Scalar().Mul(xIndex, yVec[j-1])
+	}
+	return param.Prove(aVec, yVec)
 }
 
 func (param *NizkIPAParam) Verify(proof *NizkIPAProof, A kyber.Point, yVec []kyber.Scalar) (bool, error) {

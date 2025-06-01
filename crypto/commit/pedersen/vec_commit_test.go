@@ -1,7 +1,6 @@
 package pedersen
 
 import (
-	"math/big"
 	"reflect"
 	"testing"
 
@@ -11,7 +10,7 @@ import (
 func TestVectorPCommit(t *testing.T) {
 	type args struct {
 		param VectorParam
-		value []*big.Int
+		value []kyber.Scalar
 	}
 	var tests []struct {
 		name string
@@ -20,7 +19,7 @@ func TestVectorPCommit(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := VectorPCommit(tt.args.param, tt.args.value); !reflect.DeepEqual(got, tt.want) {
+			if got := tt.args.param.Commit(tt.args.value); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("VectorPCommit() = %v, want %v", got, tt.want)
 			}
 		})

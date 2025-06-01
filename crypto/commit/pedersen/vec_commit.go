@@ -12,21 +12,41 @@ var oneBig = new(big.Int).SetInt64(1)
 type VectorParam struct {
 	group kyber.Group
 	g     []kyber.Point
-	h     []kyber.Point
+}
+
+func NewVectorParam(group kyber.Group, n int64) VectorParam {
+	g := make([]kyber.Point, n)
+	for i := int64(0); i < n; i++ {
+		g[i] = group.Point().Base()
+	}
+	return VectorParam{
+		group: group,
+		g:     g,
+	}
+}
+
+func NewVectorParamWithG(group kyber.Group, g []kyber.Point) VectorParam {
+	return VectorParam{
+		group: group,
+		g:     g,
+	}
 }
 
 /*
-VectorPCommit implement Vector Pedersen Commitment
+Commit implement Vector Pedersen Commitment
 Given an array of values, we commit the array with different generators
 for each element.
 */
-func VectorPCommit(param VectorParam, value []*big.Int) kyber.Point {
+func (param *VectorParam) Commit(value []kyber.Scalar) kyber.Point {
 	commitment := param.group.Point().Mul(param.group.Scalar().SetInt64(0), nil)
 	for i := 0; i < len(value); i++ {
 		// mGs
-		valueScalar := param.group.Scalar().SetInt64(value[i].Int64())
-		mG := param.group.Point().Mul(valueScalar, param.g[i])
+		mG := param.group.Point().Mul(value[i], param.g[i])
 		commitment = param.group.Point().Add(commitment, mG)
 	}
 	return commitment
+}
+
+func (param *VectorParam) Open(commitment kyber.Point, value []kyber.Scalar) bool {
+	return true
 }
