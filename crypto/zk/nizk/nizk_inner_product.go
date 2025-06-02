@@ -21,6 +21,14 @@ func SetupNizkIPA(group kyber.Group, n int64, rand cipher.Stream) *NizkIPAParam 
 	return params
 }
 
+func (param *NizkIPAParam) Getg() kyber.Point {
+	return param.g
+}
+
+func (param *NizkIPAParam) GetCRS() *inner_product.CRS {
+	return param.crs
+}
+
 // g[]^a[] * h^r
 func (param *NizkIPAParam) Prove(aVec, yVec []kyber.Scalar) (*NizkIPAProof, error) {
 	group := param.crs.GetGroup()

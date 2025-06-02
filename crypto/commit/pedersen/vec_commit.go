@@ -25,8 +25,8 @@ func NewVectorParam(group kyber.Group, n int64) VectorParam {
 	}
 }
 
-func NewVectorParamWithG(group kyber.Group, g []kyber.Point) VectorParam {
-	return VectorParam{
+func NewVectorParamWithG(group kyber.Group, g []kyber.Point) *VectorParam {
+	return &VectorParam{
 		group: group,
 		g:     g,
 	}
