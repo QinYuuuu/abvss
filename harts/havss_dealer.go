@@ -1,40 +1,135 @@
 package harts
 
 import (
-	"github.com/QinYuuuu/abvss/pkg"
-	"go.dedis.ch/kyber/v3"
 	"log/slog"
-	"math/big"
+	"strconv"
+
+	"github.com/QinYuuuu/abvss/crypto/commit/pedersen"
+	"github.com/QinYuuuu/abvss/crypto/zk/nizk"
+	"github.com/QinYuuuu/abvss/pkg"
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
+	"go.dedis.ch/kyber/v4"
+	"google.golang.org/protobuf/proto"
 )
 
 type dealer struct {
-	biPoly *pkg.BivariatePoly
+	biPoly *pkg.BivariatePolyKyberImpl
 }
 
-func (vss *HAVSSImpl) dealerCommit() {
+func NewHAVSSDealerImpl(
+	id, n, tc, tr int64,
+	instanceID string,
+	group kyber.Group,
+	nizkIPAParam *nizk.NizkIPAParam,
+	pedersenParam *pedersen.VectorParam,
+) *HAVSSImpl {
+	impl := NewHAVSSImpl(id, n, tc, tr, id, instanceID, group, nizkIPAParam, pedersenParam)
+	biPoly, err := pkg.NewRandBiPolyKyber(int(tr), int(tc), group)
+	if err != nil {
+		slog.Error("new rand bi poly", slog.String("error", err.Error()))
+		return nil
+	}
+	impl.dealer = &dealer{
+		biPoly: biPoly,
+	}
+	return impl
+}
+
+func (vss *HAVSSImpl) SetSecret(s kyber.Scalar) {
+	if vss.dealer == nil {
+		slog.Error("not dealer, cannot set secret")
+	}
+	vss.dealer.biPoly.SetCoefficientScalar(0, 0, s)
+}
+
+func (vss *HAVSSImpl) CommitAndDistribute() {
 	if vss.dealer == nil {
 		slog.Error("not dealer, cannot commit")
 	}
-	CPoly := make([]*pkg.Poly, vss.n)
+	// calculate commit and row message
+	CiPoly := make([]*pkg.PolyKyberImpl, vss.n)
+	CiPolyComm := make([]kyber.Point, vss.n)
+
 	for i := range vss.n {
-		CPoly[i] = vss.biPoly.EvalAtXMod(big.NewInt(i), vss.p)
+		xIndex := vss.group.Scalar().SetInt64(i)
+		CiPoly[i] = vss.biPoly.EvalAtXMod(xIndex)
+		aVec := CiPoly[i].GetAllCoefficient()
+		CiPolyComm[i] = vss.pedersenParam.Commit(aVec)
+		cijBytes := make([][]byte, vss.n)
+		proofMsgs := make([]*protobuf.NizkIPAProof, vss.n)
+		for j := range vss.n {
+			yIndex := vss.group.Scalar().SetInt64(j + 1)
+			cijByte, err := CiPoly[i].EvalMod(yIndex).MarshalBinary()
+			if err != nil {
+				slog.Error("marshal cij value", slog.String("error", err.Error()))
+				return
+			}
+			cijBytes[j] = cijByte
+
+			proof, err := vss.nizkIPAParam.ProveForPoly(aVec, yIndex)
+			if err != nil {
+				slog.Error("prove for poly", slog.String("error", err.Error()))
+				return
+			}
+			// only for debug
+			/*{
+				result, err := vss.nizkIPAParam.VerifyForPoly(proof, yIndex)
+				if err != nil {
+					slog.Error("verify for poly", slog.String("error", err.Error()))
+					return
+				}
+				slog.Info(fmt.Sprintf("[node %v] [session %v] generate proof correctnes: %v", vss.id, vss.instanceID, result))
+			}*/
+			proofMsg, err := nizk.MarshalNizkIPAProofToProto(proof)
+			if err != nil {
+				slog.Error("marshal proof", slog.String("error", err.Error()))
+				return
+			}
+			proofMsgs[j] = proofMsg
+		}
+		rowMsg := &protobuf.HartsRowVectorMessage{
+			CI:  cijBytes,
+			PiI: proofMsgs,
+		}
+		rowMsgBytes, err := proto.Marshal(rowMsg)
+		if err != nil {
+			slog.Error("marshal row msg", slog.String("error", err.Error()))
+			return
+		}
+		vss.send(&protobuf.HartsHavssMessage{
+			FromID:     vss.id,
+			DestID:     int64(i),
+			InstanceID: vss.instanceID,
+			Type:       Row,
+			Value:      rowMsgBytes,
+		})
+
 	}
-	var g kyber.Point
+
+	// calculate s_i = g^C_i(0)
 	S := make([]kyber.Point, vss.n)
 	for i := range vss.n {
-		Ci0 := CPoly[i].EvalMod(big.NewInt(0), vss.p).Int64()
-		Ci0Scale := vss.group.Scalar().SetInt64(Ci0)
-		S[i] = vss.group.Point().Mul(Ci0Scale, g)
+		Ci0 := CiPoly[i].EvalMod(vss.group.Scalar().Zero())
+		Ci0Scale := vss.group.Scalar().Set(Ci0)
+		S[i] = vss.group.Point().Mul(Ci0Scale, nil)
 	}
-}
-
-func (vss *HAVSSImpl) dealerDistribute() map[int]*Share {
-	if vss.dealer == nil {
-		slog.Error("not dealer, cannot distribute")
+	// calculate pi
+	commitMsgs := &protobuf.HartsCommitMessage{
+		Si: make([][]byte, vss.tr+1),
 	}
-	shares := make(map[int]*Share)
-	var i int64
-	for i = 0; i <= vss.n; i++ {
+	for i := int64(0); i < vss.tr+1; i++ {
+		SiBytes, err := S[i].MarshalBinary()
+		if err != nil {
+			slog.Error("marshal commitMsg.Si", slog.String("error", err.Error()))
+			return
+		}
+		commitMsgs.Si[i] = SiBytes
 	}
-	return shares
+	coomitMsgBytes, err := proto.Marshal(commitMsgs)
+	if err != nil {
+		slog.Error("marshal commit msg error", slog.String("error", err.Error()))
+		return
+	}
+	// broadcast commit message
+	vss.rbc.StartNewBroadcast(coomitMsgBytes, vss.id, "HAVSS_COMMIT_"+strconv.FormatInt(vss.dealerID, 10))
 }
