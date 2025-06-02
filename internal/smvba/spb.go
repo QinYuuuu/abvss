@@ -3,12 +3,13 @@ package smvba
 import (
 	"bytes"
 	"context"
-	"github.com/QinYuuuu/abvss/internal/party"
-	"github.com/QinYuuuu/abvss/internal/pb"
 	"sync"
 
-	"go.dedis.ch/kyber/v3/pairing"
-	"go.dedis.ch/kyber/v3/sign/bls"
+	"github.com/QinYuuuu/abvss/internal/party"
+	"github.com/QinYuuuu/abvss/internal/pb"
+
+	"go.dedis.ch/kyber/v4/pairing"
+	"go.dedis.ch/kyber/v4/sign/bls"
 	"golang.org/x/crypto/sha3"
 )
 

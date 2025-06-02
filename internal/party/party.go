@@ -8,8 +8,8 @@ import (
 
 	"github.com/QinYuuuu/abvss/pkg/core"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/share"
+	"go.dedis.ch/kyber/v4"
+	"go.dedis.ch/kyber/v4/share"
 )
 
 // Party is a interface of consensus parties

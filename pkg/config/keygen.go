@@ -3,11 +3,12 @@ package config
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+
 	"github.com/QinYuuuu/abvss/crypto/elgamal"
 	"github.com/QinYuuuu/abvss/internal/party"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/group/curve25519"
-	"os"
+	"go.dedis.ch/kyber/v4"
+	"go.dedis.ch/kyber/v4/group/curve25519"
 )
 
 type ElgamalKeyPair struct {

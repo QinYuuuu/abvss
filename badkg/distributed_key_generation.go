@@ -2,16 +2,17 @@ package badkg
 
 import (
 	"fmt"
-	"github.com/QinYuuuu/abvss/broadcast"
-	"github.com/QinYuuuu/abvss/crypto/utils"
-	"github.com/QinYuuuu/abvss/pkg"
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
-	"go.dedis.ch/kyber/v3"
-	"google.golang.org/protobuf/proto"
 	"log/slog"
 	"math/big"
 	"math/rand"
 	"strconv"
+
+	"github.com/QinYuuuu/abvss/broadcast"
+	"github.com/QinYuuuu/abvss/crypto/utils"
+	"github.com/QinYuuuu/abvss/pkg"
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
+	"go.dedis.ch/kyber/v4"
+	"google.golang.org/protobuf/proto"
 )
 
 type shareList struct {
@@ -226,7 +227,7 @@ func (dkg *DKGImpl) phase3() {
 			var share protobuf.DKGShareMessage
 			err := proto.Unmarshal(msg.Value, &share)
 			if err != nil {
-				slog.Error("proto unmarshal error", err)
+				slog.Error("proto unmarshal error")
 			}
 			dkg.vShares.x = append(dkg.vShares.x, new(big.Int).SetInt64(share.Index))
 			dkg.vShares.y = append(dkg.vShares.y, new(big.Int).SetBytes(share.Vj))

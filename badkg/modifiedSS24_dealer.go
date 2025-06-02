@@ -5,20 +5,21 @@ import (
 	"crypto/cipher"
 	cryptoRand "crypto/rand"
 	"fmt"
-	"github.com/QinYuuuu/abvss/crypto/elgamal"
-	"github.com/QinYuuuu/abvss/pkg"
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
-	"go.dedis.ch/kyber/v3"
-	"google.golang.org/protobuf/proto"
 	"io"
 	"log/slog"
 	"math/big"
 	"strconv"
+
+	"github.com/QinYuuuu/abvss/crypto/elgamal"
+	"github.com/QinYuuuu/abvss/pkg"
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
+	"go.dedis.ch/kyber/v4"
+	"google.golang.org/protobuf/proto"
 )
 
 type dealer struct {
-	fPoly []*pkg.Poly
-	gPoly []*pkg.Poly
+	fPoly []*pkg.PolyBigIntImpl
+	gPoly []*pkg.PolyBigIntImpl
 }
 
 func NewACSSImplDealer(id, degree, nodeNum, batchSize, r, sessionID int64, s []*big.Int, p *big.Int, group kyber.Group) *ACSSImpl {
@@ -28,8 +29,8 @@ func NewACSSImplDealer(id, degree, nodeNum, batchSize, r, sessionID int64, s []*
 }
 
 func (vss *ACSSImpl) dealerInit(s []*big.Int, p *big.Int, degree, batchSize, r int64) {
-	fPoly := make([]*pkg.Poly, batchSize)
-	gPoly := make([]*pkg.Poly, r)
+	fPoly := make([]*pkg.PolyBigIntImpl, batchSize)
+	gPoly := make([]*pkg.PolyBigIntImpl, r)
 	var err error
 	for i := range fPoly {
 		fPoly[i], err = pkg.NewRandPoly(int(degree), p)
@@ -51,7 +52,7 @@ func (vss *ACSSImpl) dealerInit(s []*big.Int, p *big.Int, degree, batchSize, r i
 		fPoly: fPoly,
 		gPoly: gPoly,
 	}
-	hpoly := make([]*pkg.Poly, r)
+	hpoly := make([]*pkg.PolyBigIntImpl, r)
 	for i, tmpGPoly := range gPoly {
 		hpoly[i], err = pkg.NewPoly(int(degree))
 		if err != nil {

@@ -2,16 +2,17 @@ package badkg
 
 import (
 	"fmt"
-	"github.com/QinYuuuu/abvss/broadcast"
-	"github.com/QinYuuuu/abvss/internal/osv"
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/group/edwards25519"
 	"log/slog"
 	"math/big"
 	"math/rand"
 	"sync"
 	"testing"
+
+	"github.com/QinYuuuu/abvss/broadcast"
+	"github.com/QinYuuuu/abvss/internal/osv"
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
+	"go.dedis.ch/kyber/v4"
+	"go.dedis.ch/kyber/v4/group/edwards25519"
 )
 
 func TestACSSShare(t *testing.T) {

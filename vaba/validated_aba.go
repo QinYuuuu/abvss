@@ -3,7 +3,9 @@ package vaba
 import (
 	"context"
 	"fmt"
+	"github.com/QinYuuuu/abvss/broadcast"
 	"log/slog"
+	"strconv"
 )
 
 const (
@@ -56,6 +58,7 @@ type VABAImpl struct {
 
 	asksInstances []*ASKSImpl
 	icgInstance   *IndexCoverGatherImpl
+	rbc *broadcast.OptRBC
 	//acss          *ASKS
 	acssTask     context.CancelFunc
 	acssTaskList []context.CancelFunc
@@ -100,6 +103,8 @@ func (vaba *VABAImpl) Run() {
 		asks.Run()
 	}
 	vaba.icgInstance.Run()
+	vaba.rbc.Run()
+	vaba.rbc.CreateNewSession("pre_"+strconv.FormatInt(vaba.myID, 10), vaba.myID)
 
 	asksFinishChan := vaba.getASKSOutput()
 	for {
@@ -108,7 +113,9 @@ func (vaba *VABAImpl) Run() {
 			vaba.asksCounter++
 			vaba.asksSharedSet = append(vaba.asksSharedSet, asksFinish.index)
 			if vaba.asksCounter == vaba.threshold+1 {
+				P_i := vaba.asksSharedSet
 
+				vaba.rbc.StartNewBroadcast([]byte(""), vaba.myID, "pre_"+strconv.FormatInt(vaba.myID, 10))
 			}
 		}
 	}

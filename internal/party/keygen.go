@@ -1,9 +1,9 @@
 package party
 
 import (
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/pairing"
-	"go.dedis.ch/kyber/v3/share"
+	"go.dedis.ch/kyber/v4"
+	"go.dedis.ch/kyber/v4/pairing"
+	"go.dedis.ch/kyber/v4/share"
 )
 
 // SigKeyGen return pk and sks, n is the number of parties, t is the threshold of combining signature

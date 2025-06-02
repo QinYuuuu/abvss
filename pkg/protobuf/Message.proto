@@ -98,6 +98,8 @@ message BroadcastMessage {
   bytes data = 4;
 }
 
+
+// harts
 // harts protocol message
 message HartsMessage {
   int64 fromID=1;
@@ -107,17 +109,62 @@ message HartsMessage {
   bytes value = 5;
 }
 
-message HartsRowSingle{
-  repeated bytes c_i = 1;
-  repeated bytes pi_i = 2;
+message HartsHavssMessage {
+  int64 fromID=1;
+  int64 destID=2;
+  string instanceID=3;
+  string type = 4;
+  bytes value = 5;
 }
 
-message HartsRow{
-  int64 index = 1;
-  repeated HartsRowSingle rows = 2;
+// internal: havss commit message
+message HartsCommitMessage {
+  repeated bytes commit = 1;
+  repeated bytes si = 2;
+  repeated bytes pi = 3;
 }
+
+// internal: inner_product proof
+message InnerProductProof{
+  repeated bytes lVec = 1;
+  repeated bytes rVec = 2;
+  repeated bytes aVecToSend = 3;
+}
+
+// internal: nizk inner_product proof in havss
+message NizkIPAProof{
+  bytes A = 1;
+  bytes S = 2;
+  bytes T = 3;
+  repeated bytes cVec = 4;
+	bytes v = 5;
+	bytes tHat = 6;
+	bytes gExpC = 7;
+	bytes gExpU = 8;
+  InnerProductProof ipaProof = 9;
+}
+
+// internal: havss row message
+message HartsRowVectorMessage {
+  repeated bytes c_i = 1;
+  repeated NizkIPAProof pi_i = 2;
+}
+
+// internal: havss column 
+message HartsColumnMessage {
+  bytes c_ij = 1;
+  NizkIPAProof p_ij = 2;
+}
+
+// internal: signature in harts
+message HartsProposeSet{
+  repeated int64 index = 1;
+}
+
+
 
 // validated aba protocol message
+// sub protocol: reliable agreement
 message RAMessage{
   int64 fromID=1;
   int64 destID=2;
@@ -126,7 +173,7 @@ message RAMessage{
   bytes value = 5;
 }
 
-// Asynchronous Secret Key Sharing protocol message
+// sub protocol: Asynchronous Secret Key Sharing protocol message
 message ASKSMessage{
   int64 fromID=1;
   int64 destID=2;
@@ -135,12 +182,12 @@ message ASKSMessage{
   bytes value = 5;
 }
 
-// internal ASKS hash vector
+// sub protocol: internal ASKS hash vector
 message ASKSHashVector{
   repeated bytes hashByte=1;
 }
 
-// Index Gather protocol message
+// sub protocol: Index Gather protocol message
 message IGMessage {
   int64 fromID = 1;
   int64 DestID = 2;
@@ -149,12 +196,17 @@ message IGMessage {
   repeated int64 set = 5;
 }
 
-// Index Cover Gather protocol message
+// sub protocol: Index Cover Gather protocol message
 message ICGMessage {
   int64 fromID = 1;
   int64 DestID = 2;
   string instanceID = 3;
   string type = 4;
+}
+
+// internal: rbc on pre_i in vaba
+message PreIRBCMessage{
+  repeated int64 Pi = 2;
 }
 
 // provable broadcast

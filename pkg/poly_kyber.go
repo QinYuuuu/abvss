@@ -101,6 +101,10 @@ func (poly *PolyKyberImpl) GetCoefficient(i int) (kyber.Scalar, error) {
 	return poly.coeff[i], nil
 }
 
+func (poly *PolyKyberImpl) GetAllCoefficient() []kyber.Scalar {
+	return poly.coeff
+}
+
 // SetCoefficient 将 poly.coeff[i] 设置为 ci
 func (poly *PolyKyberImpl) SetCoefficient(i int, suite kyber.Group, ci int64) error {
 	if i < 0 || i >= len(poly.coeff) {

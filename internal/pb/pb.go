@@ -3,15 +3,16 @@ package pb //provable broadcast
 import (
 	"bytes"
 	"context"
-	"github.com/QinYuuuu/abvss/internal/party"
 	"log"
 	"sync"
+
+	"github.com/QinYuuuu/abvss/internal/party"
 
 	"github.com/QinYuuuu/abvss/pkg/core"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 
-	"go.dedis.ch/kyber/v3/pairing"
-	"go.dedis.ch/kyber/v3/sign/tbls"
+	"go.dedis.ch/kyber/v4/pairing"
+	"go.dedis.ch/kyber/v4/sign/tbls"
 	"golang.org/x/crypto/sha3"
 )
 

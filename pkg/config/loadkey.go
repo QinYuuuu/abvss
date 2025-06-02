@@ -4,14 +4,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/group/curve25519"
-	"go.dedis.ch/kyber/v3/pairing"
-	"go.dedis.ch/kyber/v3/share"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+
+	"go.dedis.ch/kyber/v4"
+	"go.dedis.ch/kyber/v4/group/curve25519"
+	"go.dedis.ch/kyber/v4/pairing"
+	"go.dedis.ch/kyber/v4/share"
 )
 
 func LoadElgamalCurve25519(n int, addr string) ([]kyber.Point, []kyber.Scalar) {

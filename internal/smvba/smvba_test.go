@@ -3,16 +3,17 @@ package smvba
 import (
 	"bytes"
 	"errors"
-	"github.com/QinYuuuu/abvss/internal/party"
 	"sync"
 	"testing"
+
+	"github.com/QinYuuuu/abvss/internal/party"
 
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"github.com/QinYuuuu/abvss/pkg/utils"
 
-	"go.dedis.ch/kyber/v3/pairing"
-	"go.dedis.ch/kyber/v3/sign/bls"
-	"go.dedis.ch/kyber/v3/sign/tbls"
+	"go.dedis.ch/kyber/v4/pairing"
+	"go.dedis.ch/kyber/v4/sign/bls"
+	"go.dedis.ch/kyber/v4/sign/tbls"
 	"google.golang.org/protobuf/proto"
 )
 

@@ -9,9 +9,9 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/pkg/errors"
-	"go.dedis.ch/kyber/v3"
-	"go.dedis.ch/kyber/v3/pairing"
-	"go.dedis.ch/kyber/v3/share"
+	"go.dedis.ch/kyber/v4"
+	"go.dedis.ch/kyber/v4/pairing"
+	"go.dedis.ch/kyber/v4/share"
 )
 
 var ConfigReadError = errors.New("config read fail, check config.yaml in root directory")

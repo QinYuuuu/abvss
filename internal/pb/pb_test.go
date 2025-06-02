@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/QinYuuuu/abvss/internal/party"
-	"go.dedis.ch/kyber/v3/pairing"
-	"go.dedis.ch/kyber/v3/sign/bls"
-	"golang.org/x/crypto/sha3"
 	"sync"
 	"testing"
+
+	"github.com/QinYuuuu/abvss/internal/party"
+	"go.dedis.ch/kyber/v4/pairing"
+	"go.dedis.ch/kyber/v4/sign/bls"
+	"golang.org/x/crypto/sha3"
 )
 
 type Address struct {

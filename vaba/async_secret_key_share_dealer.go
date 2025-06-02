@@ -2,18 +2,19 @@ package vaba
 
 import (
 	"fmt"
+	"log/slog"
+	"math/big"
+	"strconv"
+
 	"github.com/QinYuuuu/abvss/crypto/hasher"
 	"github.com/QinYuuuu/abvss/pkg"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"google.golang.org/protobuf/proto"
-	"log/slog"
-	"math/big"
-	"strconv"
 )
 
 type dealer struct {
 	secret *big.Int // Secret to share (only for dealer)
-	poly   *pkg.Poly
+	poly   *pkg.PolyBigIntImpl
 }
 
 // NewASKSDealer creates a dealer for the ASKS protocol

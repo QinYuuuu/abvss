@@ -2,17 +2,18 @@ package badkg
 
 import (
 	"fmt"
+	"log/slog"
+	"math/big"
+	"math/rand"
+	"strconv"
+
 	"github.com/QinYuuuu/abvss/broadcast"
 	"github.com/QinYuuuu/abvss/crypto/elgamal"
 	"github.com/QinYuuuu/abvss/internal/osv"
 	"github.com/QinYuuuu/abvss/pkg"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
-	"go.dedis.ch/kyber/v3"
+	"go.dedis.ch/kyber/v4"
 	"google.golang.org/protobuf/proto"
-	"log/slog"
-	"math/big"
-	"math/rand"
-	"strconv"
 )
 
 const (
@@ -37,7 +38,7 @@ type ACSSImpl struct {
 
 	myShare       *protobuf.SS24Share
 	encShares     *protobuf.ElgamalEncShare
-	challengePoly []*pkg.Poly
+	challengePoly []*pkg.PolyBigIntImpl
 	theta         [][]*big.Int
 
 	group     kyber.Group
@@ -157,7 +158,7 @@ func (vss *ACSSImpl) messageLoop() {
 			if err != nil {
 				slog.Error("proto unmarshal", slog.Any("error", err))
 			}
-			vss.challengePoly = make([]*pkg.Poly, len(challengePoly.GetPolys()))
+			vss.challengePoly = make([]*pkg.PolyBigIntImpl, len(challengePoly.GetPolys()))
 			for i, poly := range challengePoly.GetPolys() {
 				coeffsBytes := poly.GetCoefficient()
 				coeffs := make([]*big.Int, len(coeffsBytes))
