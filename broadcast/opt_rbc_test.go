@@ -3,11 +3,12 @@ package broadcast
 import (
 	"bytes"
 	"fmt"
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"log/slog"
 	"strconv"
 	"sync"
 	"testing"
+
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
 )
 
 func TestOptRBC(t *testing.T) {
@@ -78,27 +79,26 @@ func TestOptRBC_TwoSessions(t *testing.T) {
 	f := int64(1)
 
 	// 创建消息通道
-	msgChan := make(chan *protobuf.OptRBCMessage, 1000)
-
+	msgChan := make([]chan *protobuf.OptRBCMessage, n)
+	for i := range msgChan {
+		msgChan[i] = make(chan *protobuf.OptRBCMessage, 100)
+	}
 	// 创建节点
 	nodes := make([]*OptRBC, n)
-
+	sendFunc := func(dest int64, msg *protobuf.OptRBCMessage) {
+		msgChan[dest] <- msg
+	}
 	// 创建发送和接收函数
 	for i := int64(0); i < n; i++ {
 		pid := i
-		sendFunc := func(dest int64, msg *protobuf.OptRBCMessage) {
-			msgChan <- msg
-		}
 		recvFunc := func() (*protobuf.OptRBCMessage, bool) {
 			select {
-			case msg := <-msgChan:
+			case msg := <-msgChan[pid]:
 				if msg.DestID == pid {
 					return msg, true
 				}
-				// 将消息放回通道
-				msgChan <- msg
+				msgChan[pid] <- msg
 			default:
-				// 无消息可接收
 			}
 			return nil, false
 		}

@@ -33,8 +33,9 @@ const (
 )
 
 type OptRBC struct {
-	pid  int64
-	n, f int64
+	pid     int64
+	n, f    int64
+	running bool
 	// session state
 	sessions map[string]*Session    // sessionID -> session state
 	output   map[string]chan []byte // sessionID -> output channel
@@ -48,6 +49,7 @@ func NewOptRBC(pid, n, f int64, send func(int64, *protobuf.OptRBCMessage), recei
 		pid:      pid,
 		n:        n,
 		f:        f,
+		running:  false,
 		sessions: make(map[string]*Session),
 		send:     send,
 		output:   make(map[string]chan []byte),
@@ -176,7 +178,12 @@ func (s *Session) initiateBroadcast(msg []byte) {
 }
 
 func (n *OptRBC) Run() {
-	go n.messageLoop()
+	if n.running {
+		return
+	} else {
+		go n.messageLoop()
+		n.running = true
+	}
 }
 
 func (n *OptRBC) messageLoop() {
@@ -353,8 +360,8 @@ func (s *Session) handleADDDisperse(sender int64, payload []byte) {
 	slog.Info(fmt.Sprintf("[node %v] [RBC: %v] handle ADDDisperse message from %v", s.pid, s.sessionID, sender))
 	s.addDisperseSenders[sender] = true
 
-	var disperseData *protobuf.DisperseData
-	err := proto.Unmarshal(payload, disperseData)
+	var disperseData protobuf.DisperseData
+	err := proto.Unmarshal(payload, &disperseData)
 	if err != nil {
 		slog.Error("proto marshal", slog.Any("error", err))
 		return
