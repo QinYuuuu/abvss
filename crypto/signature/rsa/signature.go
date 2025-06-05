@@ -1,4 +1,4 @@
-package RSA
+package rsa
 
 import (
 	"crypto"
@@ -10,7 +10,8 @@ import (
 	"fmt"
 )
 
-func KeyGen(bits int) ([]byte, []byte, error) {
+// KeyGenBytes return priKey, pubKey, error
+func KeyGenBytes(bits int) ([]byte, []byte, error) {
 	// 生成私钥
 	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
@@ -51,6 +52,18 @@ func KeyGen(bits int) ([]byte, []byte, error) {
 	}
 
 	return privateKeyBytes, publicKeyBytes, nil
+}
+
+func KeyGen(bits int) (*rsa.PrivateKey, *rsa.PublicKey, error) {
+	// 生成私钥
+	privateKey, err := rsa.GenerateKey(rand.Reader, bits)
+	if err != nil {
+		return nil, nil, err
+	}
+	// 提取公钥
+	publicKey := &privateKey.PublicKey
+
+	return privateKey, publicKey, nil
 }
 
 func Sign(data []byte, privKeyBytes []byte) ([]byte, error) {
