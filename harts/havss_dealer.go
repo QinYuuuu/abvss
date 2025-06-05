@@ -1,6 +1,7 @@
 package harts
 
 import (
+	"fmt"
 	"log/slog"
 	"strconv"
 
@@ -22,13 +23,20 @@ func NewHAVSSDealerImpl(
 	group kyber.Group,
 	nizkIPAParam *nizk.NizkIPAParam,
 	pedersenParam *pedersen.VectorParam,
+	havssNetwork HAVSSNetwork,
 ) *HAVSSImpl {
-	impl := NewHAVSSImpl(id, n, tc, tr, id, instanceID, group, nizkIPAParam, pedersenParam)
+	impl := NewHAVSSImpl(id, n, tc, tr, id, instanceID, group, nizkIPAParam, pedersenParam, havssNetwork)
 	biPoly, err := pkg.NewRandBiPolyKyber(int(tr), int(tc), group)
 	if err != nil {
 		slog.Error("new rand bi poly", slog.String("error", err.Error()))
 		return nil
 	}
+	secret, err := biPoly.GetCoefficient(0, 0)
+	if err != nil {
+		slog.Error("get coefficient", slog.String("error", err.Error()))
+		return nil
+	}
+	slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] init secret: %v", id, instanceID, secret.String()))
 	impl.dealer = &dealer{
 		biPoly: biPoly,
 	}
@@ -40,6 +48,7 @@ func (vss *HAVSSImpl) SetSecret(s kyber.Scalar) {
 		slog.Error("not dealer, cannot set secret")
 	}
 	vss.dealer.biPoly.SetCoefficientScalar(0, 0, s)
+	slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] set secret: %v", vss.id, vss.instanceID, s))
 }
 
 func (vss *HAVSSImpl) CommitAndDistribute() {
@@ -53,6 +62,7 @@ func (vss *HAVSSImpl) CommitAndDistribute() {
 	for i := range vss.n {
 		xIndex := vss.group.Scalar().SetInt64(i)
 		CiPoly[i] = vss.biPoly.EvalAtXMod(xIndex)
+		// slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] generate CiPoly[%v]: %v", vss.id, vss.instanceID, i, CiPoly[i].ToString()))
 		aVec := CiPoly[i].GetAllCoefficient()
 		CiPolyComm[i] = vss.pedersenParam.Commit(aVec)
 		cijBytes := make([][]byte, vss.n)
@@ -78,7 +88,7 @@ func (vss *HAVSSImpl) CommitAndDistribute() {
 					slog.Error("verify for poly", slog.String("error", err.Error()))
 					return
 				}
-				slog.Info(fmt.Sprintf("[node %v] [session %v] generate proof correctnes: %v", vss.id, vss.instanceID, result))
+				slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] generate proof correctnes: %v", vss.id, vss.instanceID, result))
 			}*/
 			proofMsg, err := nizk.MarshalNizkIPAProofToProto(proof)
 			if err != nil {
@@ -131,5 +141,6 @@ func (vss *HAVSSImpl) CommitAndDistribute() {
 		return
 	}
 	// broadcast commit message
-	vss.rbc.StartNewBroadcast(coomitMsgBytes, vss.id, "HAVSS_COMMIT_"+strconv.FormatInt(vss.dealerID, 10))
+	sessionID := vss.instanceID + "_COMMIT_" + strconv.FormatInt(vss.dealerID, 10)
+	vss.rbc.StartNewBroadcast(coomitMsgBytes, vss.id, sessionID)
 }

@@ -3,7 +3,6 @@ package harts
 import (
 	"fmt"
 	"log/slog"
-	"math/big"
 	"strconv"
 
 	"github.com/QinYuuuu/abvss/broadcast"
@@ -21,7 +20,6 @@ type HAVSSImpl struct {
 	id, dealerID int64
 	instanceID   string
 
-	p     *big.Int
 	group kyber.Group
 
 	voteSenders []bool
@@ -41,7 +39,11 @@ type HAVSSImpl struct {
 	pedersenParam *pedersen.VectorParam
 	nizkIPAParam  *nizk.NizkIPAParam
 
-	send    func(*protobuf.HartsHavssMessage)
+	HAVSSNetwork
+}
+
+type HAVSSNetwork struct {
+	send    func(message *protobuf.HartsHavssMessage)
 	receive func() chan *protobuf.HartsHavssMessage
 }
 
@@ -51,6 +53,7 @@ func NewHAVSSImpl(
 	group kyber.Group,
 	nizkIPAParam *nizk.NizkIPAParam,
 	pedersenParam *pedersen.VectorParam,
+	havssNetwork HAVSSNetwork,
 ) *HAVSSImpl {
 	return &HAVSSImpl{
 		n:           n,
@@ -71,11 +74,14 @@ func NewHAVSSImpl(
 
 		pedersenParam: pedersenParam,
 		nizkIPAParam:  nizkIPAParam,
+
+		HAVSSNetwork: havssNetwork,
 	}
 }
 
 func (vss *HAVSSImpl) Run() {
-	vss.rbc.CreateNewSession("HAVSS_COMMIT_"+strconv.FormatInt(vss.dealerID, 10), vss.dealerID)
+	sessionID := vss.instanceID + "_COMMIT_" + strconv.FormatInt(vss.dealerID, 10)
+	vss.rbc.CreateNewSession(sessionID, vss.dealerID)
 	vss.rbc.Run()
 	go vss.messageLoop()
 }
@@ -99,7 +105,7 @@ func (vss *HAVSSImpl) messageLoop() {
 			default:
 				slog.Error(fmt.Sprintf("[node %v] [HAVSS: %v] unhandled default case", vss.id, vss.instanceID))
 			}
-		case output := <-vss.rbc.Output("HAVSS_COMMIT_" + strconv.FormatInt(vss.dealerID, 10)):
+		case output := <-vss.rbc.Output(vss.instanceID + "_COMMIT_" + strconv.FormatInt(vss.dealerID, 10)):
 			var msg protobuf.HartsCommitMessage
 			err := proto.Unmarshal(output, &msg)
 			if err != nil {
@@ -186,7 +192,7 @@ func (vss *HAVSSImpl) handleCommit(msg *protobuf.HartsCommitMessage) {
 		if err != nil {
 			slog.Error("interpolation at zero", slog.String("error", err.Error()))
 		}
-		slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] S_%d = %v", vss.id, vss.instanceID, i, si))
+		// slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] S_%d = %v", vss.id, vss.instanceID, i, si))
 		siList[i] = si
 	}
 	vss.si <- siList
