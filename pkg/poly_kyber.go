@@ -236,3 +236,17 @@ func (poly *PolyKyberImpl) EvalMod(x kyber.Scalar) kyber.Scalar {
 	}
 	return result
 }
+
+func (poly *PolyKyberImpl) ToString() string {
+	var s = ""
+	for i := len(poly.coeff) - 1; i >= 0; i-- {
+		// skip zero coefficients but the constant term
+		if i > 0 {
+			s += fmt.Sprintf("%s x^%d + ", poly.coeff[i].String(), i)
+		} else {
+			// constant term
+			s += poly.coeff[i].String()
+		}
+	}
+	return s
+}

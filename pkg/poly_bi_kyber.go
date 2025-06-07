@@ -247,13 +247,29 @@ func (poly *BivariatePolyKyberImpl) EvalAtXMod(x kyber.Scalar) *PolyKyberImpl {
 	result.resetToDegree(poly.group, poly.degreeY)
 	for i := 0; i <= poly.degreeY; i++ {
 		term := poly.group.Scalar().Zero()
+		xExpi := poly.group.Scalar().One()
 		for j := 0; j <= poly.degreeX; j++ {
-			tmp := poly.group.Scalar().SetInt64(int64(j))
-			xTerm := poly.group.Scalar().Set(poly.coeff[j][i])
-			tmp.Mul(tmp, xTerm)
+			xCoeff := poly.group.Scalar().Set(poly.coeff[j][i])
+			tmp := poly.group.Scalar().Mul(xExpi, xCoeff)
+			xExpi = poly.group.Scalar().Mul(xExpi, x)
 			term.Add(term, tmp)
 		}
 		result.SetCoefficientScalar(i, term)
 	}
 	return result
+}
+
+func (poly *BivariatePolyKyberImpl) ToString() string {
+	s := ""
+	for i := poly.degreeX; i >= 0; i-- {
+		for j := poly.degreeY; j >= 0; j-- {
+			if i > 0 || j > 0 {
+				s += fmt.Sprintf("%s x^%dy^%d + ", poly.coeff[i][j].String(), i, j)
+			}
+			if i == 0 && j == 0 {
+				s += poly.coeff[i][j].String()
+			}
+		}
+	}
+	return s
 }

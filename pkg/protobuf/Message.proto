@@ -161,7 +161,11 @@ message HartsProposeSet{
   repeated int64 index = 1;
 }
 
-
+// internal: signature message in hgarts DKG
+message HartsSignatureMessage{
+  bytes signature = 1;
+  HartsProposeSet proposeSet = 2;
+}
 
 // validated aba protocol message
 // sub protocol: reliable agreement
