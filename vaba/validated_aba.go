@@ -3,9 +3,13 @@ package vaba
 import (
 	"context"
 	"fmt"
-	"github.com/QinYuuuu/abvss/broadcast"
 	"log/slog"
 	"strconv"
+	"sync"
+
+	"github.com/QinYuuuu/abvss/broadcast"
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -24,8 +28,6 @@ type asksOutput struct {
 // VABAImpl implement validated aba
 type VABAImpl struct {
 	raInput       chan interface{}
-	indexInput    [][]int
-	validSet      map[int]bool
 	rbc0Signal    chan struct{}
 	rbc0Signals   []chan struct{}
 	proposedValue [][]byte
@@ -39,16 +41,14 @@ type VABAImpl struct {
 	keyProposal       [][]int
 	keyProposalSignal []chan struct{}
 
-	expView int
+	n, t, myID    int64
+	validSet      sync.Map
+	asksCounter   int64
+	asksSharedSet []int64
+	proposedSet   []int64
 
-	nodeNum, threshold, myID int64
-	asksCounter              int64
-	asksSharedSet            []int64
-	proposedSet              []int64
-	sc0                      int
-	sc                       int
-	send                     func(int, interface{})
-	recv                     chan interface{}
+	send func(int, interface{})
+	recv chan interface{}
 
 	subscribeRecv func(string) chan interface{}
 
@@ -58,7 +58,7 @@ type VABAImpl struct {
 
 	asksInstances []*ASKSImpl
 	icgInstance   *IndexCoverGatherImpl
-	rbc *broadcast.OptRBC
+	rbc           *broadcast.OptRBC
 	//acss          *ASKS
 	acssTask     context.CancelFunc
 	acssTaskList []context.CancelFunc
@@ -74,16 +74,13 @@ func NewVABA(nodeNum, threshold, myID int64, send func(int, interface{}), recv c
 
 	v := &VABAImpl{
 		raInput:           make(chan interface{}, nodeNum),
-		indexInput:        make([][]int, nodeNum),
-		validSet:          make(map[int]bool),
 		rbc0Signal:        make(chan struct{}),
 		rbc0Signals:       make([]chan struct{}, nodeNum),
 		proposedValue:     make([][]byte, nodeNum),
-		nodeNum:           nodeNum,
-		threshold:         threshold,
+		n:                 nodeNum,
+		t:                 threshold,
 		myID:              myID,
-		sc0:               0,
-		expView:           1,
+		asksCounter:       0,
 		keyProposal:       make([][]int, nodeNum),
 		keyProposalSignal: make([]chan struct{}, nodeNum),
 		send:              send,
@@ -93,8 +90,6 @@ func NewVABA(nodeNum, threshold, myID int64, send func(int, interface{}), recv c
 		cancel:            cancel,
 	}
 
-	v.sc = v.sc0 + v.expView
-
 	return v
 }
 
@@ -102,35 +97,124 @@ func (vaba *VABAImpl) Run() {
 	for _, asks := range vaba.asksInstances {
 		asks.Run()
 	}
+	vaba.asksInstances[vaba.myID].Share()
 	vaba.icgInstance.Run()
 	vaba.rbc.Run()
 	vaba.rbc.CreateNewSession("pre_"+strconv.FormatInt(vaba.myID, 10), vaba.myID)
+	go vaba.messageLoop()
+}
 
-	asksFinishChan := vaba.getASKSOutput()
-	for {
-		asksFinish := <-asksFinishChan
-		if asksFinish != nil {
-			vaba.asksCounter++
-			vaba.asksSharedSet = append(vaba.asksSharedSet, asksFinish.index)
-			if vaba.asksCounter == vaba.threshold+1 {
-				P_i := vaba.asksSharedSet
-
-				vaba.rbc.StartNewBroadcast([]byte(""), vaba.myID, "pre_"+strconv.FormatInt(vaba.myID, 10))
-			}
-		}
+func (vaba *VABAImpl) Valid(index int64) {
+	_, hasStore := vaba.validSet.LoadOrStore(index, true)
+	if !hasStore {
+		slog.Info(fmt.Sprintf("[node %v][vaba] Valid %v", vaba.myID, index))
 	}
 }
 
+func (vaba *VABAImpl) messageLoop() {
+	rbcOutputChan := vaba.getRBCPreOutput()
+	for {
+		select {
+		case msg := <-vaba.recv:
+			slog.Info(fmt.Sprintf("[node %v] receive", vaba.myID), slog.Any("msg", msg))
+			// case output
+		case rbcOutput := <-rbcOutputChan:
+			slog.Info(fmt.Sprintf("[node %v] output in RBC_%v: %v", vaba.myID, rbcOutput.index, rbcOutput.message))
+			vaba.handleRBCPreOutput(rbcOutput, rbcOutputChan)
+		case asksOutput := <-vaba.getASKSOutput():
+			slog.Info(fmt.Sprintf("[node %v] output in ASKS %v: %v", vaba.myID, asksOutput.index, asksOutput))
+			vaba.handleASKSOutput(asksOutput)
+		}
+	}
+
+}
+
+func (vaba *VABAImpl) handleASKSOutput(output *asksOutput) {
+	vaba.asksCounter++
+	vaba.asksSharedSet = append(vaba.asksSharedSet, output.index)
+	// |Shared_i|= t + 1 for the first time
+	if vaba.asksCounter == vaba.t+1 {
+		sharedSet := make([]int64, vaba.t+1)
+		copy(sharedSet, vaba.asksSharedSet)
+		sharedSetBytes := vaba.convertSharedSetToBytes(sharedSet)
+		sessionID := "pre_" + strconv.FormatInt(vaba.myID, 10)
+		vaba.rbc.StartNewBroadcast(sharedSetBytes, vaba.myID, sessionID)
+	}
+
+}
+
+func (vaba *VABAImpl) handleRBCPreOutput(output *rbcOutput, outputChan chan *rbcOutput) {
+	pjBytes := output.message
+	pj := vaba.convertBytesToSharedSet(pjBytes)
+	slog.Info(fmt.Sprintf("[node %v] output in RBC_%v: %v", vaba.myID, output.index, pj))
+	// check p_j ⊆ Valid_i
+	isSubset := true
+	for _, index := range pj {
+		_, hasStore := vaba.validSet.Load(index)
+		if !hasStore {
+			isSubset = false
+			outputChan <- output
+			break
+		}
+	}
+	if isSubset {
+		// valid index in index cover gather
+		vaba.icgInstance.ValidateParty(output.index)
+	}
+}
+
+type rbcOutput struct {
+	index   int64
+	message []byte
+}
+
+func (vaba *VABAImpl) convertSharedSetToBytes(asksSharedSet []int64) []byte {
+	proposeSetMsg := &protobuf.HartsProposeSet{
+		Index: asksSharedSet,
+	}
+	proposeSetBytes, err := proto.Marshal(proposeSetMsg)
+	if err != nil {
+		slog.Error("Marshal harts propose set failed", slog.String("err", err.Error()))
+	}
+	return proposeSetBytes
+}
+
+func (vaba *VABAImpl) convertBytesToSharedSet(proposeSetBytes []byte) []int64 {
+	var proposeSet protobuf.HartsProposeSet
+	err := proto.Unmarshal(proposeSetBytes, &proposeSet)
+	if err != nil {
+		slog.Error("Unmarshal harts propose set failed", slog.String("err", err.Error()))
+	}
+	return proposeSet.Index
+}
+
 func (vaba *VABAImpl) getASKSOutput() chan *asksOutput {
-	finishChan := make(chan *asksOutput, vaba.nodeNum-vaba.threshold)
-	var i int64
-	for i = 0; i < vaba.nodeNum; i++ {
+	finishChan := make(chan *asksOutput, vaba.n-vaba.t)
+	for i := int64(0); i < vaba.n; i++ {
 		go func(sessionId int64) {
 			output := <-vaba.asksInstances[sessionId].Output()
 			if output != nil {
 				slog.Info(fmt.Sprintf("[node %v] output in ASKS %v: %v", vaba.myID, sessionId, output))
 				finishChan <- &asksOutput{
 					index: sessionId,
+				}
+			}
+		}(i)
+	}
+	return finishChan
+}
+
+func (vaba *VABAImpl) getRBCPreOutput() chan *rbcOutput {
+	finishChan := make(chan *rbcOutput, vaba.n)
+	for i := int64(0); i < vaba.n; i++ {
+		go func(index int64) {
+			sessionID := "pre_" + strconv.FormatInt(index, 10)
+			output := <-vaba.rbc.Output(sessionID)
+			if output != nil {
+				slog.Info(fmt.Sprintf("[node %v] output in RBC_%v: %v", vaba.myID, sessionID, output))
+				finishChan <- &rbcOutput{
+					index:   index,
+					message: output,
 				}
 			}
 		}(i)

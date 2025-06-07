@@ -1,12 +1,13 @@
 package vaba
 
 import (
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"reflect"
 	"sort"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
 )
 
 func TestIGImpl_GetValid(t *testing.T) {
@@ -268,23 +269,7 @@ func TestIGImpl_FullProtocolFlow(t *testing.T) {
 	threshold := int64(1)
 	instanceID := "test-full"
 
-	msgChannels := make([]chan *protobuf.IGMessage, n)
-	for i := range msgChannels {
-		msgChannels[i] = make(chan *protobuf.IGMessage, 100)
-	}
-
-	nodes := make([]*IGImpl, n)
-	send := func(msg *protobuf.IGMessage) {
-		msgChannels[msg.DestID] <- msg
-	}
-	// Create nodes
-	for i := int64(0); i < n; i++ {
-		id := i // Capture loop variable
-		receive := func() chan *protobuf.IGMessage {
-			return msgChannels[id]
-		}
-		nodes[id] = NewIGImpl(id, n, threshold, instanceID, send, receive)
-	}
+	nodes := InitLocalMultiIG(n, threshold, instanceID)
 
 	// Start all nodes
 	for _, node := range nodes {

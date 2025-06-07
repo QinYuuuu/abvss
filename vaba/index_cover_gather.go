@@ -2,9 +2,10 @@ package vaba
 
 import (
 	"fmt"
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"log/slog"
 	"strconv"
+
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
 )
 
 const (
@@ -19,7 +20,6 @@ type IndexCoverGatherImpl struct {
 	sessionID string
 	// State for Index Cover Gather Protocol
 	valid            map[int64]bool // Set of parties that pi has validated so far
-	indexGatherValid map[int64]bool // Input/output of the index gather protocol
 	withdraw         bool           // Whether party has withdrawn
 	withdrawReceived map[int64]bool // Tracks received WITHDRAW messages
 	// Reliable Agreement instances
@@ -47,8 +47,8 @@ func NewIndexCoverGatherImpl(id, n, t int64, sessionId string, send func(message
 		t:                          t,
 		sessionID:                  sessionId,
 		valid:                      make(map[int64]bool),
-		indexGatherValid:           make(map[int64]bool),
 		reliableAgreementInstances: reliableAgreementInstances,
+		output:                     make(chan []int64, 1),
 		withdraw:                   false,
 		withdrawReceived:           make(map[int64]bool),
 		withdrawReady:              make(chan bool),
@@ -66,13 +66,13 @@ func (p *IndexCoverGatherImpl) ValidateParty(j int64) {
 	}
 	// Add to validated set
 	p.valid[j] = true
-	slog.Info(fmt.Sprintf("[node %v] IndexCoverGather validated party %d", p.id, j))
+	slog.Info(fmt.Sprintf("[node %v] [IndexCoverGather: %v] validated party %d", p.id, p.sessionID, j))
 
 	// If not withdrawn yet, provide input 1 to corresponding RA instance
 	if !p.withdraw {
 		p.reliableAgreementInstances[j].Input([]byte("1"))
 		// Simulate RA protocol by broadcasting the input
-		slog.Info(fmt.Sprintf("[node %v] IndexCoverGather input 1 to RA[%v]", p.id, p.reliableAgreementInstances[j].instanceID))
+		slog.Info(fmt.Sprintf("[node %v] [IndexCoverGather: %v] input 1 to RA[%v]", p.id, p.sessionID, p.reliableAgreementInstances[j].instanceID))
 	}
 }
 
@@ -95,11 +95,8 @@ func (p *IndexCoverGatherImpl) getRAOutput() chan int64 {
 func (p *IndexCoverGatherImpl) HandleWithdrawMessage(msg *protobuf.ICGMessage) {
 	senderID := msg.FromID
 	p.withdrawReceived[senderID] = true
-	slog.Info(fmt.Sprintf("[node %d] IndexCoverGather [session %s] received WITHDRAW from party %d\n", p.id, p.sessionID, senderID), slog.Any("withdraw received", len(p.withdrawReceived)))
+	slog.Info(fmt.Sprintf("[node %d] [IndexCoverGather: %v] received WITHDRAW from party %d", p.id, p.sessionID, senderID), slog.Any("withdraw received", len(p.withdrawReceived)))
 	// Check if we've received WITHDRAW from n-t parties
-	if int64(len(p.withdrawReceived)) == p.n-p.t {
-		slog.Info("")
-	}
 	if int64(len(p.withdrawReceived)) >= p.n-p.t && !p.terminated {
 		p.terminated = true
 		p.withdrawReady <- true
@@ -112,7 +109,7 @@ func (p *IndexCoverGatherImpl) Run() {
 		ra.Run()
 	}
 	p.indexGatherInstance.Run()
-	slog.Info(fmt.Sprintf("[node %d] started Index Cover Gather Protocol\n", p.id))
+	slog.Info(fmt.Sprintf("[node %d] [IndexCoverGather: %v] start", p.id, p.sessionID))
 	go func() {
 		for {
 			select {
@@ -124,6 +121,7 @@ func (p *IndexCoverGatherImpl) Run() {
 			}
 		}
 	}()
+
 	go func() {
 		raFinishChan := p.getRAOutput()
 		for {
@@ -132,7 +130,7 @@ func (p *IndexCoverGatherImpl) Run() {
 				p.indexGatherInstance.AddValid(index)
 				if int64(len(p.indexGatherInstance.GetValid())) == p.n-p.t {
 					p.withdraw = true
-					slog.Info(fmt.Sprintf("[node %v] IndexCoverGather broadcast withdraw", p.id))
+					slog.Info(fmt.Sprintf("[node %v] [IndexCoverGather: %v] broadcast withdraw", p.id, p.sessionID))
 					for i := int64(0); i < p.n; i++ {
 						msg := &protobuf.ICGMessage{
 							FromID:     p.id,
@@ -147,7 +145,14 @@ func (p *IndexCoverGatherImpl) Run() {
 						p.send(msg)
 					}
 				}
+			}
+		}
+	}()
+	go func() {
+		for {
+			select {
 			case xi := <-p.indexGatherInstance.Output():
+				slog.Info(fmt.Sprintf("[node %v] index gather output", p.id))
 				p.output <- xi
 			}
 		}

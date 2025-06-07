@@ -3,10 +3,11 @@ package vaba
 import (
 	"bytes"
 	"fmt"
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
 )
 
 // TestRAImpl_BasicFunctionality 测试 RAImpl 的基本功能
@@ -15,33 +16,7 @@ func TestRAImpl_BasicFunctionality(t *testing.T) {
 	n := int64(4) // 总节点数
 	f := int64(1) // 最大容错数
 
-	// 创建消息通道
-	msgChannels := make([]chan *protobuf.RAMessage, n)
-	for i := range msgChannels {
-		msgChannels[i] = make(chan *protobuf.RAMessage, 100)
-	}
-
-	// 创建节点
-	nodes := make([]*RAImpl, n)
-	for i := int64(0); i < n; i++ {
-		nodes[i] = NewRAImpl(i, n, f, "test-instance-1")
-
-		// 设置发送和接收函数
-		nodeID := i
-		nodes[i].send = func(msg *protobuf.RAMessage) {
-			destID := msg.DestID
-			// 将消息发送到目标节点的通道
-			select {
-			case msgChannels[destID] <- msg:
-			default:
-				t.Errorf("Channel full when sending from %d to %d", nodeID, destID)
-			}
-		}
-
-		nodes[i].receive = func() chan *protobuf.RAMessage {
-			return msgChannels[nodeID]
-		}
-	}
+	nodes := InitLocalMultiRA(n, f, "test-instance-1")
 
 	// 启动所有节点的处理循环
 	var wg sync.WaitGroup
@@ -219,42 +194,8 @@ func TestRAImpl_ConcurrentInstances(t *testing.T) {
 
 	// 为每个实例创建节点和消息通道
 	allNodes := make([][]*RAImpl, instanceCount)
-	allChannels := make([][]chan *protobuf.RAMessage, instanceCount)
-
 	for inst := 0; inst < instanceCount; inst++ {
-		// 创建消息通道
-		msgChannels := make([]chan *protobuf.RAMessage, n)
-		for i := range msgChannels {
-			msgChannels[i] = make(chan *protobuf.RAMessage, 100)
-		}
-		allChannels[inst] = msgChannels
-
-		// 创建节点
-		nodes := make([]*RAImpl, n)
-		for i := int64(0); i < n; i++ {
-			nodes[i] = NewRAImpl(i, n, f, fmt.Sprintf("test-instance-%d", inst+1))
-
-			// 设置发送和接收函数
-			nodeID := i
-			instID := inst
-			nodes[i].send = func(msg *protobuf.RAMessage) {
-				destID := msg.DestID
-				// 将消息发送到目标节点的通道
-				select {
-				case allChannels[instID][destID] <- msg:
-					// 消息成功发送
-				default:
-					t.Errorf("Channel full when sending from %d to %d in instance %d",
-						nodeID, destID, instID)
-				}
-			}
-
-			nodes[i].receive = func() chan *protobuf.RAMessage {
-				return allChannels[instID][nodeID]
-			}
-		}
-
-		allNodes[inst] = nodes
+		allNodes[inst] = InitLocalMultiRA(n, f, fmt.Sprintf("test-instance-%d", inst+1))
 	}
 
 	// 启动所有节点的处理循环

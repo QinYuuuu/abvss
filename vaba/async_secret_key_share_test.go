@@ -2,15 +2,15 @@ package vaba
 
 import (
 	"crypto/rand"
-	"github.com/QinYuuuu/abvss/broadcast"
-	"github.com/QinYuuuu/abvss/crypto/hasher"
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"math/big"
 	"sync"
 	"testing"
 	"time"
+
+	"github.com/QinYuuuu/abvss/broadcast"
+	"github.com/QinYuuuu/abvss/crypto/hasher"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestShare(t *testing.T) {
@@ -23,63 +23,10 @@ func TestShare(t *testing.T) {
 	secret, err := rand.Int(rand.Reader, prime)
 	require.NoError(t, err, "生成随机秘密失败")
 
-	// 创建通信通道
-	channels := make(map[int64]chan *protobuf.ASKSMessage)
-	rbcChannels := make(map[int64]chan *protobuf.OptRBCMessage)
-	raChannels := make(map[int64]chan *protobuf.RAMessage)
-	for i := int64(0); i < n; i++ {
-		channels[i] = make(chan *protobuf.ASKSMessage, 100)
-		rbcChannels[i] = make(chan *protobuf.OptRBCMessage, 100)
-		raChannels[i] = make(chan *protobuf.RAMessage, 100)
-	}
-
+	rbcList := broadcast.InitLocalMultiOptRBC(n, threshold)
+	raList := InitLocalMultiRA(n, threshold, "asks0ra")
 	// 创建参与方
-	parties := make([]*ASKSImpl, n)
-	for i := int64(0); i < n; i++ {
-		id := i
-		if id == 0 {
-			parties[i] = NewASKSDealer(i, n, threshold, "test", secret, prime)
-		} else {
-			parties[i] = NewASKS(i, n, threshold, 0, "test", prime)
-		}
-
-		// 设置通信函数
-		parties[i].send = func(id int64) func(message *protobuf.ASKSMessage) {
-			return func(message *protobuf.ASKSMessage) {
-				channels[message.DestID] <- message
-			}
-		}(i)
-
-		parties[i].receive = func(id int64) func() chan *protobuf.ASKSMessage {
-			return func() chan *protobuf.ASKSMessage {
-				return channels[id]
-			}
-		}(i)
-
-		// 创建输出通道
-		parties[i].output = make(chan *sharePhaseOutput, 1)
-
-		// 模拟RBC和RA组件
-		rbcSend := func(destID int64, msg *protobuf.OptRBCMessage) {
-			rbcChannels[msg.DestID] <- msg
-		}
-		rbcRecv := func() (*protobuf.OptRBCMessage, bool) {
-			select {
-			case msg := <-rbcChannels[id]:
-				return msg, true
-			default:
-				return nil, false
-			}
-		}
-		parties[i].rbc = broadcast.NewOptRBC(i, n, threshold, rbcSend, rbcRecv)
-		parties[i].ra = NewRAImpl(id, n, threshold, "asks0ra")
-		parties[i].ra.send = func(msg *protobuf.RAMessage) {
-			raChannels[msg.DestID] <- msg
-		}
-		parties[i].ra.receive = func() chan *protobuf.RAMessage {
-			return raChannels[id]
-		}
-	}
+	parties := InitLocalMultiASKS(n, threshold, 0, "asks0", secret, prime, rbcList, raList)
 
 	// 启动所有参与方
 	for i := int64(0); i < n; i++ {

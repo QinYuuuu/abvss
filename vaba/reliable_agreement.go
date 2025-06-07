@@ -2,8 +2,9 @@ package vaba
 
 import (
 	"fmt"
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"log/slog"
+
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
 )
 
 type RAImpl struct {
@@ -134,6 +135,6 @@ func (p *RAImpl) handleReady(msg *protobuf.RAMessage) {
 		p.output <- content
 		p.hasOutput = true
 		p.terminated = true
-		slog.Info(fmt.Sprintf("[node %v] [session %s] ReliableAgreementImpl outputs: %s\n", p.id, p.instanceID, content))
+		slog.Info(fmt.Sprintf("[node %v] [RA: %s] outputs: %s", p.id, p.instanceID, content))
 	}
 }
