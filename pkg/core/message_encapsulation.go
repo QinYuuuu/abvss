@@ -37,6 +37,7 @@ func Encapsulation(messageType string, ID []byte, sender uint32, payloadMessage 
 		data, err = proto.Marshal((payloadMessage).(*protobuf.Dec))
 	case "Help":
 		data, err = proto.Marshal((payloadMessage).(*protobuf.Help))
+
 	}
 
 	if err != nil {

@@ -1,17 +1,18 @@
 package core
 
 import (
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
-	"github.com/QinYuuuu/abvss/pkg/utils"
-	"google.golang.org/protobuf/proto"
 	"io"
 	"log"
 	"net"
-	"time"
+
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
+	"github.com/QinYuuuu/abvss/pkg/utils"
+
+	"google.golang.org/protobuf/proto"
 )
 
 // MakeReceiveChannel returns a channel receiving messages
-func MakeReceiveChannel(port string) (*net.TCPListener, chan *protobuf.Message) {
+func MakeReceiveChannel(port string) chan *protobuf.Message {
 	var addr *net.TCPAddr
 	var lis *net.TCPListener
 	var err1, err2 error
@@ -21,14 +22,13 @@ func MakeReceiveChannel(port string) (*net.TCPListener, chan *protobuf.Message) 
 		addr, err1 = net.ResolveTCPAddr("tcp4", ":"+port)
 		lis, err2 = net.ListenTCP("tcp4", addr)
 		if err1 != nil || err2 != nil {
-			log.Println("In mvba make listener falied and retry", err1, err2)
+			log.Fatalln(err1)
+			log.Fatalln(err2)
 			retry = true
-			time.Sleep(3 * time.Second)
 		} else {
 			retry = false
 		}
 	}
-	//log.Printf("listen on port: %v", port)
 	//Make the receive channel and the handle func
 	var conn *net.TCPConn
 	var err3 error
@@ -37,11 +37,10 @@ func MakeReceiveChannel(port string) (*net.TCPListener, chan *protobuf.Message) 
 		for {
 			//The handle func run forever
 			conn, err3 = lis.AcceptTCP()
+			conn.SetKeepAlive(true)
 			if err3 != nil {
 				log.Fatalln(err3)
 			}
-			conn.SetKeepAlive(true)
-
 			//Once connect to a node, make a sub-handle func to handle this connection
 			go func(conn *net.TCPConn, channel chan *protobuf.Message) {
 				for {
@@ -52,8 +51,8 @@ func MakeReceiveChannel(port string) (*net.TCPListener, chan *protobuf.Message) 
 					buf := make([]byte, length)
 					_, err2 := io.ReadFull(conn, buf)
 					if err1 != nil || err2 != nil {
-						//log.Println("The receive channel has break down", err1, err2)
-						break
+						log.Fatalln("The receive channel has break down", err1, err2)
+						continue
 					}
 					//Do Unmarshal
 					var m protobuf.Message
@@ -62,11 +61,11 @@ func MakeReceiveChannel(port string) (*net.TCPListener, chan *protobuf.Message) 
 						log.Fatalln(err3)
 					}
 					//Push protobuf.Message to receivechannel
-					channel <- &m
+					(channel) <- &m
 				}
 
 			}(conn, receiveChannel)
 		}
 	}()
-	return lis, receiveChannel
+	return receiveChannel
 }

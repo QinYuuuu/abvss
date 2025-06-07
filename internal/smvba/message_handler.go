@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/QinYuuuu/abvss/internal/party"
-
 	"github.com/QinYuuuu/abvss/pkg/core"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"github.com/QinYuuuu/abvss/pkg/utils"

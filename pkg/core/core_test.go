@@ -2,22 +2,20 @@ package core
 
 import (
 	"fmt"
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
-	"log"
-	"net"
+	"sync"
 	"testing"
 	"time"
+
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
 )
+
+var wg1 = sync.WaitGroup{}
+var wg2 = sync.WaitGroup{}
 
 func TestMakeReceiveChannel(t *testing.T) {
 	port := "8882"
-	lis, receiveChannel := MakeReceiveChannel(port)
-	defer func(lis *net.TCPListener) {
-		err := lis.Close()
-		if err != nil {
-			log.Printf("close failed, err:%v\n", err)
-		}
-	}(lis)
+	receiveChannel := MakeReceiveChannel(port)
+
 	m := <-(receiveChannel)
 	fmt.Println("The Message Received from channel is")
 	fmt.Println("id==", m.Type)
@@ -30,13 +28,7 @@ func TestMakeSendChannel(t *testing.T) {
 	hostIP := "127.0.0.1"
 	hostPort := "8882"
 
-	conn, sendChannel := MakeSendChannel(hostIP, hostPort)
-	defer func(conn *net.TCPConn) {
-		err := conn.Close()
-		if err != nil {
-			log.Printf("close failed, err:%v\n", err)
-		}
-	}(conn)
+	sendChannel := MakeSendChannel(hostIP, hostPort)
 	fmt.Println(sendChannel)
 
 	for i := 0; i < 100; i++ {
@@ -45,7 +37,10 @@ func TestMakeSendChannel(t *testing.T) {
 			Sender: uint32(i),
 			Data:   make([]byte, 10000000),
 		}
-		sendChannel <- m
+		(sendChannel) <- m
 		time.Sleep(time.Duration(1) * time.Second)
+	}
+	for {
+
 	}
 }

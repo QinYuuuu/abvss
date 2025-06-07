@@ -1,8 +1,9 @@
 package core
 
 import (
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"sync"
+
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
 
 	"google.golang.org/protobuf/proto"
 )

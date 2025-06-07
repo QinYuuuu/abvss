@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/QinYuuuu/abvss/internal/party"
-
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"github.com/QinYuuuu/abvss/pkg/utils"
 
@@ -16,11 +15,6 @@ import (
 	"go.dedis.ch/kyber/v4/sign/tbls"
 	"google.golang.org/protobuf/proto"
 )
-
-type Address struct {
-	Id   int    `json:"Id"`
-	Addr string `json:"Addr"`
-}
 
 func TestMainProcess(t *testing.T) {
 	ipList := []string{"127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1", "127.0.0.1",
@@ -36,7 +30,7 @@ func TestMainProcess(t *testing.T) {
 	sk, pk := party.SigKeyGen(N, 2*F+1)
 	epk, evk, esks := party.EncKeyGen(N, F+1)
 
-	var p = make([]*party.HonestParty, N)
+	var p []*party.HonestParty = make([]*party.HonestParty, N)
 	for i := uint32(0); i < N; i++ {
 		p[i] = party.NewHonestParty(N, F, i, ipList, portList, pk, sk[i], epk, evk, esks[i])
 	}
@@ -48,18 +42,15 @@ func TestMainProcess(t *testing.T) {
 	for i := uint32(0); i < N; i++ {
 		p[i].InitSendChannel()
 	}
-	defer func() {
-		for i := range p {
-			p[i].Close()
-		}
-	}()
+
 	testNum := 1
 	var wg sync.WaitGroup
 	var mu sync.Mutex
 	result := make([][][]byte, testNum)
+
 	for k := 0; k < testNum; k++ {
 		ID := utils.IntToBytes(k)
-		var sigshare [][]byte
+		sigshare := [][]byte{}
 		var buf bytes.Buffer
 		buf.Write([]byte("Echo"))
 		buf.Write(ID)

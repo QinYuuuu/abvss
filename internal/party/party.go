@@ -2,12 +2,11 @@ package party
 
 import (
 	"errors"
-	"log"
-	"net"
 	"sync"
 
 	"github.com/QinYuuuu/abvss/pkg/core"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
+
 	"go.dedis.ch/kyber/v4"
 	"go.dedis.ch/kyber/v4/share"
 )
@@ -28,9 +27,6 @@ type HonestParty struct {
 	portList          []string
 	sendChannels      []chan *protobuf.Message
 	dispatcheChannels *sync.Map
-	lis               *net.TCPListener
-	conns             []*net.TCPConn
-	Bandwidth         uint64
 
 	SigPK *share.PubPoly  //tss pk
 	SigSK *share.PriShare //tss sk
@@ -41,7 +37,7 @@ type HonestParty struct {
 }
 
 // NewHonestParty return a new honest party object
-func NewHonestParty(N uint32, F uint32, pid uint32, ipList, portList []string, sigPK *share.PubPoly, sigSK *share.PriShare, encPK kyber.Point, encVK []*share.PubShare, encSK *share.PriShare) *HonestParty {
+func NewHonestParty(N uint32, F uint32, pid uint32, ipList []string, portList []string, sigPK *share.PubPoly, sigSK *share.PriShare, encPK kyber.Point, encVK []*share.PubShare, encSK *share.PriShare) *HonestParty {
 	p := HonestParty{
 		N:            N,
 		F:            F,
@@ -49,8 +45,6 @@ func NewHonestParty(N uint32, F uint32, pid uint32, ipList, portList []string, s
 		ipList:       ipList,
 		portList:     portList,
 		sendChannels: make([]chan *protobuf.Message, N),
-		conns:        make([]*net.TCPConn, N),
-		Bandwidth:    0,
 
 		SigPK: sigPK,
 		SigSK: sigSK,
@@ -63,31 +57,16 @@ func NewHonestParty(N uint32, F uint32, pid uint32, ipList, portList []string, s
 	return &p
 }
 
-func (p *HonestParty) Close() {
-	for _, conn := range p.conns {
-		err := conn.Close()
-		if err != nil {
-			log.Println("close honest party conn error:", err)
-		}
-	}
-	err := p.lis.Close()
-	if err != nil {
-		log.Println("close honest party lis error:", err)
-	}
-}
-
 // InitReceiveChannel setup the listener and Init the receiveChannel
 func (p *HonestParty) InitReceiveChannel() error {
-	lis, receivechan := core.MakeReceiveChannel(p.portList[p.PID])
-	p.lis = lis
-	p.dispatcheChannels = core.MakeDispatcheChannels(receivechan, p.N)
+	p.dispatcheChannels = core.MakeDispatcheChannels(core.MakeReceiveChannel(p.portList[p.PID]), p.N)
 	return nil
 }
 
 // InitSendChannel setup the sender and Init the sendChannel, please run this after initializing all party's receiveChannel
 func (p *HonestParty) InitSendChannel() error {
 	for i := uint32(0); i < p.N; i++ {
-		p.conns[i], p.sendChannels[i] = core.MakeSendChannel(p.ipList[i], p.portList[i])
+		p.sendChannels[i] = core.MakeSendChannel(p.ipList[i], p.portList[i])
 	}
 	return nil
 }
@@ -95,11 +74,10 @@ func (p *HonestParty) InitSendChannel() error {
 // Send a message to party des
 func (p *HonestParty) Send(m *protobuf.Message, des uint32) error {
 	if !p.checkInit() {
-		return errors.New("this party hasn't been initialized")
+		return errors.New("This party hasn't been initialized")
 	}
 	if des < p.N {
 		p.sendChannels[des] <- m
-		p.Bandwidth += uint64(len(m.GetData()))
 		return nil
 	}
 	return errors.New("Destination id is too large")
@@ -108,7 +86,7 @@ func (p *HonestParty) Send(m *protobuf.Message, des uint32) error {
 // Broadcast a message to all parties
 func (p *HonestParty) Broadcast(m *protobuf.Message) error {
 	if !p.checkInit() {
-		return errors.New("this party hasn't been initialized")
+		return errors.New("This party hasn't been initialized")
 	}
 	for i := uint32(0); i < p.N; i++ {
 		err := p.Send(m, i)
