@@ -91,8 +91,8 @@ func Test_HAVSS_Multi_Session(t *testing.T) {
 	var wg sync.WaitGroup
 	wg.Add(int(n) * sessionNum)
 	for j := 0; j < sessionNum; j++ {
-		xlist[j] = make([]int64, 4)
-		clist[j] = make([]kyber.Scalar, 4)
+		xlist[j] = make([]int64, n)
+		clist[j] = make([]kyber.Scalar, n)
 		for i := int64(0); i < n; i++ {
 			xlist[j][i] = i + 1
 			go func(i int64) {
@@ -117,4 +117,43 @@ func Test_HAVSS_Multi_Session(t *testing.T) {
 		slog.Info(fmt.Sprintf("secret: %v", secret.String()))
 	}
 
+}
+
+func Test_HAVSS_Rec(t *testing.T) {
+	dealerID := int64(0)
+	n := int64(4)
+	tc := int64(1)
+	tr := int64(1)
+	group := edwards25519.NewBlakeSHA256Ed25519()
+	nizkIPAParam := nizk.SetupNizkIPA(group, tc+1, group.RandomStream())
+	pedersenParam := pedersen.NewVectorParamWithG(group, nizkIPAParam.GetCRS().GetG())
+	rbcList := broadcast.InitLocalMultiOptRBC(n, tc)
+	havssList := InitLocalMultiHAVSS(n, tc, tr, dealerID, "HAVSS", group, nizkIPAParam, pedersenParam, rbcList)
+	// start 4 havss
+	for i := int64(0); i < n; i++ {
+		havssList[i].Run()
+	}
+	havssList[0].CommitAndDistribute()
+	xlist := make([]int64, n)
+	clist := make([]kyber.Scalar, n)
+	var wg sync.WaitGroup
+	wg.Add(int(n))
+	for i := int64(0); i < n; i++ {
+		xlist[i] = i + 1
+		go func(i int64) {
+			_ = havssList[i].Output()
+			clist[i] = havssList[i].Rec()
+			wg.Done()
+		}(i)
+	}
+	wg.Wait()
+	originPoly, err := pkg.InterpolationKyber(xlist, clist, group)
+	if err != nil {
+		t.Errorf("interpolation failed: %v", err)
+	}
+	secret, err := originPoly.GetCoefficient(0)
+	if err != nil {
+		t.Errorf("get coefficient failed: %v", err)
+	}
+	slog.Info(fmt.Sprintf("secret: %v", secret.String()))
 }

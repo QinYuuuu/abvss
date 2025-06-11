@@ -20,9 +20,12 @@ func MakeReceiveChannel(port string) chan *protobuf.Message {
 	//Retry to make listener
 	for retry {
 		addr, err1 = net.ResolveTCPAddr("tcp4", ":"+port)
-		lis, err2 = net.ListenTCP("tcp4", addr)
-		if err1 != nil || err2 != nil {
+		if err1 != nil {
 			log.Fatalln(err1)
+			retry = true
+		}
+		lis, err2 = net.ListenTCP("tcp4", addr)
+		if err2 != nil {
 			log.Fatalln(err2)
 			retry = true
 		} else {

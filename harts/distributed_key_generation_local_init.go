@@ -5,31 +5,27 @@ import (
 	"log/slog"
 	"strconv"
 	"sync"
-	"testing"
-
-	"github.com/QinYuuuu/abvss/crypto/signature/rsa"
-	"github.com/QinYuuuu/abvss/internal/smvba"
-	"github.com/QinYuuuu/abvss/pkg"
-	"gotest.tools/v3/assert"
 
 	"github.com/QinYuuuu/abvss/broadcast"
 	"github.com/QinYuuuu/abvss/crypto/commit/pedersen"
+	"github.com/QinYuuuu/abvss/crypto/signature/rsa"
 	"github.com/QinYuuuu/abvss/crypto/zk/nizk"
+	"github.com/QinYuuuu/abvss/internal/smvba"
+	"github.com/QinYuuuu/abvss/pkg"
 	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"go.dedis.ch/kyber/v4/group/edwards25519"
 	"go.dedis.ch/kyber/v4/share"
 )
 
-func Test_DKG_Run(t *testing.T) {
-	n := int64(4)
-	tc := int64(1)
-	tr := int64(1)
+func InitLocalDKG(n, t int64) {
+	tc, tr := t, t
 	group := edwards25519.NewBlakeSHA256Ed25519()
 	nizkIPAParam := nizk.SetupNizkIPA(group, tc+1, group.RandomStream())
 	pedersenParam := pedersen.NewVectorParamWithG(group, nizkIPAParam.GetCRS().GetG())
 	siMatrix, err := pkg.GenerateVandermondeKyber(int(n-2*tc), int(n-tc), group)
-	assert.NilError(t, err)
-
+	if err != nil {
+		slog.Error("si matrix generate error", slog.Any("error", err))
+	}
 	// init 4 dkgMsgChans
 	dkgMsgChans := make([]chan *protobuf.HartsMessage, n)
 	sendDKGMsg := func(msg *protobuf.HartsMessage) {
@@ -90,5 +86,4 @@ func Test_DKG_Run(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
-
 }

@@ -38,7 +38,7 @@ type HAVSSImpl struct {
 	rbc           *broadcast.OptRBC
 	pedersenParam *pedersen.VectorParam
 	nizkIPAParam  *nizk.NizkIPAParam
-
+	output        *HavssOutput
 	HAVSSNetwork
 }
 
@@ -287,25 +287,25 @@ func (vss *HAVSSImpl) handleDone(sender int64) {
 }
 
 func (vss *HAVSSImpl) Output() *HavssOutput {
-	output := &HavssOutput{}
+	vss.output = &HavssOutput{}
 
 	ci, ok := <-vss.polyCi
 	if !ok {
 		slog.Error("polyCi channel closed")
 		return nil
 	}
-	output._Ci = ci
+	vss.output._Ci = ci
 
 	s, ok := <-vss.si
 	if !ok {
 		slog.Error("si channel closed")
 		return nil
 	}
-	output._S = s
+	vss.output._S = s
 
-	return output
+	return vss.output
 }
 
-func (vss *HAVSSImpl) Reconstruct() {
-	return
+func (vss *HAVSSImpl) Rec() kyber.Scalar {
+	return vss.output._Ci.EvalMod(vss.group.Scalar().Zero())
 }

@@ -11,6 +11,8 @@ const (
 	Column string = "harts.Column"
 	Vote   string = "harts.Vote"
 	Done   string = "harts.Done"
+	RecReq string = "harts.RecReq"
+	RecRes string = "harts.RecRes"
 )
 
 type HavssOutput struct {

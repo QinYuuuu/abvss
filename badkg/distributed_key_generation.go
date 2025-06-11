@@ -189,7 +189,7 @@ func (dkg *DKGImpl) phase2() []*rbcOutput {
 	Qss := dkg.setQss
 	Qele := make([][]kyber.Point, len(Qss))
 	for i, index := range Qss {
-		dkg.sk[i], _ = utils.MatrixMulVector(dkg.hyperMatrix, dkg.fShares[index])
+		dkg.sk[i], _ = pkg.MatrixMulVector(dkg.hyperMatrix, dkg.fShares[index])
 		Qele[i] = make([]kyber.Point, dkg.batchSize+1)
 		var j int64
 		for j = 0; j < dkg.batchSize; j++ {
@@ -266,7 +266,7 @@ func (dkg *DKGImpl) handle() {
 		for j = 0; j < dkg.batchSize; j++ {
 			rj[j] = utils.RandomNum(dkg.p)
 		}
-		product, err := utils.DotProduct(rj, dkg.fShares[index])
+		product, err := pkg.DotProduct(rj, dkg.fShares[index])
 		if err != nil {
 			slog.Error("calculate r_j * f_j(i)", slog.Any("Error", err))
 		}

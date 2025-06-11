@@ -91,14 +91,6 @@ message DisperseData{
   bytes senderStripe =2;
 }
 
-message BroadcastMessage {
-  string type = 1;// instance id
-  int64 instanceID = 2;
-  int64 fromID = 3;
-  bytes data = 4;
-}
-
-
 // harts
 // harts protocol message
 message HartsMessage {
@@ -154,6 +146,11 @@ message HartsRowVectorMessage {
 message HartsColumnMessage {
   bytes c_ij = 1;
   NizkIPAProof p_ij = 2;
+}
+
+message HartsHavssOutput {
+  bytes ci0 = 1;
+  repeated bytes s = 2;
 }
 
 // internal: signature in harts
