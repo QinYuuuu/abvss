@@ -72,32 +72,33 @@ func InitLocalDKG(n, t, batchSize int64) *Usage {
 		signKeys[i] = signKey
 	}
 	// init 4 DKG implementation
-	startTime := time.Now()
 	dkg := make([]*Party, n)
+	for i := int64(0); i < n; i++ {
+		dkgMsgChans[i] = make(chan *protobuf.HartsMessage, n*100)
+		dkgNetwork := DKGNetwork{
+			send:    sendDKGMsg,
+			receive: func() chan *protobuf.HartsMessage { return dkgMsgChans[i] },
+		}
+		dkg[i] = NewParty(i, n, tc, tr, group, nizkIPAParam, pedersenParam, dkgNetwork)
+		havssImpls := make([]*HAVSSImpl, n)
+		for j := int64(0); j < n; j++ {
+			havssImpls[j] = havssList[j][i]
+		}
+		dkg[i].avssInstances = havssImpls
+		dkg[i].verKeys = verKeys
+		dkg[i].signKey = signKeys[i]
+		dkg[i].mvbaParty = mvbaParty[i]
+		// dkg[i].mvbaSig = signature
+		dkg[i].mvbaSigPK = mvbaParty[0].SigPK
+		dkg[i].mvbaSigSK = mvbaSigSK
+		dkg[i].superMatrix = siMatrix
+	}
 	var wg sync.WaitGroup
 	wg.Add(int(n))
-	for i := int64(0); i < n; i++ {
+	startTime := time.Now()
+	for i := range n {
 		go func(i int64) {
 			defer wg.Done()
-			dkgMsgChans[i] = make(chan *protobuf.HartsMessage, n*100)
-			dkgNetwork := DKGNetwork{
-				send:    sendDKGMsg,
-				receive: func() chan *protobuf.HartsMessage { return dkgMsgChans[i] },
-			}
-			dkg[i] = NewParty(i, n, tc, tr, group, nizkIPAParam, pedersenParam, dkgNetwork)
-			havssImpls := make([]*HAVSSImpl, n)
-			for j := int64(0); j < n; j++ {
-				havssImpls[j] = havssList[j][i]
-			}
-			dkg[i].avssInstances = havssImpls
-			dkg[i].verKeys = verKeys
-			dkg[i].signKey = signKeys[i]
-			dkg[i].mvbaParty = mvbaParty[i]
-			// dkg[i].mvbaSig = signature
-			dkg[i].mvbaSigPK = mvbaParty[0].SigPK
-			dkg[i].mvbaSigSK = mvbaSigSK
-			dkg[i].superMatrix = siMatrix
-			slog.Debug("DKG Run", slog.Any("node", i))
 			dkg[i].Run()
 		}(i)
 	}
