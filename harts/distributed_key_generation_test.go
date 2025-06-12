@@ -1,6 +1,7 @@
 package harts
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -21,9 +22,9 @@ import (
 )
 
 func Test_DKG_Run(t *testing.T) {
-	n := int64(4)
-	tc := int64(1)
-	tr := int64(1)
+	n := int64(31)
+	tc := int64(10)
+	tr := int64(10)
 	group := edwards25519.NewBlakeSHA256Ed25519()
 	nizkIPAParam := nizk.SetupNizkIPA(group, tc+1, group.RandomStream())
 	pedersenParam := pedersen.NewVectorParamWithG(group, nizkIPAParam.GetCRS().GetG())
@@ -35,10 +36,21 @@ func Test_DKG_Run(t *testing.T) {
 	sendDKGMsg := func(msg *protobuf.HartsMessage) {
 		dkgMsgChans[msg.DestID] <- msg
 	}
+	ctx, cancel := context.WithCancel(context.Background())
 	// init n rbc
 	havssList := make([][]*HAVSSImpl, n)
 	rbcList := broadcast.InitLocalMultiOptRBC(n, tc)
-	mvbaParty := smvba.InitLocalMultiMVBA(uint32(n), uint32(tc))
+	mvbaParty := smvba.InitLocalMultiMVBA(ctx, uint32(n), uint32(tc))
+	defer func() {
+		cancel()
+		for _, party := range mvbaParty {
+			party.CloseSend()
+		}
+		for _, party := range mvbaParty {
+			party.CloseRecv()
+		}
+	}()
+
 	mvbaSigSK := make([]*share.PriShare, n)
 	for i := int64(0); i < n; i++ {
 		dealerID := i
@@ -90,5 +102,4 @@ func Test_DKG_Run(t *testing.T) {
 		}(i)
 	}
 	wg.Wait()
-
 }

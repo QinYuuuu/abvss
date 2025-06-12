@@ -2,6 +2,7 @@ package smvba
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"strconv"
 	"sync"
@@ -14,7 +15,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func InitLocalMultiMVBA(n, t uint32) []*party.HonestParty {
+func InitLocalMultiMVBA(ctx context.Context, n, t uint32) []*party.HonestParty {
 	ipList, portList := initLocalIPList(n)
 	sk, pk := party.SigKeyGen(n, 2*t+1)
 	epk, evk, esks := party.EncKeyGen(n, t+1)
@@ -24,7 +25,7 @@ func InitLocalMultiMVBA(n, t uint32) []*party.HonestParty {
 	}
 
 	for i := uint32(0); i < n; i++ {
-		p[i].InitReceiveChannel()
+		p[i].InitReceiveChannel(ctx)
 	}
 
 	for i := uint32(0); i < n; i++ {

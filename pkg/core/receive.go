@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"io"
 	"log"
 	"net"
@@ -12,7 +13,7 @@ import (
 )
 
 // MakeReceiveChannel returns a channel receiving messages
-func MakeReceiveChannel(port string) chan *protobuf.Message {
+func MakeReceiveChannel(ctx context.Context, port string, n int) (*net.TCPListener, []*net.TCPConn, chan *protobuf.Message) {
 	var addr *net.TCPAddr
 	var lis *net.TCPListener
 	var err1, err2 error
@@ -33,42 +34,48 @@ func MakeReceiveChannel(port string) chan *protobuf.Message {
 		}
 	}
 	//Make the receive channel and the handle func
-	var conn *net.TCPConn
-	var err3 error
+	conns := make([]*net.TCPConn, n)
 	receiveChannel := make(chan *protobuf.Message, MAXMESSAGE)
-	go func() {
-		for {
-			//The handle func run forever
-			conn, err3 = lis.AcceptTCP()
-			conn.SetKeepAlive(true)
+	for i := range n {
+		//The handle func run forever
+		go func(i int) {
+			conn, err3 := lis.AcceptTCP()
 			if err3 != nil {
-				log.Fatalln(err3)
+				// log.Fatalln(err3)
+				return
 			}
+			conns[i] = conn
+			conn.SetKeepAlive(true)
+
 			//Once connect to a node, make a sub-handle func to handle this connection
 			go func(conn *net.TCPConn, channel chan *protobuf.Message) {
 				for {
 					//Receive bytes
 					lengthBuf := make([]byte, 4)
 					_, err1 := io.ReadFull(conn, lengthBuf)
+					if err1 != nil {
+						// log.Println("The receive channel has break down", err1)
+						break
+					}
 					length := utils.BytesToInt(lengthBuf)
 					buf := make([]byte, length)
 					_, err2 := io.ReadFull(conn, buf)
-					if err1 != nil || err2 != nil {
-						log.Fatalln("The receive channel has break down", err1, err2)
-						continue
+					if err2 != nil {
+						// log.Println("The receive channel has break down", err2)
+						break
 					}
 					//Do Unmarshal
 					var m protobuf.Message
 					err3 := proto.Unmarshal(buf, &m)
 					if err3 != nil {
-						log.Fatalln(err3)
+						// log.Println("Unmarshal from receive channel", err3)
 					}
 					//Push protobuf.Message to receivechannel
 					(channel) <- &m
 				}
 
 			}(conn, receiveChannel)
-		}
-	}()
-	return receiveChannel
+		}(i)
+	}
+	return lis, conns, receiveChannel
 }

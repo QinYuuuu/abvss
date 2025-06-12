@@ -1,6 +1,7 @@
 package harts
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"math/big"
@@ -52,6 +53,8 @@ type Party struct {
 }
 
 type DKGNetwork struct {
+	bandwidthCounter int
+
 	send     func(message *protobuf.HartsMessage)
 	receive  func() chan *protobuf.HartsMessage
 	havssMap map[string]HAVSSNetwork
@@ -89,8 +92,9 @@ type singleSignature struct {
 
 // Run runs the Packed Asynchronous DKG algorithm for a party
 func (p *Party) Run() {
+	ctx, _ := context.WithCancel(context.Background())
 	for _, avss := range p.avssInstances {
-		avss.Run()
+		avss.Run(ctx)
 	}
 	p.avssInstances[p.id].CommitAndDistribute()
 	go p.messageLoop()
@@ -103,6 +107,9 @@ func (p *Party) messageLoop() {
 	for {
 		select {
 		case msg := <-p.receive():
+			if msg.Value != nil {
+				p.bandwidthCounter += len(msg.Value)
+			}
 			switch msg.Type {
 			case "proposal":
 				// handle proposal
@@ -112,7 +119,7 @@ func (p *Party) messageLoop() {
 				p.handleSignature(msg)
 			}
 		case <-p.mvbaOutput:
-			slog.Info(fmt.Sprintf("[node %v] [DKG] start reconstruct for havss %v", p.id, p.mvbaInput))
+			slog.Debug(fmt.Sprintf("[node %v] [DKG] start reconstruct for havss %v", p.id, p.mvbaInput))
 			shares := make([]kyber.Scalar, 0)
 			for _, index := range p.proposeSet {
 				shares = append(shares, p.avssInstances[index].Rec())
@@ -130,7 +137,7 @@ func (p *Party) handleProposal(msg *protobuf.HartsMessage) {
 	if err != nil {
 		slog.Error("Unmarshal harts propose set failed", slog.String("err", err.Error()))
 	}
-	slog.Info(fmt.Sprintf("[node %v] [DKG] receive proposal from %v, propose set: %v", p.id, msg.FromID, proposeSet.Index))
+	slog.Debug(fmt.Sprintf("[node %v] [DKG] receive proposal from %v, propose set: %v", p.id, msg.FromID, proposeSet.Index))
 	sig, err := rsa.Sign(proposeSetBytes, p.signKey)
 	if err != nil {
 		slog.Error("Sign harts propose set failed", slog.String("err", err.Error()))
@@ -141,7 +148,7 @@ func (p *Party) handleProposal(msg *protobuf.HartsMessage) {
 		if err != nil {
 			slog.Error("Verify harts signature failed", slog.String("err", err.Error()))
 		} else {
-			slog.Info(fmt.Sprintf("[node %v] [DKG] generate signature success, use verkey %s", p.id, verKey))
+			slog.Debug(fmt.Sprintf("[node %v] [DKG] generate signature success, use verkey %s", p.id, verKey))
 		}
 	}*/
 	sigMsg := &protobuf.HartsSignatureMessage{
@@ -158,7 +165,7 @@ func (p *Party) handleProposal(msg *protobuf.HartsMessage) {
 		DestID: msg.FromID,
 		Value:  sigBytes,
 	}
-	slog.Info(fmt.Sprintf("[node %v] [DKG] send signature to %v", p.id, msg.FromID))
+	slog.Debug(fmt.Sprintf("[node %v] [DKG] send signature to %v", p.id, msg.FromID))
 	p.send(dkgMsg)
 }
 
@@ -175,7 +182,7 @@ func (p *Party) handleHAVSSOutput() {
 			copy(proposeSet, p.dealerSet)
 			p.proposeSet = proposeSet
 			value := p.convertProposeSetToBytes(proposeSet)
-			slog.Info(fmt.Sprintf("[node %v] [DKG] broadcast proposal", p.id))
+			slog.Debug(fmt.Sprintf("[node %v] [DKG] broadcast proposal", p.id))
 			for i := int64(0); i < p.n; i++ {
 				proposalMsg := &protobuf.HartsMessage{
 					Type:   "proposal",
@@ -189,12 +196,10 @@ func (p *Party) handleHAVSSOutput() {
 					p.send(proposalMsg)
 				}
 			}
-		}
-		if avssFinishCounter == p.n {
 			break
 		}
 	}
-	slog.Info(fmt.Sprintf("[node %v] [DKG] finish handle havss output", p.id))
+	slog.Debug(fmt.Sprintf("[node %v] [DKG] finish handle havss output", p.id))
 }
 
 func (p *Party) handleSignature(msg *protobuf.HartsMessage) {
@@ -206,7 +211,7 @@ func (p *Party) handleSignature(msg *protobuf.HartsMessage) {
 	var sigMsg protobuf.HartsSignatureMessage
 	err := proto.Unmarshal(sigMsgBytes, &sigMsg)
 	proposeSet := sigMsg.ProposeSet
-	slog.Info(fmt.Sprintf("[node %v] [DKG] receive signature from %v, propose set: %v", p.id, msg.FromID, proposeSet.Index))
+	slog.Debug(fmt.Sprintf("[node %v] [DKG] receive signature from %v, propose set: %v", p.id, msg.FromID, proposeSet.Index))
 	proposeSetBytes, err := proto.Marshal(proposeSet)
 	if err != nil {
 		slog.Error("Marshal harts propose set failed", slog.String("err", err.Error()))
@@ -227,7 +232,7 @@ func (p *Party) handleSignature(msg *protobuf.HartsMessage) {
 		}
 		slices.Sort(input)
 		p.mvbaInput = input
-		slog.Info(fmt.Sprintf("[node %v] [DKG] receive %v signature, start mvba", p.id, len(p.sigSet)))
+		slog.Debug(fmt.Sprintf("[node %v] [DKG] receive %v signature, start mvba", p.id, len(p.sigSet)))
 		p.mvbaReady <- true
 	}
 }
@@ -237,7 +242,7 @@ func (p *Party) getAVSSOutput() chan int64 {
 	for i := int64(0); i < p.n; i++ {
 		go func(sessionID int64) {
 			_ = p.avssInstances[sessionID].Output()
-			slog.Info(fmt.Sprintf("[node %v] [DKG] receive avss output from %v", p.id, sessionID))
+			slog.Debug(fmt.Sprintf("[node %v] [DKG] receive avss output from %v", p.id, sessionID))
 			finishChan <- sessionID
 		}(i)
 	}
@@ -262,7 +267,7 @@ func (p *Party) convertProposeSetToBytes(proposeSet []int64) []byte {
 			}
 		}
 	}
-	slog.Info(fmt.Sprintf("[node %v] [DKG] propose set: %v", p.id, proposeSet))
+	slog.Debug(fmt.Sprintf("[node %v] [DKG] propose set: %v", p.id, proposeSet))
 	proposeSetMsg := &protobuf.HartsProposeSet{
 		Index: proposeSet,
 	}
@@ -271,4 +276,13 @@ func (p *Party) convertProposeSetToBytes(proposeSet []int64) []byte {
 		slog.Error("Marshal harts propose set failed", slog.String("err", err.Error()))
 	}
 	return proposeSetBytes
+}
+
+func (p *Party) GetBandwidth() int {
+	bandwidth := 0
+	for _, avss := range p.avssInstances {
+		bandwidth += avss.bandwidthCounter
+	}
+	bandwidth += p.bandwidthCounter
+	return bandwidth
 }

@@ -31,8 +31,9 @@ func InitLocalMultiHAVSS(
 			return havssMsgChans[i]
 		}
 		havssNetwork := HAVSSNetwork{
-			send:    sendHAVSSMsg,
-			receive: recvFunc,
+			bandwidthCounter: 0,
+			send:             sendHAVSSMsg,
+			receive:          recvFunc,
 		}
 		if i == dealerID {
 			havss[i] = NewHAVSSDealerImpl(i, n, tc, tr, instanceID, group, nizkIPAParam, pedersenParam, havssNetwork)

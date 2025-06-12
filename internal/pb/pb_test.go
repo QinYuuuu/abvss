@@ -34,9 +34,9 @@ func TestPb(t *testing.T) {
 	for i := uint32(0); i < N; i++ {
 		p[i] = party.NewHonestParty(N, F, i, ipList, portList, pk, sk[i], epk, evk, esks[i])
 	}
-
+	ctx1, _ := context.WithCancel(context.Background())
 	for i := uint32(0); i < N; i++ {
-		p[i].InitReceiveChannel()
+		p[i].InitReceiveChannel(ctx1)
 	}
 
 	for i := uint32(0); i < N; i++ {

@@ -1,10 +1,12 @@
 package harts
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/QinYuuuu/abvss/broadcast"
 	"github.com/QinYuuuu/abvss/crypto/commit/pedersen"
@@ -17,12 +19,17 @@ import (
 	"go.dedis.ch/kyber/v4/share"
 )
 
-func InitLocalDKG(n, t int64) {
+type Usage struct {
+	Time      int64
+	Bandwidth int64
+}
+
+func InitLocalDKG(n, t, batchSize int64) *Usage {
 	tc, tr := t, t
 	group := edwards25519.NewBlakeSHA256Ed25519()
 	nizkIPAParam := nizk.SetupNizkIPA(group, tc+1, group.RandomStream())
 	pedersenParam := pedersen.NewVectorParamWithG(group, nizkIPAParam.GetCRS().GetG())
-	siMatrix, err := pkg.GenerateVandermondeKyber(int(n-2*tc), int(n-tc), group)
+	siMatrix, err := pkg.GenerateVandermondeKyber(int(batchSize), int(n-tc), group)
 	if err != nil {
 		slog.Error("si matrix generate error", slog.Any("error", err))
 	}
@@ -34,7 +41,18 @@ func InitLocalDKG(n, t int64) {
 	// init n rbc
 	havssList := make([][]*HAVSSImpl, n)
 	rbcList := broadcast.InitLocalMultiOptRBC(n, tc)
-	mvbaParty := smvba.InitLocalMultiMVBA(uint32(n), uint32(tc))
+	ctx, cancel := context.WithCancel(context.Background())
+	mvbaParty := smvba.InitLocalMultiMVBA(ctx, uint32(n), uint32(tc))
+
+	defer func() {
+		cancel()
+		for _, party := range mvbaParty {
+			party.CloseSend()
+		}
+		for _, party := range mvbaParty {
+			party.CloseRecv()
+		}
+	}()
 	mvbaSigSK := make([]*share.PriShare, n)
 	for i := int64(0); i < n; i++ {
 		dealerID := i
@@ -54,36 +72,64 @@ func InitLocalDKG(n, t int64) {
 		signKeys[i] = signKey
 	}
 	// init 4 DKG implementation
+	startTime := time.Now()
 	dkg := make([]*Party, n)
-	for i := int64(0); i < n; i++ {
-		dkgMsgChans[i] = make(chan *protobuf.HartsMessage, 10)
-		dkgNetwork := DKGNetwork{
-			send:    sendDKGMsg,
-			receive: func() chan *protobuf.HartsMessage { return dkgMsgChans[i] },
-		}
-		dkg[i] = NewParty(i, n, tc, tr, group, nizkIPAParam, pedersenParam, dkgNetwork)
-		havssImpls := make([]*HAVSSImpl, n)
-		for j := int64(0); j < n; j++ {
-			havssImpls[j] = havssList[j][i]
-		}
-		dkg[i].avssInstances = havssImpls
-		dkg[i].verKeys = verKeys
-		dkg[i].signKey = signKeys[i]
-		dkg[i].mvbaParty = mvbaParty[i]
-		// dkg[i].mvbaSig = signature
-		dkg[i].mvbaSigPK = mvbaParty[0].SigPK
-		dkg[i].mvbaSigSK = mvbaSigSK
-		dkg[i].superMatrix = siMatrix
-		dkg[i].Run()
-	}
 	var wg sync.WaitGroup
-	wg.Add(4)
+	wg.Add(int(n))
 	for i := int64(0); i < n; i++ {
 		go func(i int64) {
 			defer wg.Done()
-			_ = <-dkg[i].output
-			slog.Info(fmt.Sprintf("[node %v] [DKG] finish", i))
+			dkgMsgChans[i] = make(chan *protobuf.HartsMessage, 10)
+			dkgNetwork := DKGNetwork{
+				send:    sendDKGMsg,
+				receive: func() chan *protobuf.HartsMessage { return dkgMsgChans[i] },
+			}
+			dkg[i] = NewParty(i, n, tc, tr, group, nizkIPAParam, pedersenParam, dkgNetwork)
+			havssImpls := make([]*HAVSSImpl, n)
+			for j := int64(0); j < n; j++ {
+				havssImpls[j] = havssList[j][i]
+			}
+			dkg[i].avssInstances = havssImpls
+			dkg[i].verKeys = verKeys
+			dkg[i].signKey = signKeys[i]
+			dkg[i].mvbaParty = mvbaParty[i]
+			// dkg[i].mvbaSig = signature
+			dkg[i].mvbaSigPK = mvbaParty[0].SigPK
+			dkg[i].mvbaSigSK = mvbaSigSK
+			dkg[i].superMatrix = siMatrix
+			slog.Debug("DKG Run")
+			dkg[i].Run()
 		}(i)
 	}
 	wg.Wait()
+	finishChan := make(chan bool, n)
+	finishCounter := int64(0)
+	for i := int64(0); i < n; i++ {
+		go func(i int64) {
+			_ = <-dkg[i].output
+			finishChan <- true
+			slog.Debug(fmt.Sprintf("[node %v] [DKG] finish", i))
+		}(i)
+	}
+	for {
+		<-finishChan
+		finishCounter++
+		if finishCounter == n {
+			break
+		}
+	}
+	finishTime := time.Now()
+	timeUsage := finishTime.Sub(startTime)
+
+	bandwidthUsage := 0
+
+	for i := range n {
+		bandwidthUsage += dkg[i].GetBandwidth()
+	}
+	bandwidthUsage = bandwidthUsage / int(n)
+
+	return &Usage{
+		Time:      timeUsage.Milliseconds(),
+		Bandwidth: int64(bandwidthUsage),
+	}
 }

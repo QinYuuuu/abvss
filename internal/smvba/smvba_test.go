@@ -2,6 +2,7 @@ package smvba
 
 import (
 	"bytes"
+	"context"
 	"sync"
 	"testing"
 
@@ -14,10 +15,10 @@ import (
 )
 
 func TestMainProcess(t *testing.T) {
-
+	ctx, _ := context.WithCancel(context.Background())
 	N := uint32(4)
 	F := uint32(1)
-	p := InitLocalMultiMVBA(N, F)
+	p := InitLocalMultiMVBA(ctx, N, F)
 	testNum := 1
 	var wg sync.WaitGroup
 	var mu sync.Mutex

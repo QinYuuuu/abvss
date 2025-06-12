@@ -16,7 +16,7 @@ import (
 func (p *Party) mvbaRun() {
 	tc := p.tc
 	_ = <-p.mvbaReady
-	slog.Info(fmt.Sprintf("[node %v] [DKG] start mvba", p.id))
+	slog.Debug(fmt.Sprintf("[node %v] [DKG] start mvba", p.id))
 	//input := p.mvbaInput
 
 	ID := utils.IntToBytes(0)

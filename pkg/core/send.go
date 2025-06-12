@@ -14,7 +14,7 @@ import (
 var MAXMESSAGE = 1024
 
 // MakeSendChannel returns a channel to send messages to hostIP
-func MakeSendChannel(hostIP string, hostPort string) chan *protobuf.Message {
+func MakeSendChannel(hostIP string, hostPort string) (*net.TCPConn, chan *protobuf.Message) {
 	var addr *net.TCPAddr
 	var conn *net.TCPConn
 	var err1, err2 error
@@ -22,9 +22,12 @@ func MakeSendChannel(hostIP string, hostPort string) chan *protobuf.Message {
 	retry := true
 	for retry {
 		addr, err1 = net.ResolveTCPAddr("tcp4", hostIP+":"+hostPort)
-		conn, err2 = net.DialTCP("tcp4", nil, addr)
-		if err1 != nil || err2 != nil {
+		if err1 != nil {
 			log.Fatalln(err1)
+			retry = true
+		}
+		conn, err2 = net.DialTCP("tcp4", nil, addr)
+		if err2 != nil {
 			log.Fatalln(err2)
 			retry = true
 			continue
@@ -48,12 +51,17 @@ func MakeSendChannel(hostIP string, hostPort string) chan *protobuf.Message {
 			//Send bytes
 			length := len(byt)
 			_, err2 := conn.Write(utils.IntToBytes(length))
+			if err2 != nil {
+				// log.Println("The send channel has break down", err2)
+				break
+			}
 			_, err3 := conn.Write(byt)
-			if err2 != nil || err3 != nil {
-				log.Fatalln("The send channel has break down!", err2)
+			if err3 != nil {
+				// log.Println("The send channel has break down", err3)
+				break
 			}
 		}
 	}(conn, sendChannel)
 
-	return sendChannel
+	return conn, sendChannel
 }

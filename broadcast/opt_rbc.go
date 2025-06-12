@@ -42,6 +42,8 @@ type OptRBC struct {
 	// network interface
 	send    func(int64, *protobuf.OptRBCMessage)
 	receive func() (*protobuf.OptRBCMessage, bool)
+	// calculate bandwidth
+	bandwidthCounter int
 }
 
 func NewOptRBC(pid, n, f int64, send func(int64, *protobuf.OptRBCMessage), receive func() (*protobuf.OptRBCMessage, bool)) *OptRBC {
@@ -159,7 +161,7 @@ func (s *Session) Output() chan []byte {
 func (s *Session) initiateBroadcast(msg []byte) {
 	slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] start broadcast on %v", s.pid, s.sessionID, msg))
 	if s.leader != s.pid {
-		slog.Info("only leader send propose")
+		slog.Debug("only leader send propose")
 		return
 	}
 	s.leaderMsg = msg
@@ -172,7 +174,7 @@ func (s *Session) initiateBroadcast(msg []byte) {
 			MsgType:   Propose,
 			Payload:   msg,
 		}
-		//slog.Info(fmt.Sprintf("[node %v] [RBC: %v] send message %v", s.pid, s.sessionID, msg))
+		//slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] send message %v", s.pid, s.sessionID, msg))
 		s.send(i, proposeMsg)
 	}
 }
@@ -189,6 +191,9 @@ func (n *OptRBC) Run() {
 func (n *OptRBC) messageLoop() {
 	for {
 		if msg, ok := n.receive(); ok {
+			if msg.Payload != nil {
+				n.bandwidthCounter += len(msg.Payload)
+			}
 			slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] receive %v message from %v", n.pid, msg.SessionID, msg.MsgType, msg.FromID))
 			s := n.sessions[msg.SessionID]
 			if s == nil {
@@ -209,11 +214,11 @@ func (n *OptRBC) messageLoop() {
 				s.handleADDTrigger(msg.FromID, msg.Payload)
 			case ADDDisperse:
 				// handle addDisperse
-				slog.Info(fmt.Sprintf("[node %v] [RBC: %v] addDisperse: %v", n.pid, n.sessions, msg.Payload))
+				slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] addDisperse: %v", n.pid, n.sessions, msg.Payload))
 				s.handleADDDisperse(msg.FromID, msg.Payload)
 			case ADDReconstruct:
 				// handle addReconstruct
-				slog.Info(fmt.Sprintf("[node %v] [RBC: %v] addRecomstruct: %v", n.pid, n.sessions, msg.Payload))
+				slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] addRecomstruct: %v", n.pid, n.sessions, msg.Payload))
 				s.handleADDReconstruct(msg.FromID, msg.Payload)
 			default:
 				slog.Error("unhandled", slog.Any("type", msg.MsgType))
@@ -225,14 +230,14 @@ func (n *OptRBC) messageLoop() {
 
 func (s *Session) handlePropose(sender int64, msg []byte) {
 	if sender != s.leader {
-		slog.Info(fmt.Sprintf("[node %v] [RBC: %v] receive message from node %v not leader", s.pid, s.sessionID, sender))
+		slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] receive message from node %v not leader", s.pid, s.sessionID, sender))
 		return
 	}
 	if s.committed {
-		slog.Info(fmt.Sprintf("[node %v] [RBC: %v] have received propose message from node %v", s.pid, s.sessionID, sender))
+		slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] have received propose message from node %v", s.pid, s.sessionID, sender))
 		return
 	}
-	slog.Info(fmt.Sprintf("[node %v] [RBC: %v] handle Propose message from %v", s.pid, s.sessionID, sender))
+	slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] handle Propose message from %v", s.pid, s.sessionID, sender))
 	digest := hasher.MD5Hasher(msg)
 	s.leaderMsg = msg
 	s.leaderHash = digest
@@ -250,11 +255,11 @@ func (s *Session) handlePropose(sender int64, msg []byte) {
 
 func (s *Session) handleEcho(sender int64, payload []byte) {
 	if s.echoSenders[sender] {
-		slog.Info("leader is", slog.Any("id", s.leader))
-		slog.Info(fmt.Sprintf("[node %v] [RBC: %v] has received ECHO message from node %v", s.pid, s.sessionID, sender))
+		slog.Debug("leader is", slog.Any("id", s.leader))
+		slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] has received ECHO message from node %v", s.pid, s.sessionID, sender))
 		return
 	}
-	slog.Info(fmt.Sprintf("[node %v] [RBC: %v] handle Echo message from %v", s.pid, s.sessionID, sender))
+	slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] handle Echo message from %v", s.pid, s.sessionID, sender))
 	digest := payload
 
 	s.echoSenders[sender] = true
@@ -282,10 +287,10 @@ func (s *Session) handleEcho(sender int64, payload []byte) {
 func (s *Session) handleReady(sender int64, payload []byte) {
 	// check the sender
 	if s.readySenders[sender] {
-		slog.Info(fmt.Sprintf("[node %v] [RBC: %v] has received Ready message from node %v", s.pid, s.sessionID, sender))
+		slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] has received Ready message from node %v", s.pid, s.sessionID, sender))
 		return
 	}
-	slog.Info(fmt.Sprintf("[node %v] [RBC: %v] handle Ready message from %v", s.pid, s.sessionID, sender))
+	slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] handle Ready message from %v", s.pid, s.sessionID, sender))
 	digest := payload
 	s.readySenders[sender] = true
 
@@ -301,7 +306,7 @@ func (s *Session) handleReady(sender int64, payload []byte) {
 			if !s.outputted {
 				s.output <- s.leaderMsg
 				s.outputted = true
-				//slog.Info(fmt.Sprintf("[node %v] [RBC: %v] output message %v", s.pid, s.sessionID, s.leaderMsg))
+				//slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] output message %v", s.pid, s.sessionID, s.leaderMsg))
 			}
 		} else {
 			for i := range s.n {
@@ -323,10 +328,10 @@ func (s *Session) handleReady(sender int64, payload []byte) {
 
 func (s *Session) handleADDTrigger(sender int64, payload []byte) {
 	if s.addTriggerSenders[sender] {
-		slog.Info(fmt.Sprintf("[node %v] [RBC: %v] has received ADDTrigger message from node %v", s.pid, s.sessionID, sender))
+		slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] has received ADDTrigger message from node %v", s.pid, s.sessionID, sender))
 		return
 	}
-	slog.Info(fmt.Sprintf("[node %v] [RBC: %v] handle ADDTrigger message from %v", s.pid, s.sessionID, sender))
+	slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] handle ADDTrigger message from %v", s.pid, s.sessionID, sender))
 	s.addTriggerSenders[sender] = true
 	if s.committed {
 		if s.stripes == nil {
@@ -354,10 +359,10 @@ func (s *Session) handleADDTrigger(sender int64, payload []byte) {
 
 func (s *Session) handleADDDisperse(sender int64, payload []byte) {
 	if s.addTriggerSenders[sender] {
-		slog.Info(fmt.Sprintf("[node %v] [RBC: %v] has received ADDDisperse message from node %v", s.pid, s.sessionID, sender))
+		slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] has received ADDDisperse message from node %v", s.pid, s.sessionID, sender))
 		return
 	}
-	slog.Info(fmt.Sprintf("[node %v] [RBC: %v] handle ADDDisperse message from %v", s.pid, s.sessionID, sender))
+	slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] handle ADDDisperse message from %v", s.pid, s.sessionID, sender))
 	s.addDisperseSenders[sender] = true
 
 	var disperseData protobuf.DisperseData
@@ -389,7 +394,11 @@ func (s *Session) handleADDDisperse(sender int64, payload []byte) {
 
 func (s *Session) handleADDReconstruct(sender int64, payload []byte) {
 	if s.addReconstructSenders[sender] {
-		slog.Info(fmt.Sprintf("[node %v] [RBC: %v] has received ADDReconstruct message from node %v", s.pid, s.sessionID, sender))
+		slog.Debug(fmt.Sprintf("[node %v] [RBC: %v] has received ADDReconstruct message from node %v", s.pid, s.sessionID, sender))
 		return
 	}
+}
+
+func (n *OptRBC) GetBandwidth() int {
+	return n.bandwidthCounter
 }

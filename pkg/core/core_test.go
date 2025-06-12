@@ -1,6 +1,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"testing"
@@ -14,7 +15,8 @@ var wg2 = sync.WaitGroup{}
 
 func TestMakeReceiveChannel(t *testing.T) {
 	port := "8882"
-	receiveChannel := MakeReceiveChannel(port)
+	ctx := context.Background()
+	_, _, receiveChannel := MakeReceiveChannel(ctx, port, 1)
 
 	m := <-(receiveChannel)
 	fmt.Println("The Message Received from channel is")
@@ -28,7 +30,7 @@ func TestMakeSendChannel(t *testing.T) {
 	hostIP := "127.0.0.1"
 	hostPort := "8882"
 
-	sendChannel := MakeSendChannel(hostIP, hostPort)
+	_, sendChannel := MakeSendChannel(hostIP, hostPort)
 	fmt.Println(sendChannel)
 
 	for i := 0; i < 100; i++ {
@@ -39,8 +41,5 @@ func TestMakeSendChannel(t *testing.T) {
 		}
 		(sendChannel) <- m
 		time.Sleep(time.Duration(1) * time.Second)
-	}
-	for {
-
 	}
 }

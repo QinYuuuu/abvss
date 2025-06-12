@@ -1,6 +1,7 @@
 package harts
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -43,6 +44,8 @@ type HAVSSImpl struct {
 }
 
 type HAVSSNetwork struct {
+	bandwidthCounter int
+
 	send    func(message *protobuf.HartsHavssMessage)
 	receive func() chan *protobuf.HartsHavssMessage
 }
@@ -79,17 +82,20 @@ func NewHAVSSImpl(
 	}
 }
 
-func (vss *HAVSSImpl) Run() {
+func (vss *HAVSSImpl) Run(ctx context.Context) {
 	sessionID := vss.instanceID + "_COMMIT_" + strconv.FormatInt(vss.dealerID, 10)
 	vss.rbc.CreateNewSession(sessionID, vss.dealerID)
 	vss.rbc.Run()
-	go vss.messageLoop()
+	go vss.messageLoop(ctx)
 }
 
-func (vss *HAVSSImpl) messageLoop() {
+func (vss *HAVSSImpl) messageLoop(ctx context.Context) {
 	for {
 		select {
 		case msg := <-vss.receive():
+			if msg.Value != nil {
+				vss.bandwidthCounter += len(msg.Value)
+			}
 			switch msg.Type {
 			case Row:
 				// handle Row
@@ -112,12 +118,14 @@ func (vss *HAVSSImpl) messageLoop() {
 				slog.Error("proto harts msg unmarshal", slog.String("error", err.Error()))
 			}
 			vss.handleCommit(&msg)
+		case <-ctx.Done():
+			break
 		}
 	}
 }
 
 func (vss *HAVSSImpl) handleRow(msg *protobuf.HartsHavssMessage) {
-	slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] handle row", vss.id, vss.instanceID))
+	slog.Debug(fmt.Sprintf("[node %v] [HAVSS: %v] handle row", vss.id, vss.instanceID))
 	var rowMsg protobuf.HartsRowVectorMessage
 	err := proto.Unmarshal(msg.Value, &rowMsg)
 	if err != nil {
@@ -171,7 +179,7 @@ func (vss *HAVSSImpl) handleRow(msg *protobuf.HartsHavssMessage) {
 }
 
 func (vss *HAVSSImpl) handleCommit(msg *protobuf.HartsCommitMessage) {
-	slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] handle commit", vss.id, vss.instanceID))
+	slog.Debug(fmt.Sprintf("[node %v] [HAVSS: %v] handle commit", vss.id, vss.instanceID))
 
 	SiBytes := msg.GetSi()
 	Si := make([]kyber.Point, len(SiBytes))
@@ -192,14 +200,14 @@ func (vss *HAVSSImpl) handleCommit(msg *protobuf.HartsCommitMessage) {
 		if err != nil {
 			slog.Error("interpolation at zero", slog.String("error", err.Error()))
 		}
-		// slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] S_%d = %v", vss.id, vss.instanceID, i, si))
+		// slog.Debug(fmt.Sprintf("[node %v] [HAVSS: %v] S_%d = %v", vss.id, vss.instanceID, i, si))
 		siList[i] = si
 	}
 	vss.si <- siList
 }
 
 func (vss *HAVSSImpl) handleColumn(msg *protobuf.HartsHavssMessage) {
-	slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] handle column from %v", vss.id, vss.instanceID, msg.FromID))
+	slog.Debug(fmt.Sprintf("[node %v] [HAVSS: %v] handle column from %v", vss.id, vss.instanceID, msg.FromID))
 	var column protobuf.HartsColumnMessage
 	err := proto.Unmarshal(msg.Value, &column)
 	if err != nil {
@@ -213,7 +221,7 @@ func (vss *HAVSSImpl) handleColumn(msg *protobuf.HartsHavssMessage) {
 		slog.Error("verify nizkIPA proof", slog.String("error", err.Error()))
 	}
 	if verifyResult {
-		// slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] verify nizkIPA proof success", vss.id, vss.instanceID))
+		// slog.Debug(fmt.Sprintf("[node %v] [HAVSS: %v] verify nizkIPA proof success", vss.id, vss.instanceID))
 		c_ij := vss.group.Scalar()
 		err := c_ij.UnmarshalBinary(column.GetCIj())
 		if err != nil {
@@ -229,12 +237,12 @@ func (vss *HAVSSImpl) handleColumn(msg *protobuf.HartsHavssMessage) {
 				return
 			}
 			vss.polyCi <- c_i
-			slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] calculate c_i = %v", vss.id, vss.instanceID, c_i))
+			slog.Debug(fmt.Sprintf("[node %v] [HAVSS: %v] calculate c_i = %v", vss.id, vss.instanceID, c_i))
 		}
 	} else {
 		slog.Error(fmt.Sprintf("[node %v] [HAVSS: %v] verify nizkIPA proof failed", vss.id, vss.instanceID))
 	}
-	// slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] handle column from %v success", vss.id, vss.instanceID, msg.FromID))
+	// slog.Debug(fmt.Sprintf("[node %v] [HAVSS: %v] handle column from %v success", vss.id, vss.instanceID, msg.FromID))
 }
 
 func (vss *HAVSSImpl) handleVote(msg *protobuf.HartsHavssMessage) {
@@ -242,7 +250,7 @@ func (vss *HAVSSImpl) handleVote(msg *protobuf.HartsHavssMessage) {
 	if vss.voteSenders[sender] {
 		slog.Error("have receive vote", slog.Any("fromID", sender))
 	}
-	slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] handle vote from %v", vss.id, vss.instanceID, sender))
+	slog.Debug(fmt.Sprintf("[node %v] [HAVSS: %v] handle vote from %v", vss.id, vss.instanceID, sender))
 	vss.voteCounter++
 	if vss.voteCounter >= vss.n-vss.tc && !vss.sentDone {
 		// send done
@@ -264,7 +272,7 @@ func (vss *HAVSSImpl) handleDone(sender int64) {
 	if vss.doneSenders[sender] {
 		slog.Error("have receive vote", slog.Any("fromID", sender))
 	}
-	slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] handle done from %v", vss.id, vss.instanceID, sender))
+	slog.Debug(fmt.Sprintf("[node %v] [HAVSS: %v] handle done from %v", vss.id, vss.instanceID, sender))
 	vss.doneCounter++
 	if vss.doneCounter >= vss.tc+1 && !vss.sentDone {
 		// send done
@@ -282,7 +290,7 @@ func (vss *HAVSSImpl) handleDone(sender int64) {
 	}
 	if vss.doneCounter >= vss.n-vss.tc {
 		// terminate
-		slog.Info(fmt.Sprintf("[node %v] [HAVSS: %v] terminate", vss.id, vss.instanceID))
+		slog.Debug(fmt.Sprintf("[node %v] [HAVSS: %v] terminate", vss.id, vss.instanceID))
 	}
 }
 
@@ -308,4 +316,10 @@ func (vss *HAVSSImpl) Output() *HavssOutput {
 
 func (vss *HAVSSImpl) Rec() kyber.Scalar {
 	return vss.output._Ci.EvalMod(vss.group.Scalar().Zero())
+}
+
+func (vss *HAVSSImpl) GetBandwidth() int {
+	bandwidth := vss.rbc.GetBandwidth()
+	bandwidth += vss.bandwidthCounter
+	return bandwidth
 }

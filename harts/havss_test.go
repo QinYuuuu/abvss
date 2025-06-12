@@ -1,6 +1,7 @@
 package harts
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"strconv"
@@ -17,9 +18,9 @@ import (
 
 func Test_HAVSS_Share(t *testing.T) {
 	dealerID := int64(0)
-	n := int64(4)
-	tc := int64(1)
-	tr := int64(1)
+	n := int64(7)
+	tc := int64(2)
+	tr := int64(2)
 	// p, _ := new(big.Int).SetString("7237005577332262213973186563042994240857116359379907606001950938285454250989", 10)
 	group := edwards25519.NewBlakeSHA256Ed25519()
 	nizkIPAParam := nizk.SetupNizkIPA(group, tc+1, group.RandomStream())
@@ -27,14 +28,14 @@ func Test_HAVSS_Share(t *testing.T) {
 
 	rbcList := broadcast.InitLocalMultiOptRBC(n, tc)
 	havssList := InitLocalMultiHAVSS(n, tc, tr, dealerID, "HAVSS", group, nizkIPAParam, pedersenParam, rbcList)
-
+	ctx, _ := context.WithCancel(context.Background())
 	// start 4 havss
 	for i := int64(0); i < n; i++ {
-		havssList[i].Run()
+		havssList[i].Run(ctx)
 	}
 	havssList[0].CommitAndDistribute()
-	xlist := make([]int64, 4)
-	clist := make([]kyber.Scalar, 4)
+	xlist := make([]int64, n)
+	clist := make([]kyber.Scalar, n)
 	var wg sync.WaitGroup
 	wg.Add(int(n))
 	for i := int64(0); i < n; i++ {
@@ -61,11 +62,14 @@ func Test_HAVSS_Share(t *testing.T) {
 }
 
 func Test_HAVSS_Multi_Session(t *testing.T) {
-	sessionNum := 2
-	dealerList := []int64{0, 1}
-	n := int64(4)
-	tc := int64(1)
-	tr := int64(1)
+	sessionNum := 7
+	dealerList := make([]int64, sessionNum)
+	for i := range sessionNum {
+		dealerList[i] = int64(i)
+	}
+	n := int64(7)
+	tc := int64(10)
+	tr := int64(10)
 	group := edwards25519.NewBlakeSHA256Ed25519()
 	nizkIPAParam := nizk.SetupNizkIPA(group, tc+1, group.RandomStream())
 	pedersenParam := pedersen.NewVectorParamWithG(group, nizkIPAParam.GetCRS().GetG())
@@ -78,11 +82,11 @@ func Test_HAVSS_Multi_Session(t *testing.T) {
 		instanceID := "HAVSS_" + strconv.Itoa(j)
 		havss[j] = InitLocalMultiHAVSS(n, tc, tr, dealerID, instanceID, group, nizkIPAParam, pedersenParam, rbcList)
 	}
-
+	ctx, _ := context.WithCancel(context.Background())
 	// start 4 havss
 	for j := 0; j < sessionNum; j++ {
 		for i := int64(0); i < n; i++ {
-			havss[j][i].Run()
+			havss[j][i].Run(ctx)
 		}
 		havss[j][dealerList[j]].CommitAndDistribute()
 	}
@@ -129,9 +133,10 @@ func Test_HAVSS_Rec(t *testing.T) {
 	pedersenParam := pedersen.NewVectorParamWithG(group, nizkIPAParam.GetCRS().GetG())
 	rbcList := broadcast.InitLocalMultiOptRBC(n, tc)
 	havssList := InitLocalMultiHAVSS(n, tc, tr, dealerID, "HAVSS", group, nizkIPAParam, pedersenParam, rbcList)
+	ctx, _ := context.WithCancel(context.Background())
 	// start 4 havss
 	for i := int64(0); i < n; i++ {
-		havssList[i].Run()
+		havssList[i].Run(ctx)
 	}
 	havssList[0].CommitAndDistribute()
 	xlist := make([]int64, n)
