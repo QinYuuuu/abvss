@@ -9,7 +9,7 @@ func InitLocalMultiOptRBC(n int64, t int64) []*OptRBC {
 	}
 	rbcList := make([]*OptRBC, n)
 	for i := int64(0); i < n; i++ {
-		rbcMsgChans[i] = make(chan *protobuf.OptRBCMessage, 100)
+		rbcMsgChans[i] = make(chan *protobuf.OptRBCMessage, n*100)
 		receive := func() (*protobuf.OptRBCMessage, bool) {
 			msg, ok := <-rbcMsgChans[i]
 			return msg, ok

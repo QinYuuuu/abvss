@@ -2,9 +2,9 @@
   "test_case": [
     {
       "test_num": 1,
-      "node_num": 7,
-      "threshold": 2,
-      "batch_size": 3
+      "node_num": 31,
+      "threshold": 10,
+      "batch_size": 11
     }
   ],
   "output_path": "./test_result"

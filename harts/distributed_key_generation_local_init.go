@@ -79,7 +79,7 @@ func InitLocalDKG(n, t, batchSize int64) *Usage {
 	for i := int64(0); i < n; i++ {
 		go func(i int64) {
 			defer wg.Done()
-			dkgMsgChans[i] = make(chan *protobuf.HartsMessage, 10)
+			dkgMsgChans[i] = make(chan *protobuf.HartsMessage, n*100)
 			dkgNetwork := DKGNetwork{
 				send:    sendDKGMsg,
 				receive: func() chan *protobuf.HartsMessage { return dkgMsgChans[i] },
@@ -97,7 +97,7 @@ func InitLocalDKG(n, t, batchSize int64) *Usage {
 			dkg[i].mvbaSigPK = mvbaParty[0].SigPK
 			dkg[i].mvbaSigSK = mvbaSigSK
 			dkg[i].superMatrix = siMatrix
-			slog.Debug("DKG Run")
+			slog.Debug("DKG Run", slog.Any("node", i))
 			dkg[i].Run()
 		}(i)
 	}

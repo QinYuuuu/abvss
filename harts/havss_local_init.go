@@ -26,7 +26,7 @@ func InitLocalMultiHAVSS(
 	havss := make([]*HAVSSImpl, n)
 
 	for i := int64(0); i < n; i++ {
-		havssMsgChans[i] = make(chan *protobuf.HartsHavssMessage, 10)
+		havssMsgChans[i] = make(chan *protobuf.HartsHavssMessage, n*100)
 		recvFunc := func() chan *protobuf.HartsHavssMessage {
 			return havssMsgChans[i]
 		}
