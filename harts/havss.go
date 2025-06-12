@@ -57,7 +57,10 @@ func NewHAVSSImpl(
 	nizkIPAParam *nizk.NizkIPAParam,
 	pedersenParam *pedersen.VectorParam,
 	havssNetwork HAVSSNetwork,
+	rbc *broadcast.OptRBC,
 ) *HAVSSImpl {
+	sessionID := instanceID + "_COMMIT_" + strconv.FormatInt(dealerID, 10)
+	rbc.CreateNewSession(sessionID, dealerID)
 	return &HAVSSImpl{
 		n:           n,
 		tc:          tc,
@@ -77,14 +80,12 @@ func NewHAVSSImpl(
 
 		pedersenParam: pedersenParam,
 		nizkIPAParam:  nizkIPAParam,
-
-		HAVSSNetwork: havssNetwork,
+		rbc:           rbc,
+		HAVSSNetwork:  havssNetwork,
 	}
 }
 
 func (vss *HAVSSImpl) Run(ctx context.Context) {
-	sessionID := vss.instanceID + "_COMMIT_" + strconv.FormatInt(vss.dealerID, 10)
-	vss.rbc.CreateNewSession(sessionID, vss.dealerID)
 	vss.rbc.Run()
 	go vss.messageLoop(ctx)
 }

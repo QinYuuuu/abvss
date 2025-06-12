@@ -36,11 +36,10 @@ func InitLocalMultiHAVSS(
 			receive:          recvFunc,
 		}
 		if i == dealerID {
-			havss[i] = NewHAVSSDealerImpl(i, n, tc, tr, instanceID, group, nizkIPAParam, pedersenParam, havssNetwork)
+			havss[i] = NewHAVSSDealerImpl(i, n, tc, tr, instanceID, group, nizkIPAParam, pedersenParam, havssNetwork, rbcList[i])
 		} else {
-			havss[i] = NewHAVSSImpl(i, n, tc, tr, dealerID, instanceID, group, nizkIPAParam, pedersenParam, havssNetwork)
+			havss[i] = NewHAVSSImpl(i, n, tc, tr, dealerID, instanceID, group, nizkIPAParam, pedersenParam, havssNetwork, rbcList[i])
 		}
-		havss[i].rbc = rbcList[i]
 	}
 	return havss
 }

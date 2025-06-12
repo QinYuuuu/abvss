@@ -68,8 +68,8 @@ func Test_HAVSS_Multi_Session(t *testing.T) {
 		dealerList[i] = int64(i)
 	}
 	n := int64(7)
-	tc := int64(10)
-	tr := int64(10)
+	tc := int64(2)
+	tr := int64(2)
 	group := edwards25519.NewBlakeSHA256Ed25519()
 	nizkIPAParam := nizk.SetupNizkIPA(group, tc+1, group.RandomStream())
 	pedersenParam := pedersen.NewVectorParamWithG(group, nizkIPAParam.GetCRS().GetG())

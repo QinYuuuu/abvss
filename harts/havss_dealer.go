@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"strconv"
 
+	"github.com/QinYuuuu/abvss/broadcast"
 	"github.com/QinYuuuu/abvss/crypto/commit/pedersen"
 	"github.com/QinYuuuu/abvss/crypto/zk/nizk"
 	"github.com/QinYuuuu/abvss/pkg"
@@ -24,8 +25,9 @@ func NewHAVSSDealerImpl(
 	nizkIPAParam *nizk.NizkIPAParam,
 	pedersenParam *pedersen.VectorParam,
 	havssNetwork HAVSSNetwork,
+	rbc *broadcast.OptRBC,
 ) *HAVSSImpl {
-	impl := NewHAVSSImpl(id, n, tc, tr, id, instanceID, group, nizkIPAParam, pedersenParam, havssNetwork)
+	impl := NewHAVSSImpl(id, n, tc, tr, id, instanceID, group, nizkIPAParam, pedersenParam, havssNetwork, rbc)
 	biPoly, err := pkg.NewRandBiPolyKyber(int(tr), int(tc), group)
 	if err != nil {
 		slog.Error("new rand bi poly", slog.String("error", err.Error()))
