@@ -2,11 +2,11 @@ package osv
 
 import (
 	"fmt"
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"log/slog"
-	"strconv"
 	"sync"
 	"testing"
+
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
 )
 
 func TestOSV_Init(t *testing.T) {
@@ -100,25 +100,10 @@ func TestOSV_Recv(t *testing.T) {
 func TestOSV_Run(t *testing.T) {
 	var n int64 = 4
 	var tnum int64 = 1
-	msgChans := make([]chan *protobuf.OSVMessage, n)
-	osvInstances := make([]*Instance, n)
+	var i int64 = 0
+	osvInstances := InitLocalMulti(n, tnum, "0")
 	var wait sync.WaitGroup
 	wait.Add(int(n))
-	var i int64
-	for i = 0; i < n; i++ {
-		msgChans[i] = make(chan *protobuf.OSVMessage, 10)
-	}
-	for i = 0; i < n; i++ {
-		ID := i
-		send := func(msg *protobuf.OSVMessage) {
-			slog.Info("send", slog.Any("msg", msg))
-			msgChans[msg.DestID] <- msg
-		}
-		receive := func() chan *protobuf.OSVMessage {
-			return msgChans[ID]
-		}
-		osvInstances[i] = NewInstance(n, tnum, ID, "0", send, receive)
-	}
 	for i = 0; i < n; i++ {
 		go osvInstances[i].Run()
 	}
@@ -137,41 +122,21 @@ func TestOSV_Run_2Instance(t *testing.T) {
 	var n int64 = 4
 	var tNum int64 = 1
 	var instanceNum int64 = 2
-	msgChans := make([]map[string]chan *protobuf.OSVMessage, n)
-	osvInstances := make([][]*Instance, n)
+	var i, j int64
+	osvInstances := make([][]*Instance, instanceNum)
+	for i = 0; i < instanceNum; i++ {
+		osvInstances[i] = InitLocalMulti(n, tNum, fmt.Sprintf("%v", i))
+	}
 	var wait sync.WaitGroup
 	wait.Add(int(n * instanceNum))
-	var i, j int64
-	for i = 0; i < n; i++ {
-		msgChans[i] = make(map[string]chan *protobuf.OSVMessage)
-		for j = 0; j < instanceNum; j++ {
-			msgChans[i][strconv.FormatInt(j, 10)] = make(chan *protobuf.OSVMessage, 10)
-		}
-		osvInstances[i] = make([]*Instance, instanceNum)
-	}
-	for i = 0; i < n; i++ {
-		ID := i
-		for j = 0; j < instanceNum; j++ {
-			instanceID := j
-			send := func(msg *protobuf.OSVMessage) {
-				slog.Info("send", slog.Any("msg", msg))
-				msgChans[msg.DestID][msg.InstanceID] <- msg
-			}
-			receive := func() chan *protobuf.OSVMessage {
-				return msgChans[ID][strconv.FormatInt(instanceID, 10)]
-			}
-			osvInstances[i][j] = NewInstance(n, tNum, i, strconv.FormatInt(instanceID, 10), send, receive)
-		}
-
-	}
-	for i = 0; i < n; i++ {
-		for j = 0; j < instanceNum; j++ {
+	for i = 0; i < instanceNum; i++ {
+		for j = 0; j < n; j++ {
 			go osvInstances[i][j].Run()
 		}
 
 	}
-	for i = 0; i < n; i++ {
-		for j = 0; j < instanceNum; j++ {
+	for i = 0; i < instanceNum; i++ {
+		for j = 0; j < n; j++ {
 			go func(i, j int64) {
 				output := <-osvInstances[i][j].Output()
 				if output {

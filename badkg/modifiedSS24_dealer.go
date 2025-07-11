@@ -71,13 +71,13 @@ func (vss *ACSSImpl) Share() {
 		slog.Error("dealer is nil")
 		return
 	}
-	slog.Info(fmt.Sprintf("[node %v] [session %v] dealer", vss.id, vss.sessionID))
+	slog.Debug(fmt.Sprintf("[node %v] [acss %v] dealer", vss.id, vss.sessionID))
 	var i int64
 	aesEncShares := make([]*protobuf.AESEncShare, vss.nodeNum)
 	encShares := make([]*protobuf.ElgamalEncShare, vss.nodeNum)
 	for i = 0; i < vss.nodeNum; i++ {
 		sS24Share := vss.generateShare(i + 1)
-		slog.Debug(fmt.Sprintf("[node %v] generate", vss.id), slog.Any("share", sS24Share.FShare))
+		slog.Debug(fmt.Sprintf("[node %v] [acss %v] generate", vss.id, vss.sessionID), slog.Any("share", sS24Share.FShare))
 		shareByte, err := proto.Marshal(sS24Share)
 		if err != nil {
 			slog.Error("proto marshal", slog.Any("error", err))
@@ -93,6 +93,9 @@ func (vss *ACSSImpl) Share() {
 			slog.Error("encrypt cipher", slog.Any("error", err), slog.Any("len of aes key", len(key)))
 		}
 		c2Bytes, err := c2.MarshalBinary()
+		if err != nil {
+			slog.Error("encrypt cipher", slog.Any("error", err), slog.Any("len of aes key", len(key)))
+		}
 		aesEncShares[i] = &protobuf.AESEncShare{
 			Index:  sS24Share.Index,
 			Cipher: encShare,
@@ -115,7 +118,7 @@ func (vss *ACSSImpl) Share() {
 		slog.Error("proto marshal", slog.Any("error", err))
 		return
 	}
-	slog.Info(fmt.Sprintf("[node %v] [session %v] dealer broadcast encMultiShareBytes ", vss.id, vss.sessionID))
+	slog.Debug(fmt.Sprintf("[node %v] [acss %v] dealer broadcast encMultiShareBytes ", vss.id, vss.sessionID))
 	vss.rbc.StartNewBroadcast(encMultiShareBytes, vss.id, strconv.FormatInt(vss.id, 10)+"0")
 	challengePolys := make([]*protobuf.Poly, vss.r)
 	for i = 0; i < vss.r; i++ {
@@ -151,7 +154,7 @@ func (vss *ACSSImpl) generateShare(index int64) *protobuf.SS24Share {
 	fByte := make([][]byte, vss.batchSize)
 	for i, poly := range vss.dealer.fPoly {
 		f := poly.EvalMod(new(big.Int).SetInt64(index), vss.p)
-		// slog.Info(fmt.Sprintf("fShare for %v at %v : %v", index-1, i, f.Int64()))
+		// slog.Debug(fmt.Sprintf("fShare for %v at %v : %v", index-1, i, f.Int64()))
 		fByte[i] = f.Bytes()
 	}
 	//g := make([]*big.Int, vss.r)

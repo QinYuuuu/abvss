@@ -3,16 +3,17 @@ package osv
 import (
 	"errors"
 	"fmt"
-	"github.com/QinYuuuu/abvss/pkg/protobuf"
 	"log/slog"
+
+	"github.com/QinYuuuu/abvss/pkg/protobuf"
 )
 
 const Echo string = "osv.Echo"
 const Vote string = "osv.Vote"
 
-var duplicateMessageError = errors.New("duplicate Message")
-var wrongInstanceError = errors.New("wrong instanceID")
-var wrongDestinationError = errors.New("wrong destinationID")
+var ErrDuplicateMessage = errors.New("duplicate Message")
+var ErrWrongInstance = errors.New("wrong instanceID")
+var ErrWrongDestination = errors.New("wrong destinationID")
 
 type Instance struct {
 	n, t, id   int64
@@ -54,7 +55,7 @@ func (osv *Instance) init() []*protobuf.OSVMessage {
 	if osv.acquired {
 		slog.Error("node has acquired")
 	}
-	slog.Debug(fmt.Sprintf("node %v osv init", osv.id))
+	slog.Debug(fmt.Sprintf("[node %v] [osv %v] init", osv.id, osv.instanceID))
 	var msgs []*protobuf.OSVMessage
 	var i int64
 	for i = 0; i < osv.n; i++ {
@@ -85,18 +86,15 @@ func (osv *Instance) Run() {
 		osv.send(msg)
 	}
 	go func() {
-		for {
-			select {
-			case msg := <-osv.receive():
-				slog.Info(fmt.Sprintf("[node %v, instance %v]", osv.id, osv.instanceID), slog.Any("msg", msg))
-				newMsgs, err := osv.recv(msg)
-				if err != nil {
-					slog.Error("handle message", slog.Any("error", err))
-					return
-				}
-				for _, newMsg := range newMsgs {
-					osv.send(newMsg)
-				}
+		for msg := range osv.receive() {
+			slog.Info(fmt.Sprintf("[node %v] [osv %v]", osv.id, osv.instanceID), slog.Any("msg", msg))
+			newMsgs, err := osv.recv(msg)
+			if err != nil {
+				slog.Error("handle message", slog.Any("error", err))
+				return
+			}
+			for _, newMsg := range newMsgs {
+				osv.send(newMsg)
 			}
 		}
 	}()
@@ -125,15 +123,15 @@ func (osv *Instance) loop(m *protobuf.OSVMessage) []*protobuf.OSVMessage {
 func (osv *Instance) recv(m *protobuf.OSVMessage) ([]*protobuf.OSVMessage, error) {
 	var msgs []*protobuf.OSVMessage
 	if m.DestID != osv.id {
-		return nil, wrongDestinationError
+		return nil, ErrWrongDestination
 	}
 	if m.InstanceID != osv.instanceID {
-		return nil, wrongInstanceError
+		return nil, ErrWrongInstance
 	}
 	if m.MsgType == Echo {
 		//log.Printf("[node %v] received ECHO from node %v", osv.id, m.FromID)
 		if osv.nEchos[m.FromID] {
-			return nil, duplicateMessageError
+			return nil, ErrDuplicateMessage
 		}
 		osv.echosNum += 1
 		osv.nEchos[m.FromID] = true
@@ -141,9 +139,9 @@ func (osv *Instance) recv(m *protobuf.OSVMessage) ([]*protobuf.OSVMessage, error
 	if m.MsgType == Vote {
 		if osv.nVotes[m.FromID] {
 			//log.Printf("node %v has already voted", m.fromID)
-			return nil, duplicateMessageError
+			return nil, ErrDuplicateMessage
 		}
-		slog.Info(fmt.Sprintf("[node %v] received VOTE from node %v, total %v", osv.id, m.FromID, osv.votesNum))
+		slog.Info(fmt.Sprintf("[node %v] [osv %v] received VOTE from node %v, total %v", osv.id, osv.instanceID, m.FromID, osv.votesNum))
 		if osv.votesNum == 2 {
 			fmt.Printf("")
 		}
@@ -190,10 +188,10 @@ func (osv *Instance) recv(m *protobuf.OSVMessage) ([]*protobuf.OSVMessage, error
 		return msgs, nil
 	}
 	if osv.votesNum >= osv.n-osv.t && osv.voted {
-		if osv.done == false {
+		if !osv.done {
 			osv.done = true
 			osv.outPut <- true
-			slog.Info(fmt.Sprintf("[node %v, instance %v] output", osv.id, osv.instanceID))
+			slog.Info(fmt.Sprintf("[node %v] [osv %v] output", osv.id, osv.instanceID))
 		}
 		return nil, nil
 	}

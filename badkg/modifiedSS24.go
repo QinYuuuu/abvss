@@ -37,7 +37,6 @@ type ACSSImpl struct {
 	verified          bool
 
 	myShare       *protobuf.SS24Share
-	encShares     *protobuf.ElgamalEncShare
 	challengePoly []*pkg.PolyBigIntImpl
 	theta         [][]*big.Int
 
@@ -102,7 +101,7 @@ func (vss *ACSSImpl) messageLoop() {
 		select {
 		case data := <-vss.rbc.Output(strconv.FormatInt(vss.dealerID, 10) + "0"):
 			// handel RBC output
-			slog.Debug(fmt.Sprintf("[node %v] receive encMultiShare", vss.id), slog.Any("data", data))
+			slog.Debug(fmt.Sprintf("[node %v] [acss %v] receive encMultiShare", vss.id, vss.sessionID), slog.Any("data", data))
 			var encShares protobuf.AESEncMultiShare
 			err = proto.Unmarshal(data, &encShares)
 			if err != nil {
@@ -136,10 +135,10 @@ func (vss *ACSSImpl) messageLoop() {
 						return
 					}
 					vss.myShare = &decShare
-					slog.Debug(fmt.Sprintf("[node %v]", vss.id), slog.Any("share", decShare.FShare))
+					slog.Debug(fmt.Sprintf("[node %v] [acss %v]", vss.id, vss.sessionID), slog.Any("share", decShare.FShare))
 					vss.shareReceived = true
 				} else {
-					slog.Debug(fmt.Sprintf("[node %v] receive", vss.id), slog.Any("enc share", encShare))
+					slog.Debug(fmt.Sprintf("[node %v] [acss %v] receive", vss.id, vss.sessionID), slog.Any("enc share", encShare))
 				}
 			}
 			if vss.shareReceived && vss.challengeReceived && !vss.verified && vss.id != vss.dealerID {
@@ -147,12 +146,12 @@ func (vss *ACSSImpl) messageLoop() {
 				vss.verified = true
 			}
 			if !vss.verified && vss.id == vss.dealerID {
-				slog.Info(fmt.Sprintf("[node %v] dealer run osv", vss.id))
+				slog.Info(fmt.Sprintf("[node %v] [acss %v] dealer run osv", vss.id, vss.sessionID))
 				vss.osvNode.Run()
 				vss.verified = true
 			}
 		case data := <-vss.rbc.Output(strconv.FormatInt(vss.dealerID, 10) + "1"):
-			slog.Info(fmt.Sprintf("[node %v] receive", vss.id), slog.Any("challenge poly", data))
+			slog.Info(fmt.Sprintf("[node %v] [acss %v] receive", vss.id, vss.sessionID), slog.Any("challenge poly", data))
 			var challengePoly protobuf.ChallengePoly
 			err = proto.Unmarshal(data, &challengePoly)
 			if err != nil {
@@ -173,12 +172,12 @@ func (vss *ACSSImpl) messageLoop() {
 				vss.verified = true
 			}
 			if !vss.verified && vss.id == vss.dealerID {
-				slog.Info(fmt.Sprintf("[node %v] dealer run osv", vss.id))
+				slog.Info(fmt.Sprintf("[node %v] [acss %v] dealer run osv", vss.id, vss.sessionID))
 				vss.osvNode.Run()
 				vss.verified = true
 			}
 		case output := <-vss.osvNode.Output():
-			slog.Info(fmt.Sprintf("[node %v] osv output", vss.id))
+			slog.Info(fmt.Sprintf("[node %v] [acss %v] osv output", vss.id, vss.sessionID))
 			if output {
 				vss.output <- vss.myShare
 			}
@@ -196,7 +195,7 @@ func (vss *ACSSImpl) verifyDistribute() {
 		gShares[i] = new(big.Int).SetBytes(gShareByte)
 	}
 	// Wait vss.Challenge != nil
-	slog.Info(fmt.Sprintf("[node %v] try verify", vss.id))
+	slog.Info(fmt.Sprintf("[node %v] [acss %v] try verify", vss.id, vss.sessionID))
 	for i, hPoly := range vss.challengePoly {
 		right := gShares[i]
 		var j int64
@@ -210,7 +209,7 @@ func (vss *ACSSImpl) verifyDistribute() {
 		// check happy
 		slog.Debug("verify", slog.Any("want", hej.Int64()), slog.Any("got", right.Int64()))
 		if hej.Cmp(right) == 0 {
-			slog.Debug(fmt.Sprintf("[node %v] run osv", vss.id))
+			slog.Debug(fmt.Sprintf("[node %v] [acss %v] run osv", vss.id, vss.sessionID))
 			vss.osvNode.Run()
 		}
 	}

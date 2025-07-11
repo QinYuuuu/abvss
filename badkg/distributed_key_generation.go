@@ -37,19 +37,19 @@ type DKGImpl struct {
 	fShares                        [][]*big.Int
 	gShares                        []*big.Int
 	hyperMatrix                    [][]*big.Int
-	sk                             [][]*big.Int
+	sk                             []*big.Int
 	group                          kyber.Group
 	g                              kyber.Point
 	hasVote1                       bool
 	hasVote2                       bool
 	vShares                        shareList
 
-	setQss            []int64
 	setQrbc           []int64
 	acssOutputted     []*acssOutput
 	acssOutputCounter int64
 	rbcOutputted      []*rbcOutput
 	rbcOutputCounter  int64
+	superMatrix       [][]kyber.Scalar
 
 	mvba1       *MVBA
 	mvba2       *MVBA
@@ -99,30 +99,26 @@ func (dkg *DKGImpl) Run() {
 	for _, acss := range dkg.acssImpls {
 		acss.Run()
 	}
+	dkg.acssImpls[dkg.id].Share()
 	dkg.mvba1.Run()
 	dkg.mvba2.Run()
 
-	Qss := dkg.phase1()
-	QssMvba1Input := make([]int64, len(Qss))
-	for i := 0; i < len(Qss); i++ {
-		QssMvba1Input[i] = Qss[i].index
+	for {
+		select {
+		case acssOutput := <-dkg.getACSSOutput():
+			slog.Info(fmt.Sprintf("[node %v] output in ACSS %v", dkg.id, acssOutput.data))
+			dkg.handleACSS(acssOutput)
+		case setQss := <-dkg.mvba1.Output():
+			dkg.handleQss(setQss)
+		case rbcOutput := <-dkg.getRBCOutput():
+			dkg.handleQelej(rbcOutput)
+		case setQrbc := <-dkg.mvba2.Output():
+			slog.Info(fmt.Sprintf("[node %v] setQrbc: %v", dkg.id, setQrbc))
+		case msg := <-dkg.receiveChan():
+			slog.Info(fmt.Sprintf("[node %v] receive message: %v", dkg.id, msg))
+			dkg.handleMessage(msg)
+		}
 	}
-	dkg.mvba1.Input(QssMvba1Input)
-
-	dkg.setQss = <-dkg.mvba1.Output()
-
-	Qrbc := dkg.phase2()
-	QssMvba2Input := make([]int64, len(Qss))
-	for i := 0; i < len(Qrbc); i++ {
-		QssMvba2Input[i] = Qrbc[i].index
-	}
-	dkg.mvba2.Input(QssMvba2Input)
-
-	dkg.setQrbc = <-dkg.mvba2.Output()
-
-	dkg.phase3()
-
-	dkg.phase4()
 }
 
 func (dkg *DKGImpl) getACSSOutput() chan *acssOutput {
@@ -166,88 +162,90 @@ func (dkg *DKGImpl) getRBCOutput() chan *rbcOutput {
 	return finishChan
 }
 
-func (dkg *DKGImpl) phase1() []*acssOutput {
-	dkg.acssImpls[dkg.id].Share()
-	finishChan := dkg.getACSSOutput()
-	for {
-		newACSSOutput := <-finishChan
-		dkg.acssOutputted[newACSSOutput.index] = newACSSOutput
-		dkg.acssOutputCounter++
-		if dkg.acssOutputCounter >= dkg.nodeNum-dkg.degree {
-			result := make([]*acssOutput, 0)
-			var j int64
-			for j = 0; j < dkg.nodeNum; j++ {
-				if dkg.acssOutputted[j] != nil {
-					result = append(result, dkg.acssOutputted[j])
-				}
+func (dkg *DKGImpl) handleACSS(newACSSOutput *acssOutput) {
+	dkg.acssOutputted[newACSSOutput.index] = newACSSOutput
+	dkg.acssOutputCounter++
+	if dkg.acssOutputCounter >= dkg.nodeNum-dkg.degree {
+		Qss := make([]*acssOutput, 0)
+		var j int64
+		for j = 0; j < dkg.nodeNum; j++ {
+			if dkg.acssOutputted[j] != nil {
+				Qss = append(Qss, dkg.acssOutputted[j])
 			}
 		}
+		QssMvba1Input := make([]int64, len(Qss))
+		for i := 0; i < len(Qss); i++ {
+			QssMvba1Input[i] = Qss[i].index
+		}
+		dkg.mvba1.Input(QssMvba1Input)
 	}
 }
 
-func (dkg *DKGImpl) phase2() []*rbcOutput {
-	Qss := dkg.setQss
-	Qele := make([][]kyber.Point, len(Qss))
-	for i, index := range Qss {
-		dkg.sk[i], _ = pkg.MatrixMulVector(dkg.hyperMatrix, dkg.fShares[index])
+func (dkg *DKGImpl) handleQss(setQss []int64) {
+	Qele := make([][]kyber.Point, len(setQss))
+	for i, index := range setQss {
+		sk, err := pkg.MatrixMulVector(dkg.hyperMatrix, dkg.fShares[index])
+		if err != nil {
+			slog.Error("calculate hyperMatrix * fShares[index] failed", slog.Any("Error", err))
+		}
+		dkg.sk = append(dkg.sk, sk)
+
 		Qele[i] = make([]kyber.Point, dkg.batchSize+1)
 		var j int64
 		for j = 0; j < dkg.batchSize; j++ {
-			fShareScalar := dkg.group.Scalar().SetInt64(dkg.fShares[index][j].Int64())
+			fShareScalar := dkg.group.Scalar().SetBytes(dkg.fShares[index][j].Bytes())
 			Qele[i][j] = dkg.group.Point().Mul(fShareScalar, dkg.g)
 		}
 		gShareScalar := dkg.group.Scalar().SetInt64(dkg.gShares[index].Int64())
 		Qele[i][dkg.batchSize] = dkg.group.Point().Mul(gShareScalar, dkg.g)
 	}
 	dkg.rbc.StartNewBroadcast([]byte(""), dkg.id, strconv.FormatInt(dkg.id, 10)+"RBC_on_Qele")
+}
 
-	finishChan := dkg.getRBCOutput()
-	for {
-		newRbcOutput := <-finishChan
-		dkg.rbcOutputted[newRbcOutput.index] = newRbcOutput
-		dkg.rbcOutputCounter++
-		if dkg.rbcOutputCounter >= dkg.nodeNum {
-			result := make([]*rbcOutput, 0)
-			var j int64
-			for j = 0; j < dkg.nodeNum; j++ {
-				if dkg.rbcOutputted[j] != nil {
-					result = append(result, dkg.rbcOutputted[j])
-				}
-
+func (dkg *DKGImpl) handleQelej(newRbcOutput *rbcOutput) {
+	dkg.rbcOutputted[newRbcOutput.index] = newRbcOutput
+	dkg.rbcOutputCounter++
+	if dkg.rbcOutputCounter >= dkg.nodeNum-dkg.degree {
+		Qrbc := make([]*rbcOutput, 0)
+		var j int64
+		for j = 0; j < dkg.nodeNum; j++ {
+			if dkg.rbcOutputted[j] != nil {
+				Qrbc = append(Qrbc, dkg.rbcOutputted[j])
 			}
-			return result
+
 		}
+		QssMvba2Input := make([]int64, len(Qrbc))
+		for i := 0; i < len(Qrbc); i++ {
+			QssMvba2Input[i] = Qrbc[i].index
+		}
+		dkg.mvba2.Input(QssMvba2Input)
 	}
 }
 
-func (dkg *DKGImpl) phase3() {
-	for {
-		select {
-		case msg := <-dkg.receiveChan():
-			var share protobuf.DKGShareMessage
-			err := proto.Unmarshal(msg.Value, &share)
-			if err != nil {
-				slog.Error("proto unmarshal error")
-			}
-			dkg.vShares.x = append(dkg.vShares.x, new(big.Int).SetInt64(share.Index))
-			dkg.vShares.y = append(dkg.vShares.y, new(big.Int).SetBytes(share.Vj))
-			interpolation, err := pkg.LagrangeInterpolation(dkg.vShares.x, dkg.vShares.y, dkg.p)
-			if err != nil {
-				return
-			}
-			_, err = interpolation.GetCoefficient(0)
-			if err != nil {
-				return
-			}
-		}
+func (dkg *DKGImpl) handleMessage(msg *protobuf.DKGMessage) {
+	var share protobuf.DKGShareMessage
+	err := proto.Unmarshal(msg.Value, &share)
+	if err != nil {
+		slog.Error("proto unmarshal error")
 	}
+	dkg.vShares.x = append(dkg.vShares.x, new(big.Int).SetInt64(share.Index))
+	dkg.vShares.y = append(dkg.vShares.y, new(big.Int).SetBytes(share.Vj))
+	interpolation, err := pkg.LagrangeInterpolation(dkg.vShares.x, dkg.vShares.y, dkg.p)
+	if err != nil {
+		return
+	}
+	_, err = interpolation.GetCoefficient(0)
+	if err != nil {
+		return
+	}
+
 }
 
 func (dkg *DKGImpl) phase4() {
 
 }
 
-func (dkg *DKGImpl) handle() {
+func (dkg *DKGImpl) handleQrbc() {
 	// |Qss| = n-t
 	Qss := <-dkg.mvba1.Output()
 
